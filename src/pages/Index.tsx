@@ -1,11 +1,14 @@
 import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2, User } from "lucide-react";
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,7 +17,7 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -26,15 +29,27 @@ const Index = () => {
     return null;
   }
 
+  const displayName = profile?.name || user.email?.split('@')[0] || 'User';
+  const userInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase();
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">Seeds</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Welcome, {user.email}
-            </span>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={profile?.avatar_url || ""} alt={displayName} />
+                <AvatarFallback>
+                  {userInitials || <User className="h-4 w-4" />}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col text-sm">
+                <span className="font-medium">{displayName}</span>
+                <span className="text-muted-foreground text-xs">{profile?.email || user.email}</span>
+              </div>
+            </div>
             <Button variant="outline" onClick={signOut}>
               Sign Out
             </Button>
