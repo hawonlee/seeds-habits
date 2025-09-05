@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      habits: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          notes: string | null
+          category: string
+          target_frequency: number
+          leniency_threshold: number
+          phase: 'future' | 'current' | 'adopted'
+          streak: number
+          total_completions: number
+          last_completed: string | null
+          points: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          notes?: string | null
+          category?: string
+          target_frequency?: number
+          leniency_threshold?: number
+          phase?: 'future' | 'current' | 'adopted'
+          streak?: number
+          total_completions?: number
+          last_completed?: string | null
+          points?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          notes?: string | null
+          category?: string
+          target_frequency?: number
+          leniency_threshold?: number
+          phase?: 'future' | 'current' | 'adopted'
+          streak?: number
+          total_completions?: number
+          last_completed?: string | null
+          points?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
