@@ -26,9 +26,9 @@ export const UserDropdown = ({
         <div className="focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
           <Button 
             variant="ghost" 
-            className="h-10 w-10 rounded-full p-0 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none hover:bg-transparent"
+            className="h-8 w-8 rounded-full p-0 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none hover:bg-transparent"
           >
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-8 w-8">
               <AvatarImage src={profile?.avatar_url || ""} alt={displayName} />
               <AvatarFallback>
                 {userInitials || <User className="h-5 w-5" />}

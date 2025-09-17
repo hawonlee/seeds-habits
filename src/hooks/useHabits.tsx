@@ -20,6 +20,10 @@ export interface Habit {
   updated_at: string;
 }
 
+// Simple cache to prevent unnecessary refetches
+let habitsCache: { [userId: string]: { habits: Habit[], timestamp: number } } = {};
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export const useHabits = () => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +39,24 @@ export const useHabits = () => {
     }
   }, [user]);
 
+  // Optimize: Don't refetch if we already have data for this user
+  useEffect(() => {
+    if (user && habits.length === 0 && !loading) {
+      fetchHabits();
+    }
+  }, [user?.id]);
+
   const fetchHabits = async () => {
     if (!user) return;
+
+    // Check cache first
+    const cached = habitsCache[user.id];
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log('Using cached habits for user:', user.id);
+      setHabits(cached.habits);
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -59,7 +79,14 @@ export const useHabits = () => {
         });
       } else {
         console.log('Habits loaded:', data);
-        setHabits(data || []);
+        const habitsData = data || [];
+        setHabits(habitsData);
+        
+        // Cache the results
+        habitsCache[user.id] = {
+          habits: habitsData,
+          timestamp: Date.now()
+        };
       }
     } catch (error) {
       console.error('Error fetching habits:', error);
@@ -118,6 +145,12 @@ export const useHabits = () => {
       } else {
         console.log('Habit added successfully:', data);
         setHabits(prev => [data, ...prev]);
+        
+        // Invalidate cache
+        if (user) {
+          delete habitsCache[user.id];
+        }
+        
         toast({
           title: "Success",
           description: "Habit added successfully",
@@ -151,6 +184,12 @@ export const useHabits = () => {
         return { error };
       } else {
         setHabits(prev => prev.map(h => h.id === id ? data : h));
+        
+        // Invalidate cache
+        if (user) {
+          delete habitsCache[user.id];
+        }
+        
         toast({
           title: "Success",
           description: "Habit updated successfully",
@@ -182,6 +221,12 @@ export const useHabits = () => {
         return { error };
       } else {
         setHabits(prev => prev.filter(h => h.id !== id));
+        
+        // Invalidate cache
+        if (user) {
+          delete habitsCache[user.id];
+        }
+        
         toast({
           title: "Success",
           description: "Habit deleted successfully",

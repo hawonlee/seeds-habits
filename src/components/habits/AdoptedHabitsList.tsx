@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trophy } from "lucide-react";
+import { Plus, Trophy, PanelRight } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { HabitCard } from "./HabitCard";
 
@@ -9,47 +9,81 @@ interface AdoptedHabitsListProps {
   habits: Habit[];
   onAddHabit: () => void;
   adoptionThreshold: number;
-  onEditHabit: (habit: Habit) => void;
-  onDeleteHabit: (id: string) => void;
-  onCheckIn: (id: string) => void;
-  onUndoCheckIn: (id: string) => void;
+  onCheckIn: (id: string, date?: Date) => void;
+  onUndoCheckIn: (id: string, date?: Date) => void;
   onMoveHabit: (id: string, phase: Habit['phase']) => void;
+  onEditHabit?: (habit: Habit) => void;
+  onDeleteHabit?: (id: string) => void;
+  onUpdateHabit?: (updatedHabit: Partial<Habit>) => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  hideHeader?: boolean;
 }
 
 export const AdoptedHabitsList = ({ 
   habits, 
   onAddHabit, 
   adoptionThreshold,
-  onEditHabit,
-  onDeleteHabit,
   onCheckIn,
   onUndoCheckIn,
-  onMoveHabit
+  onMoveHabit,
+  onEditHabit,
+  onDeleteHabit,
+  onUpdateHabit,
+  isCollapsed = false,
+  onToggleCollapse,
+  hideHeader = false
 }: AdoptedHabitsListProps) => {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          <h2 className="text-xl font-semibold">Adopted Habits</h2>
-          <Badge variant="secondary">{habits.length}</Badge>
-        </div>
+  if (isCollapsed) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-gray-50 rounded-lg border">
         <Button
           size="sm"
-          variant="outline"
-          onClick={onAddHabit}
-          className="h-8 w-8 p-0"
+          variant="ghost"
+          onClick={onToggleCollapse}
+          className="h-12 w-12 p-0 hover:bg-gray-100"
         >
-          <Plus className="h-4 w-4" />
+          <PanelRight className="h-6 w-6 text-green-500" />
         </Button>
+        <div className="mt-2 text-xs text-green-500 font-medium transform -rotate-90 whitespace-nowrap">
+          Adopted
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="h-full bg-white overflow-y-auto">
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="group relative">
+              <h2 className="text-sm font-medium cursor-pointer">ADOPTED</h2>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onToggleCollapse}
+                className="absolute -right-8 top-0 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <PanelRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onAddHabit}
+            className="h-8 w-8 p-0"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       <div className="space-y-4">
         {habits.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No adopted habits yet</p>
-              <p className="text-sm">Maintain streaks to adopt habits</p>
+            <CardContent className="text-center text-muted-foreground">
+              <p className="text-xs">No adopted habits yet</p>
             </CardContent>
           </Card>
         ) : (
@@ -57,13 +91,13 @@ export const AdoptedHabitsList = ({
             <HabitCard 
               key={habit.id} 
               habit={habit} 
-              showActions={false}
               adoptionThreshold={adoptionThreshold}
-              onEditHabit={onEditHabit}
-              onDeleteHabit={onDeleteHabit}
               onCheckIn={onCheckIn}
               onUndoCheckIn={onUndoCheckIn}
               onMoveHabit={onMoveHabit}
+              onEditHabit={onEditHabit}
+              onDeleteHabit={onDeleteHabit}
+              onUpdateHabit={onUpdateHabit}
             />
           ))
         )}

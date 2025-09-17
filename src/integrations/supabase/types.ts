@@ -73,6 +73,90 @@ export type Database = {
           }
         ]
       }
+      habit_completions: {
+        Row: {
+          id: string
+          habit_id: string
+          user_id: string
+          completion_date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          habit_id: string
+          user_id: string
+          completion_date: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          habit_id?: string
+          user_id?: string
+          completion_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "habit_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      habit_schedules: {
+        Row: {
+          id: string
+          habit_id: string
+          user_id: string
+          scheduled_date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          habit_id: string
+          user_id: string
+          scheduled_date: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          habit_id?: string
+          user_id?: string
+          scheduled_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_schedules_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "habit_schedules_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -100,6 +184,36 @@ export type Database = {
           name?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          id: string
+          name: string
+          color: string
+          bg_color: string
+          text_color: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          color: string
+          bg_color: string
+          text_color: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          color?: string
+          bg_color?: string
+          text_color?: string
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { DEFAULT_CATEGORIES, getCategoryClasses } from "@/lib/categories";
 
 interface EditHabitDialogProps {
   open: boolean;
@@ -35,15 +37,15 @@ export const EditHabitDialog = ({
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Habit Title</label>
+            <label className="text-xs font-medium">Habit Title</label>
             <Input
-              placeholder="e.g., Morning Exercise"
+              placeholder="Morning Exercise..."
               value={newHabit.title}
               onChange={(e) => setNewHabit({...newHabit, title: e.target.value})}
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Notes (Optional)</label>
+            <label className="text-xs font-medium">Notes</label>
             <Textarea
               placeholder="Add details about your habit..."
               value={newHabit.notes}
@@ -51,23 +53,38 @@ export const EditHabitDialog = ({
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Category</label>
+            <label className="text-xs font-medium">Category</label>
             <Select value={newHabit.category} onValueChange={(value) => setNewHabit({...newHabit, category: value})}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="health">Health</SelectItem>
-                <SelectItem value="learning">Learning</SelectItem>
-                <SelectItem value="work">Work</SelectItem>
-                <SelectItem value="social">Social</SelectItem>
+                {DEFAULT_CATEGORIES.map(category => (
+                  <SelectItem key={category.id} value={category.id}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      <span>{category.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {/* {newHabit.category && (
+              <div className="mt-2">
+                <Badge
+                  className={`${getCategoryClasses(newHabit.category).bgColor} ${getCategoryClasses(newHabit.category).textColor} border-0`}
+                >
+                  {DEFAULT_CATEGORIES.find(c => c.id === newHabit.category)?.name}
+                </Badge>
+              </div>
+            )} */}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium">Target Frequency (per week)</label>
+              <label className="text-xs font-medium">Target Frequency (per week)</label>
               <Select value={newHabit.target_frequency.toString()} onValueChange={(value) => setNewHabit({...newHabit, target_frequency: parseInt(value)})}>
                 <SelectTrigger>
                   <SelectValue />
@@ -80,7 +97,7 @@ export const EditHabitDialog = ({
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Leniency Threshold (days)</label>
+              <label className="text-xs font-medium">Leniency Threshold (days)</label>
               <Select value={newHabit.leniency_threshold.toString()} onValueChange={(value) => setNewHabit({...newHabit, leniency_threshold: parseInt(value)})}>
                 <SelectTrigger>
                   <SelectValue />
@@ -93,12 +110,12 @@ export const EditHabitDialog = ({
               </Select>
             </div>
           </div>
-          <div className="flex gap-2 pt-4">
-            <Button onClick={onUpdateHabit} className="flex-1 bg-green-600 hover:bg-green-700">
-              Update Habit
-            </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+          <div className="flex w-full justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="">
               Cancel
+            </Button>
+            <Button onClick={onUpdateHabit} className="">
+              Save
             </Button>
           </div>
         </div>

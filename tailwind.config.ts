@@ -12,12 +12,18 @@ export default {
 	theme: {
 		container: {
 			center: true,
-			padding: '2rem',
+			padding: '0',
 			screens: {
 				'2xl': '1400px'
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['IBM Plex Mono', 'monospace'],
+			},
+			fontSize: {
+				'xxs': ['0.6rem', { lineHeight: '0.75rem' }], // 10px
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -61,7 +67,38 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Custom colors for your habit tracking app
+				habit: {
+					future: '#8B5CF6',    // Purple for future habits
+					current: '#10B981',   // Green for current habits
+					adopted: '#F59E0B',   // Amber for adopted habits
+					completed: '#059669', // Dark green for completed
+					missed: '#EF4444'     // Red for missed days
+				},
+				general: {
+					lightgray: '#F5F5F5',
+				},
+				brand: {
+					50: '#f0f9ff',
+					100: '#e0f2fe',
+					200: '#bae6fd',
+					300: '#7dd3fc',
+					400: '#38bdf8',
+					500: '#0ea5e9',
+					600: '#0284c7',
+					700: '#0369a1',
+					800: '#075985',
+					900: '#0c4a6e'
+				},
+				// Category color overrides (bg-*-100 and text-*-800)
+				red: { 100: 'hsla(0, 34%, 91%, 1)', 800: 'hsla(2, 8%, 24%, 1)' },
+				orange: { 100: 'hsla(40, 30%, 90%, 1)', 800: 'hsla(39, 10%, 28%, 1)' },
+				amber: { 100: 'hsla(40, 30%, 90%, 1)', 800: 'hsla(39, 10%, 28%, 1)' },
+				yellow: { 100: 'hsla(57, 67%, 86%, 1)', 800: 'hsla(58, 15%, 31%, 1)' },
+				green: { 100: 'hsla(94, 24%, 87%, 1)', 800: 'hsla(94, 5%, 32%, 1)' },
+				blue: { 100: 'hsla(180, 11%, 89%, 1)', 800: 'hsla(94, 5%, 32%, 1)' },
+				purple: { 100: 'hsla(300, 12%, 89%, 1)', 800: 'hsla(298, 5%, 36%, 1)' }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
