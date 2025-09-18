@@ -379,14 +379,19 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
                         </h3>
                         <div className="grid gap-3">
                           {remainingHabits.map(habit => (
-                            <CalendarHabitItem
+                            <HabitCard
                               key={habit.id}
                               habit={habit}
-                              date={selectedDay}
-                              isCompleted={isHabitCompletedOnDate(habit.id, selectedDay)}
-                              onToggle={(h, d, done) => handleHabitCheckIn(h, d, done)}
-                              isScheduled={isHabitScheduledOnDate ? isHabitScheduledOnDate(habit.id, selectedDay) : false}
-                              onUnschedule={onHabitUnschedule}
+                              adoptionThreshold={7}
+                              onCheckIn={(id) => handleHabitCheckIn(habit, selectedDay, isHabitCompletedOnDate(habit.id, selectedDay))}
+                              onUndoCheckIn={() => handleHabitCheckIn(habit, selectedDay, true)}
+                              onMoveHabit={() => { }}
+                              variant="week"
+                              weekStartDate={weekDates[0]}
+                              isCompletedOnDate={isHabitCompletedOnDate}
+                              selectedDate={selectedDay}
+                              onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
+                              onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
                             />
                           ))}
                         </div>
@@ -399,14 +404,19 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
                         </h3>
                         <div className="grid gap-2">
                           {nonGridHabits.map(habit => (
-                            <CalendarHabitItem
+                            <HabitCard
                               key={habit.id}
                               habit={habit}
-                              date={selectedDay}
-                              isCompleted={isHabitCompletedOnDate(habit.id, selectedDay)}
-                              onToggle={(h, d, done) => handleHabitCheckIn(h, d, done)}
-                              isScheduled={isHabitScheduledOnDate ? isHabitScheduledOnDate(habit.id, selectedDay) : false}
-                              onUnschedule={onHabitUnschedule}
+                              adoptionThreshold={7}
+                              onCheckIn={(id) => handleHabitCheckIn(habit, selectedDay, isHabitCompletedOnDate(habit.id, selectedDay))}
+                              onUndoCheckIn={() => handleHabitCheckIn(habit, selectedDay, true)}
+                              onMoveHabit={() => {}}
+                              variant="week"
+                              weekStartDate={weekDates[0]}
+                              isCompletedOnDate={isHabitCompletedOnDate}
+                              selectedDate={selectedDay}
+                              onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
+                              onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
                             />
                           ))}
                         </div>
