@@ -74,13 +74,16 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
       days.push(d);
     }
     
-    // Calculate how many more days we need to fill exactly 6 rows (42 cells)
-    const totalCells = 42; // 6 rows × 7 days
-    const remainingCells = totalCells - days.length;
-    for (let day = 1; day <= remainingCells; day++) {
-      const d = new Date(year, month + 1, day);
-      d.setHours(12, 0, 0, 0);
-      days.push(d);
+    // Add days from next month only to complete the current week
+    // Calculate how many days we need to complete the current week
+    const currentWeekLength = days.length % 7;
+    if (currentWeekLength > 0) {
+      const daysNeededToCompleteWeek = 7 - currentWeekLength;
+      for (let day = 1; day <= daysNeededToCompleteWeek; day++) {
+        const d = new Date(year, month + 1, day);
+        d.setHours(12, 0, 0, 0);
+        days.push(d);
+      }
     }
     
     return days;
@@ -124,33 +127,15 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
   const shouldHabitBeDoneOnDate = (habit: Habit, date: Date, dayOfWeek: number) => {
     // If target_frequency is 7, it's daily
     if (habit.target_frequency === 7) {
-      return true;
+      // Only show daily habits from the day they were created onwards
+      const createdDate = new Date(habit.created_at);
+      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return currentDateOnly >= createdDateOnly;
     }
     
-    // If target_frequency is 1, it's weekly (show on one day)
-    if (habit.target_frequency === 1) {
-      // Show on the day of the week when the habit was created
-      const createdDay = new Date(habit.created_at).getDay();
-      return dayOfWeek === createdDay;
-    }
-    
-    // For other frequencies (2-6), distribute across the week
-    if (habit.target_frequency >= 2 && habit.target_frequency <= 6) {
-      // Create a simple distribution based on habit ID for consistency
-      const habitIdHash = Math.abs(habit.id.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-      }, 0));
-      
-      // Generate days based on frequency and habit ID
-      const targetDays = [];
-      for (let i = 0; i < habit.target_frequency; i++) {
-        targetDays.push((habitIdHash + i) % 7);
-      }
-      
-      return targetDays.includes(dayOfWeek);
-    }
-    
+    // For frequencies 1-6, don't show automatically on calendar
+    // These habits should only appear when manually scheduled
     return false;
   };
 
@@ -180,10 +165,57 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
   const getDetailedHabitsForDate = (date: Date) => {
     const activeHabits = habits.filter(habit => habit.phase === 'current');
     const completedHabits = habits.filter(habit => isHabitCompletedOnDate(habit.id, date));
-    const remainingHabits = activeHabits.filter(habit => !completedHabits.some(c => c.id === habit.id));
+    
+    // Get habits that are specifically assigned to this day
+    const scheduledHabitIds = getScheduledHabitsForDate(date);
+    const scheduledHabits = activeHabits.filter(habit => scheduledHabitIds.includes(habit.id));
+    
+    // Get daily habits (target_frequency = 7) that should appear on this day
+    const dailyHabits = activeHabits.filter(habit => {
+      if (habit.target_frequency !== 7) return false;
+      if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
+      
+      // Only show daily habits from the day they were created onwards
+      const createdDate = new Date(habit.created_at);
+      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return currentDateOnly >= createdDateOnly;
+    });
+    
+    // Get custom day habits that should appear on this day
+    const customDayHabits = activeHabits.filter(habit => {
+      if (habit.target_frequency < 2 || habit.target_frequency > 6) return false;
+      if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
+      
+      // Check if this habit has custom days defined and this day is one of them
+      const hasCustomDaysField = Object.prototype.hasOwnProperty.call(habit as any, 'custom_days');
+      const customDays = (habit as any).custom_days as number[] | undefined;
+      if (hasCustomDaysField && customDays && customDays.length > 0) {
+        const dayOfWeek = date.getDay();
+        return customDays.includes(dayOfWeek);
+      }
+      return false;
+    });
+    
+    // Planned habits are those specifically assigned to this day
+    const plannedHabits = [...scheduledHabits, ...dailyHabits, ...customDayHabits];
+    
+    // My habits are all other current habits that aren't specifically assigned to this day
+    const myHabits = activeHabits.filter(habit => 
+      !plannedHabits.some(p => p.id === habit.id)
+    );
+    
     const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
     const isFuture = date > new Date(new Date().setHours(23, 59, 59, 999));
-    return { activeHabits, completedHabits, remainingHabits, isPast, isFuture };
+    
+    return { 
+      activeHabits, 
+      completedHabits, 
+      plannedHabits, 
+      myHabits, 
+      isPast, 
+      isFuture 
+    };
   };
 
 
@@ -284,7 +316,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
 
                     {/* Habits for this day */}
                     <div className="flex-1 flex flex-col gap-1 overflow-hidden">
-                      {isCurrentMonth && habitsForDay.slice(0, 3).map(habit => (
+                      {habitsForDay.slice(0, 3).map(habit => (
                         <CalendarHabitItem
                           key={habit.id}
                           habit={habit}
@@ -296,7 +328,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                         />
                       ))}
 
-                      {isCurrentMonth && habitsForDay.length > 3 && (
+                      {habitsForDay.length > 3 && (
                         <div className="text-xs text-muted-foreground">
                           +{habitsForDay.length - 3} more
                         </div>
@@ -322,15 +354,15 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
               </PopoverTrigger>
               <PopoverContent side="right" align="start" className="w-[420px] p-3">
                 {(() => {
-                  const { completedHabits, remainingHabits, isFuture } = getDetailedHabitsForDate(date);
+                  const { completedHabits, plannedHabits, myHabits, isFuture } = getDetailedHabitsForDate(date);
                   const weekStart = getWeekStartDate(date);
                   return (
                     <div className="space-y-3">
-                      {remainingHabits.length > 0 && (
+                      {plannedHabits.length > 0 && (
                         <div className="space-y-2">
                           <div className="text-xs font-medium text-gray-700">Planned Habits</div>
                           <div className="grid gap-2">
-                            {remainingHabits.map(habit => (
+                            {plannedHabits.map(habit => (
                               <HabitCard
                                 key={habit.id}
                                 habit={habit}
@@ -374,7 +406,31 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                         </div>
                       )}
 
-                      {remainingHabits.length === 0 && completedHabits.length === 0 && (
+                      {myHabits.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-xs font-medium text-gray-700">My Habits</div>
+                          <div className="grid gap-2">
+                            {myHabits.map(habit => (
+                              <HabitCard
+                                key={habit.id}
+                                habit={habit}
+                                adoptionThreshold={7}
+                                onCheckIn={() => handleHabitCheckIn(habit, date, isHabitCompletedOnDate(habit.id, date))}
+                                onUndoCheckIn={() => handleHabitCheckIn(habit, date, true)}
+                                onMoveHabit={() => {}}
+                                variant="week"
+                                weekStartDate={weekStart}
+                                isCompletedOnDate={isHabitCompletedOnDate}
+                                selectedDate={date}
+                                onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
+                                onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {plannedHabits.length === 0 && completedHabits.length === 0 && myHabits.length === 0 && (
                         <div className="text-xs text-muted-foreground text-center py-2">No active habits</div>
                       )}
                     </div>

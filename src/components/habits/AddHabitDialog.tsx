@@ -4,8 +4,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-import { DEFAULT_CATEGORIES, getCategoryClasses } from "@/lib/categories";
+import { useEffect, useState } from "react";
+import { DEFAULT_CATEGORIES, fetchCategories, getCategories, getCategoryClasses, resolveCategoryBgColor, type Category } from "@/lib/categories";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AddHabitDialogProps {
   open: boolean;
@@ -33,6 +34,26 @@ export const AddHabitDialog = ({
   const [frequencyType, setFrequencyType] = useState<'daily' | 'weekly' | 'custom'>('daily');
   const [frequencyValue, setFrequencyValue] = useState(1);
   const [customDays, setCustomDays] = useState<boolean[]>([false, false, false, false, false, false, false]);
+  const [categories, setCategories] = useState<Category[]>(getCategories());
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const load = async () => {
+      setLoadingCategories(true);
+      try {
+        if (!user?.id) {
+          setCategories(DEFAULT_CATEGORIES);
+          return;
+        }
+        const cats = await fetchCategories(user.id);
+        setCategories(cats && cats.length ? cats : DEFAULT_CATEGORIES);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    load();
+  }, [user?.id]);
   
   const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   return (
@@ -62,20 +83,28 @@ export const AddHabitDialog = ({
             <label className="text-xs font-medium">Category</label>
             <Select value={newHabit.category} onValueChange={(value) => setNewHabit({...newHabit, category: value})}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {DEFAULT_CATEGORIES.map(category => (
-                  <SelectItem key={category.id} value={category.id}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span>{category.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {categories.length === 0 ? (
+                  <div className="px-2 py-1 text-xs text-muted-foreground">No categories. Create one in Category Manager.</div>
+                ) : (
+                  categories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center gap-2">
+                        {category.id === 'none' ? (
+                          <div className="w-3 h-3 rounded-full border border-gray-300 bg-transparent" />
+                        ) : (
+                          <div
+                            className="w-3 h-3 rounded-full border"
+                            style={{ backgroundColor: category.color || resolveCategoryBgColor(category.id), borderColor: category.color || resolveCategoryBgColor(category.id) }}
+                          />
+                        )}
+                        <span>{category.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {/* {newHabit.category && (
@@ -99,6 +128,8 @@ export const AddHabitDialog = ({
                   setFrequencyType('daily');
                   setFrequencyValue(1);
                   setCustomDays([false, false, false, false, false, false, false]);
+                  // Ensure the persisted target is 7/week when choosing 1/day by default
+                  setNewHabit({...newHabit, target_frequency: 7});
                 }}
                 className={`flex-1`}
               >
@@ -131,6 +162,8 @@ export const AddHabitDialog = ({
                   setFrequencyType('weekly');
                   setFrequencyValue(1);
                   setCustomDays([false, false, false, false, false, false, false]);
+                  // Default weekly target to 1/week when switching to Weekly
+                  setNewHabit({...newHabit, target_frequency: 1});
                 }}
                 className={`flex-1`}
               >

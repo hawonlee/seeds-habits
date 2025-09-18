@@ -139,32 +139,15 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
 
     // If target_frequency is 7, it's daily
     if (habit.target_frequency === 7) {
-      return true;
+      // Only show daily habits from the day they were created onwards
+      const createdDate = new Date(habit.created_at);
+      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return currentDateOnly >= createdDateOnly;
     }
 
-    // If target_frequency is 1, it's weekly (show on one day)
-    if (habit.target_frequency === 1) {
-      // Show on the day of the week when the habit was created
-      const createdDay = new Date(habit.created_at).getDay();
-      return dayOfWeek === createdDay;
-    }
-
-    // For other frequencies (2-6), distribute across the week
-    if (habit.target_frequency >= 2 && habit.target_frequency <= 6) {
-      // Create a simple distribution based on habit ID for consistency
-      const habitIdHash = Math.abs(habit.id.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-      }, 0));
-
-      // Generate days based on frequency and habit ID
-      const targetDays = [];
-      for (let i = 0; i < habit.target_frequency; i++) {
-        targetDays.push((habitIdHash + i) % 7);
-      }
-
-      return targetDays.includes(dayOfWeek);
-    }
+    // For frequencies 1-6, don't show automatically on calendar
+    // These habits should only appear when manually scheduled
 
     return false;
   };
@@ -190,23 +173,52 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
     const isFuture = date > new Date(new Date().setHours(23, 59, 59, 999));
 
     const activeHabits = habits.filter(habit => habit.phase === 'current');
-
-    // Habits that should render in day cells (scheduled or pass frequency/custom rules)
-    const habitsForGrid = getHabitsForDate(date);
-
-    // Habits that are current but not in the grid (e.g., no custom days selected)
-    const nonGridHabits = activeHabits.filter(h => !habitsForGrid.some(g => g.id === h.id));
-
     const completedHabits = getCompletedHabitsForDate(date);
-    const remainingHabits = activeHabits.filter(habit =>
-      !completedHabits.some(completed => completed.id === habit.id)
+    
+    // Get habits that are specifically assigned to this day
+    const scheduledHabitIds = getScheduledHabitsForDate(date);
+    const scheduledHabits = activeHabits.filter(habit => scheduledHabitIds.includes(habit.id));
+    
+    // Get daily habits (target_frequency = 7) that should appear on this day
+    const dailyHabits = activeHabits.filter(habit => {
+      if (habit.target_frequency !== 7) return false;
+      if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
+      
+      // Only show daily habits from the day they were created onwards
+      const createdDate = new Date(habit.created_at);
+      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return currentDateOnly >= createdDateOnly;
+    });
+    
+    // Get custom day habits that should appear on this day
+    const customDayHabits = activeHabits.filter(habit => {
+      if (habit.target_frequency < 2 || habit.target_frequency > 6) return false;
+      if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
+      
+      // Check if this habit has custom days defined and this day is one of them
+      const hasCustomDaysField = Object.prototype.hasOwnProperty.call(habit as any, 'custom_days');
+      const customDays = (habit as any).custom_days as number[] | undefined;
+      if (hasCustomDaysField && customDays && customDays.length > 0) {
+        const dayOfWeek = date.getDay();
+        return customDays.includes(dayOfWeek);
+      }
+      return false;
+    });
+    
+    // Planned habits are those specifically assigned to this day
+    const plannedHabits = [...scheduledHabits, ...dailyHabits, ...customDayHabits];
+    
+    // My habits are all other current habits that aren't specifically assigned to this day
+    const myHabits = activeHabits.filter(habit => 
+      !plannedHabits.some(p => p.id === habit.id)
     );
 
     return {
       activeHabits,
       completedHabits,
-      remainingHabits,
-      nonGridHabits,
+      plannedHabits,
+      myHabits,
       isPast,
       isFuture
     };
@@ -308,8 +320,8 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
               onDrop={handleDrop}
             >
               <div className="p-1 h-full">
-                <div className={`calendar-cell-inner h-full border  rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-gray-100' : 'bg-gray-50'}`}>
-                  <div className="flex flex-col gap-1 max-h-64 overflow-y-auto pr-1">
+                <div className={`calendar-cell-inner h-full border rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                  <div className="flex flex-col gap-1 min-h-20 max-h-64 overflow-y-auto pr-1">
                   {/* Completed Habits */}
                   {completedHabits.slice(0, 3).map(habit => (
                     <CalendarHabitItem
@@ -366,7 +378,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
           <Card className="bg-gray-100 border-none h-full flex flex-col">
             <CardContent className="flex-1 overflow-auto">
               {(() => {
-                const { activeHabits, completedHabits, remainingHabits, nonGridHabits, isPast, isFuture } = getDetailedHabitsForDate(selectedDay);
+                const { activeHabits, completedHabits, plannedHabits, myHabits, isPast, isFuture } = getDetailedHabitsForDate(selectedDay);
 
                 return (
                   <div className="space-y-4">
@@ -378,7 +390,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
                           Planned Habits
                         </h3>
                         <div className="grid gap-3">
-                          {remainingHabits.map(habit => (
+                          {plannedHabits.map(habit => (
                             <HabitCard
                               key={habit.id}
                               habit={habit}
@@ -403,7 +415,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
                           My Habits
                         </h3>
                         <div className="grid gap-2">
-                          {nonGridHabits.map(habit => (
+                          {myHabits.map(habit => (
                             <HabitCard
                               key={habit.id}
                               habit={habit}

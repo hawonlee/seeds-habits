@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { DEFAULT_CATEGORIES, getCategoryClasses } from "@/lib/categories";
+import { DEFAULT_CATEGORIES, fetchCategories, getCategories, resolveCategoryBgColor, type Category } from "@/lib/categories";
 import { Habit } from "@/hooks/useHabits";
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
@@ -40,6 +40,44 @@ export const InlineEditDropdown = ({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const [categories, setCategories] = useState<Category[]>(getCategories());
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
+  
+  // Frequency editing state
+  const [frequencyType, setFrequencyType] = useState<'daily' | 'weekly' | 'custom'>('daily');
+  const [frequencyValue, setFrequencyValue] = useState(1);
+  const [customDays, setCustomDays] = useState<boolean[]>([false, false, false, false, false, false, false]);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoadingCategories(true);
+      try {
+        const { data: { user } } = await import('@/integrations/supabase/client').then(m => m.supabase.auth.getUser());
+        const uid = user?.id as string | undefined;
+        const cats = uid ? await fetchCategories(uid) : [];
+        setCategories(cats);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    load();
+  }, []);
+
+  // Initialize frequency state based on existing habit
+  useEffect(() => {
+    const freq = habit.target_frequency;
+    if (freq === 7) {
+      setFrequencyType('daily');
+      setFrequencyValue(1);
+    } else if (freq >= 1 && freq <= 6) {
+      setFrequencyType('weekly');
+      setFrequencyValue(freq);
+    } else {
+      setFrequencyType('custom');
+      setFrequencyValue(1);
+    }
+  }, [habit.target_frequency]);
 
   // Compute optimal placement relative to the anchor
   useLayoutEffect(() => {
@@ -91,22 +129,10 @@ export const InlineEditDropdown = ({
     return () => cancelAnimationFrame(rAF);
   }, [isOpen, anchorRect, position]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isOpen, onClose]);
+  // Close dropdown when clicking outside - handled by backdrop
 
   const handleSave = () => {
-    onUpdate(editedHabit);
+    onUpdate({ id: habit.id, ...editedHabit });
     onClose();
   };
 
@@ -120,7 +146,16 @@ export const InlineEditDropdown = ({
   return createPortal(
     <>
       {/* Backdrop to capture outside clicks */}
-      <div className="fixed inset-0 z-40 bg-transparent" onMouseDown={onClose} />
+      <div 
+        className="fixed inset-0 z-40 bg-transparent" 
+        onMouseDown={(e) => {
+          // Don't close if Select is open
+          if (isSelectOpen) {
+            return;
+          }
+          onClose();
+        }} 
+      />
 
       <div
         ref={dropdownRef}
@@ -183,41 +218,152 @@ export const InlineEditDropdown = ({
 
         <div>
           <label className="text-xs font-medium">Category</label>
-          <Select value={editedHabit.category} onValueChange={(value) => setEditedHabit({...editedHabit, category: value})}>
+          <Select 
+            value={editedHabit.category} 
+            onValueChange={(value) => setEditedHabit({...editedHabit, category: value})}
+            onOpenChange={setIsSelectOpen}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {DEFAULT_CATEGORIES.map(category => (
-                <SelectItem key={category.id} value={category.id}>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: category.color }}
-                    />
-                    <span>{category.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
+              {categories.length === 0 ? (
+                <div className="px-2 py-1 text-xs text-muted-foreground">No categories. Create one in Category Manager.</div>
+              ) : (
+                categories.map(category => (
+                  <SelectItem key={category.id} value={category.id}>
+                    <div className="flex items-center gap-2">
+                      {category.id === 'none' ? (
+                        <div className="w-3 h-3 rounded-full border border-gray-300 bg-transparent" />
+                      ) : (
+                        <div
+                          className="w-3 h-3 rounded-full border"
+                          style={{ backgroundColor: category.color || resolveCategoryBgColor(category.id), borderColor: category.color || resolveCategoryBgColor(category.id) }}
+                        />
+                      )}
+                      <span>{category.name}</span>
+                    </div>
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-medium">Target Frequency (per week)</label>
-            <Input
-              type="number"
-              min="1"
-              max="7"
-              value={editedHabit.target_frequency}
-              onChange={(e) => {
-                const val = parseInt(e.target.value) || 1;
-                setEditedHabit({...editedHabit, target_frequency: val});
+        <div>
+          <label className="text-xs font-medium">Target Frequency</label>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={frequencyType === 'daily' ? 'outlinefilled' : 'outlineinactive'}
+              size="sm"
+              onClick={() => {
+                setFrequencyType('daily');
+                setFrequencyValue(1);
+                setCustomDays([false, false, false, false, false, false, false]);
+                setEditedHabit({...editedHabit, target_frequency: 7});
               }}
-              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
+              className={`flex-1`}
+            >
+              {frequencyType === 'daily' ? (
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={frequencyValue}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setFrequencyValue(val);
+                      setEditedHabit({...editedHabit, target_frequency: val * 7});
+                    }}
+                    className="rounded-full px-2 py-1 text-center text-xs bg-gray-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <span>/day</span>
+                </div>
+              ) : (
+                'Daily'
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant={frequencyType === 'weekly' ? 'outlinefilled' : 'outlineinactive'}
+              size="sm"
+              onClick={() => {
+                setFrequencyType('weekly');
+                setFrequencyValue(1);
+                setCustomDays([false, false, false, false, false, false, false]);
+                setEditedHabit({...editedHabit, target_frequency: 1});
+              }}
+              className={`flex-1`}
+            >
+              {frequencyType === 'weekly' ? (
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="number"
+                    min="1"
+                    max="7"
+                    value={frequencyValue}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setFrequencyValue(val);
+                      setEditedHabit({...editedHabit, target_frequency: val});
+                    }}
+                    className="rounded-full px-2 py-1 text-center text-xs bg-gray-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <span>/ week</span>
+                </div>
+              ) : (
+                'Weekly'
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant={frequencyType === 'custom' ? 'outlinefilled' : 'outlineinactive'}
+              size="sm"
+              onClick={() => {
+                setFrequencyType('custom');
+                setFrequencyValue(1);
+                setCustomDays([false, false, false, false, false, false, false]);
+              }}
+              className={`flex-1`}
+            >
+              Custom Days
+            </Button>
           </div>
+        </div>
+
+        {/* Custom Days Selector */}
+        {frequencyType === 'custom' && (
+          <div>
+            <label className="text-xs font-medium">Select days of the week</label>
+            <div className="flex gap-2 mt-2">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                <Button
+                  key={index}
+                  type="button"
+                  variant={customDays[index] ? 'outlinefilled' : 'outlineinactive'}
+                  size="sm"
+                  onClick={() => {
+                    const newCustomDays = [...customDays];
+                    newCustomDays[index] = !newCustomDays[index];
+                    setCustomDays(newCustomDays);
+                    // Calculate target_frequency based on selected days
+                    const selectedCount = newCustomDays.filter(Boolean).length;
+                    setEditedHabit({...editedHabit, target_frequency: selectedCount});
+                  }}
+                  className="w-8 h-8 p-0 text-xs"
+                >
+                  {day}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-medium">Leniency Threshold (days)</label>
             <Input

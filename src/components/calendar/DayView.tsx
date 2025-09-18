@@ -87,40 +87,59 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
     
     // If target_frequency is 7, it's daily
     if (habit.target_frequency === 7) {
-      return true;
+      // Only show daily habits from the day they were created onwards
+      const createdDate = new Date(habit.created_at);
+      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return currentDateOnly >= createdDateOnly;
     }
     
-    // If target_frequency is 1, it's weekly (show on one day)
-    if (habit.target_frequency === 1) {
-      // Show on the day of the week when the habit was created
-      const createdDay = new Date(habit.created_at).getDay();
-      return dayOfWeek === createdDay;
-    }
-    
-    // For other frequencies (2-6), distribute across the week
-    if (habit.target_frequency >= 2 && habit.target_frequency <= 6) {
-      // Create a simple distribution based on habit ID for consistency
-      const habitIdHash = Math.abs(habit.id.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-      }, 0));
-      
-      // Generate days based on frequency and habit ID
-      const targetDays = [];
-      for (let i = 0; i < habit.target_frequency; i++) {
-        targetDays.push((habitIdHash + i) % 7);
-      }
-      
-      return targetDays.includes(dayOfWeek);
-    }
+    // For frequencies 1-6, don't show automatically on calendar
+    // These habits should only appear when manually scheduled
     
     return false;
   };
 
   const completedHabits = getCompletedHabits();
   const activeHabits = getActiveHabits();
-  const remainingHabits = activeHabits.filter(habit => 
-    !completedHabits.some(completed => completed.id === habit.id)
+  
+  // Get habits that are specifically assigned to this day
+  const scheduledHabitIds = getScheduledHabitsForDate(currentDate);
+  const scheduledHabits = activeHabits.filter(habit => scheduledHabitIds.includes(habit.id));
+  
+  // Get daily habits (target_frequency = 7) that should appear on this day
+  const dailyHabits = activeHabits.filter(habit => {
+    if (habit.target_frequency !== 7) return false;
+    if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
+    
+    // Only show daily habits from the day they were created onwards
+    const createdDate = new Date(habit.created_at);
+    const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+    const currentDateOnly = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+    return currentDateOnly >= createdDateOnly;
+  });
+  
+  // Get custom day habits that should appear on this day
+  const customDayHabits = activeHabits.filter(habit => {
+    if (habit.target_frequency < 2 || habit.target_frequency > 6) return false;
+    if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
+    
+    // Check if this habit has custom days defined and this day is one of them
+    const hasCustomDaysField = Object.prototype.hasOwnProperty.call(habit as any, 'custom_days');
+    const customDays = (habit as any).custom_days as number[] | undefined;
+    if (hasCustomDaysField && customDays && customDays.length > 0) {
+      const dayOfWeek = currentDate.getDay();
+      return customDays.includes(dayOfWeek);
+    }
+    return false;
+  });
+  
+  // Planned habits are those specifically assigned to this day
+  const plannedHabits = [...scheduledHabits, ...dailyHabits, ...customDayHabits];
+  
+  // My habits are all other current habits that aren't specifically assigned to this day
+  const myHabits = activeHabits.filter(habit => 
+    !plannedHabits.some(p => p.id === habit.id)
   );
 
   const isToday = currentDate.toDateString() === new Date().toDateString();
@@ -253,16 +272,52 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
             </div>
           )}
 
-          {/* Remaining Habits */
-          }
-          {remainingHabits.length > 0 && (
+          {/* Planned Habits */}
+          {plannedHabits.length > 0 && (
             <div>
               <h3 className="text-xs font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                {/* <Circle className="h-5 w-5" /> */}
-                {isFuture ? 'Planned Habits' : 'Remaining Habits'} ({remainingHabits.length})
+                Planned Habits ({plannedHabits.length})
               </h3>
               <div className="grid gap-3">
-                {remainingHabits.map(habit => {
+                {plannedHabits.map(habit => {
+                  const isScheduled = isHabitScheduledOnDate(habit.id, currentDate);
+                  const handleRightClick = (e: React.MouseEvent) => {
+                    if (isScheduled && onHabitUnschedule) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onHabitUnschedule(habit.id, currentDate);
+                    }
+                  };
+                  return (
+                    <div key={habit.id} onContextMenu={handleRightClick}>
+                      <HabitCard
+                        habit={habit}
+                        adoptionThreshold={7}
+                        onCheckIn={() => handleHabitCheckIn(habit, currentDate, isHabitCompletedOnDate(habit.id, currentDate))}
+                        onUndoCheckIn={() => handleHabitCheckIn(habit, currentDate, true)}
+                        onMoveHabit={() => {}}
+                        variant="week"
+                        weekStartDate={weekStartDate}
+                        isCompletedOnDate={isHabitCompletedOnDate}
+                        selectedDate={currentDate}
+                        onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
+                        onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* My Habits */}
+          {myHabits.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                My Habits ({myHabits.length})
+              </h3>
+              <div className="grid gap-3">
+                {myHabits.map(habit => {
                   const isScheduled = isHabitScheduledOnDate(habit.id, currentDate);
                   const handleRightClick = (e: React.MouseEvent) => {
                     if (isScheduled && onHabitUnschedule) {

@@ -49,8 +49,8 @@ const Index = () => {
   const [newHabit, setNewHabit] = useState({
     title: '',
     notes: '',
-    category: 'personal',
-    target_frequency: 1,
+    category: 'none',
+    target_frequency: 7, // Default to daily (7 times per week)
     leniency_threshold: 2
   });
 
@@ -81,8 +81,8 @@ const Index = () => {
     setNewHabit({
       title: '',
       notes: '',
-      category: 'personal',
-      target_frequency: 1,
+      category: 'none',
+      target_frequency: 7, // Default to daily (7 times per week)
       leniency_threshold: 2
     });
     setIsAddDialogOpen(false);
@@ -114,8 +114,8 @@ const Index = () => {
     setNewHabit({
       title: '',
       notes: '',
-      category: 'personal',
-      target_frequency: 1,
+      category: 'none',
+      target_frequency: 7, // Default to daily (7 times per week)
       leniency_threshold: 2
     });
   };

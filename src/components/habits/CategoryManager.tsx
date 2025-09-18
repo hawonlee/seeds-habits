@@ -5,9 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Palette, LayoutGrid } from 'lucide-react';
 import { Category, fetchCategories, getCategories } from '@/lib/categories';
+import { useAuth } from '@/hooks/useAuth';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { COLOR_OPTIONS, findColorOptionByValue } from '@/lib/colorOptions';
 
 interface CategoryManagerProps {
   onCategoryChange?: (categories: Category[]) => void;
@@ -27,14 +29,19 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
   const { toast } = useToast();
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
+  const { user } = useAuth();
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (user) {
+      loadCategories(user.id);
+    } else {
+      setCategories([]);
+    }
+  }, [user]);
 
-  const loadCategories = async () => {
+  const loadCategories = async (userId: string) => {
     setLoading(true);
     try {
-      const fetchedCategories = await fetchCategories();
+      const fetchedCategories = await fetchCategories(userId);
       setCategories(fetchedCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -43,18 +50,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
     }
   };
 
-  const colorOptions = [
-    { name: 'Blue', value: '#3B82F6', bg: 'bg-blue-100', text: 'text-blue-800' },
-    { name: 'Green', value: '#10B981', bg: 'bg-green-100', text: 'text-green-800' },
-    { name: 'Purple', value: '#8B5CF6', bg: 'bg-purple-100', text: 'text-purple-800' },
-    { name: 'Amber', value: '#F59E0B', bg: 'bg-amber-100', text: 'text-amber-800' },
-    { name: 'Red', value: '#EF4444', bg: 'bg-red-100', text: 'text-red-800' },
-    { name: 'Cyan', value: '#06B6D4', bg: 'bg-cyan-100', text: 'text-cyan-800' },
-    { name: 'Lime', value: '#84CC16', bg: 'bg-lime-100', text: 'text-lime-800' },
-    { name: 'Pink', value: '#EC4899', bg: 'bg-pink-100', text: 'text-pink-800' },
-    { name: 'Indigo', value: '#6366F1', bg: 'bg-indigo-100', text: 'text-indigo-800' },
-    { name: 'Orange', value: '#F97316', bg: 'bg-orange-100', text: 'text-orange-800' }
-  ];
+  const colorOptions = COLOR_OPTIONS;
 
   const handleAddCategory = async () => {
     if (newCategory.name && newCategory.color) {
@@ -62,8 +58,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         id: newCategory.name.toLowerCase().replace(/\s+/g, '-'),
         name: newCategory.name,
         color: newCategory.color,
-        bgColor: colorOptions.find(c => c.value === newCategory.color)?.bg || 'bg-gray-100',
-        textColor: colorOptions.find(c => c.value === newCategory.color)?.text || 'text-gray-800'
+        bgColor: findColorOptionByValue(newCategory.color)?.bg || 'bg-gray-100',
+        textColor: findColorOptionByValue(newCategory.color)?.text || 'text-gray-800'
       };
       
       try {
@@ -74,7 +70,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
             name: category.name,
             color: category.color,
             bg_color: category.bgColor,
-            text_color: category.textColor
+            text_color: category.textColor,
+            user_id: user?.id || null
           });
 
         if (error) {
@@ -115,8 +112,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         ...editingCategory,
         name: newCategory.name,
         color: newCategory.color,
-        bgColor: colorOptions.find(c => c.value === newCategory.color)?.bg || 'bg-gray-100',
-        textColor: colorOptions.find(c => c.value === newCategory.color)?.text || 'text-gray-800'
+        bgColor: findColorOptionByValue(newCategory.color)?.bg || 'bg-gray-100',
+        textColor: findColorOptionByValue(newCategory.color)?.text || 'text-gray-800'
       };
       
       try {
@@ -128,7 +125,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
             bg_color: updatedCategory.bgColor,
             text_color: updatedCategory.textColor
           })
-          .eq('id', editingCategory.id);
+          .eq('id', editingCategory.id)
+          .eq('user_id', user?.id || '');
 
         if (error) {
           toast({
@@ -164,7 +162,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
       const { error } = await supabase
         .from('categories')
         .delete()
-        .eq('id', categoryId);
+        .eq('id', categoryId)
+        .eq('user_id', user?.id || '');
 
       if (error) {
         toast({

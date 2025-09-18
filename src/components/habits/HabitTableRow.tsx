@@ -10,7 +10,7 @@ import {
   Plus
 } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
-import { getCategoryClasses, getCategoryById, resolveCategoryBgColor } from "@/lib/categories";
+import { getCategoryClasses, getCategoryById, resolveCategoryBgColor, resolveCategoryBgColorFromText } from "@/lib/categories";
 import { useHabitCompletions } from "@/hooks/useHabitCompletions";
 import { InlineEditDropdown } from "./InlineEditDropdown";
 import { useState, useRef } from "react";
@@ -132,11 +132,13 @@ export const HabitTableRow = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-medium text-xs truncate">{habit.title}</h3>
-              <Badge
-                className={`${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor} border-0 px-2 py-0.5 text-xs`}
-              >
-                {getCategoryById(habit.category)?.name || habit.category}
-              </Badge>
+              {habit.category !== 'none' && (
+                <Badge
+                  className={`${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor} border-0 px-2 py-0.5 text-xs`}
+                >
+                  {getCategoryById(habit.category)?.name || habit.category}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
@@ -163,13 +165,13 @@ export const HabitTableRow = ({
           const isCompleted = isHabitDoneOnDate(day);
           const shouldShow = shouldHabitBeDoneOnDate(day);
           const isToday = day.toDateString() === today.toDateString();
+          const wrapperSize = isToday ? 'w-7 h-7' : 'w-4 h-4';
+          const checkboxSize = isToday ? 'h-7 w-7' : 'h-4 w-4';
           
           return (
             <div 
               key={index} 
-              className={`flex flex-col items-center justify-center min-w-[32px] w-12 h-12 ${
-                isToday ? 'bg-gray-100' : ''
-              }`}
+              className={`flex flex-col items-center justify-center min-w-[32px] w-12 h-12`}
             >
               {/* Day name header */}
               {/* <div className="text-xs text-muted-foreground font-medium">
@@ -178,14 +180,14 @@ export const HabitTableRow = ({
               
               {/* Checkbox */}
               <div 
-                className="relative flex items-center justify-center w-6 h-6"
+                className={`relative flex items-center justify-center ${wrapperSize}`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <Checkbox
                   checked={isCompleted}
                   onCheckedChange={() => handleDayCheckIn(day, isCompleted)}
-                  className="h-6 w-6"
-                  customColor={resolveCategoryBgColor(habit.category)}
+                  className={checkboxSize}
+                  customColor={resolveCategoryBgColorFromText(habit.category)}
                 />
               </div>
               
