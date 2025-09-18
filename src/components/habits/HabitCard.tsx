@@ -16,7 +16,7 @@ import {
   Check
 } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
-import { getCategoryClasses, getCategoryById, resolveCategoryBgColor, resolveCategoryTextColor, resolveCategoryBgColorFromText } from "@/lib/categories";
+import { getCategoryClasses, getCategoryById, resolveCategoryBgColor, resolveCategoryTextColor, resolveCategoryBgColorFromText, formatFrequency } from "@/lib/categories";
 import { InlineEditDropdown } from "./InlineEditDropdown";
 import { useState, useRef } from "react";
 import { Progress } from "@/components/ui/progress";
@@ -94,7 +94,7 @@ export const HabitCard = ({
           className={`group relative ${draggable ? 'hover:bg-gray-100 cursor-pointer transition-colors duration-200' : 'hover:bg-gray-100 transition-colors duration-200'}`}
           draggable={draggable}
           onDragStart={handleDragStart}
-          onClick={() => setShowInlineEdit(true)}
+          onClick={() => setShowInlineEdit(!showInlineEdit)}
         >
 
 
@@ -185,7 +185,7 @@ export const HabitCard = ({
             </span>
             <span className="flex items-center gap-1">
               <Target className="h-3 w-3" />
-              {habit.target_frequency}x/week
+              {formatFrequency(habit.target_frequency)}
             </span>
           </div>
           <div className="mt-3 flex items-center gap-3">
@@ -199,28 +199,132 @@ export const HabitCard = ({
 
   // Calendar variant - optimized for calendar views
   if (variant === 'calendar') {
+    const targetDate = selectedDate || new Date();
+    const done = isCompletedOnDate
+      ? isCompletedOnDate(habit.id, targetDate)
+      : (() => {
+          const dayString = targetDate.toISOString().split('T')[0];
+          const lastCompletedLocal = habit.last_completed ? new Date(habit.last_completed).toISOString().split('T')[0] : null;
+          return lastCompletedLocal === dayString;
+        })();
+
     return (
-      <div className="text-xs p-1 rounded flex items-center gap-1 truncate bg-white border border-gray-200">
-        {habit.category !== 'none' && (
-          <Badge
-            className={`${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor} border-0 px-1 py-0.5 text-xs`}
-          >
-            {getCategoryById(habit.category)?.name || habit.category}
-          </Badge>
-        )}
-        <span className="truncate">{habit.title}</span>
-        <span className="text-muted-foreground ml-auto">{habit.target_frequency}x/week</span>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-5 px-2 ml-2"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveHabit(habit.id, 'adopted');
-          }}
+      <div className="relative" ref={cardRef}>
+        <Card
+          className="mb-4 group relative cursor-pointer hover:bg-gray-100"
+          onClick={() => setShowInlineEdit(!showInlineEdit)}
         >
-          Adopt
-        </Button>
+          {/* Plus button for future habits */}
+          {habit.phase === 'future' && (
+            <Button
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveHabit(habit.id, 'current');
+              }}
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-green-600 hover:bg-green-700 text-white shadow-lg z-10 h-8 w-8"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
+
+          <CardContent className="">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <Checkbox 
+                  checked={done} 
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      onCheckInForDate ? onCheckInForDate(habit.id, targetDate) : onCheckIn(habit.id);
+                    } else {
+                      onUndoCheckInForDate ? onUndoCheckInForDate(habit.id, targetDate) : onUndoCheckIn(habit.id);
+                    }
+                  }}
+                  className="mt-1"
+                  customColor={resolveCategoryBgColorFromText(habit.category)}
+                />
+                <div className="flex-1">
+                  <CardTitle className="flex items-center gap-2 text-xs">
+                    {habit.title}
+                    {habit.category !== 'none' && (
+                      <Badge
+                        className={`${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor} border-0 px-2 py-0.5`}
+                      >
+                        {getCategoryById(habit.category)?.name || habit.category}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <div className="flex text-xs items-center gap-4 mt-2 text-sm text-muted-foreground">
+                    <span className="flex text-xs items-center gap-1">
+                      <MoveUpRight className="h-4 w-4" />
+                      {habit.streak}
+                    </span>
+                    <span className="text-xs text-gray-500">({formatFrequency(habit.target_frequency)})</span>
+                  </div>
+                </div>
+              </div>
+              {(() => {
+              const todayDate = new Date();
+              const startOfWeek = new Date(todayDate);
+              startOfWeek.setDate(todayDate.getDate() - todayDate.getDay());
+              const weekDays = Array.from({ length: 7 }, (_, i) => {
+                const d = new Date(startOfWeek);
+                d.setDate(startOfWeek.getDate() + i);
+                return d;
+              });
+              const completedCount = weekDays.reduce((count, d) => {
+                const dayString = d.toISOString().split('T')[0];
+                const lastCompletedLocal = habit.last_completed ? new Date(habit.last_completed).toISOString().split('T')[0] : null;
+                const isDone = lastCompletedLocal === dayString;
+                return count + (isDone ? 1 : 0);
+              }, 0);
+              const targetPerWeek = Math.max(1, habit.target_frequency || 1);
+              const weeklyPct = Math.min(100, Math.round((completedCount / targetPerWeek) * 100));
+              const categoryBg = resolveCategoryBgColorFromText(habit.category);
+
+              return (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-center">
+                    <ProgressCircle
+                      value={weeklyPct}
+                      size={50}
+                      strokeWidth={5}
+                      color={categoryBg}
+                      label={`${completedCount}/${targetPerWeek}`}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+            </div>
+            
+          </CardContent>
+        </Card>
+
+        {showInlineEdit && (
+          <InlineEditDropdown
+            habit={habit}
+            isOpen={showInlineEdit}
+            onClose={() => setShowInlineEdit(false)}
+            onUpdate={(updatedHabit) => {
+              onUpdateHabit?.(updatedHabit);
+              setShowInlineEdit(false);
+            }}
+            onDelete={(id) => {
+              onDeleteHabit?.(id);
+              setShowInlineEdit(false);
+            }}
+            onAdopt={(id) => {
+              onMoveHabit(id, 'adopted');
+              setShowInlineEdit(false);
+            }}
+            position={{
+              top: cardRef.current ? cardRef.current.getBoundingClientRect().bottom + 4 : 0,
+              left: cardRef.current ? cardRef.current.getBoundingClientRect().left : 0
+            }}
+            anchorRect={cardRef.current ? cardRef.current.getBoundingClientRect() : null}
+          />
+        )}
       </div>
     );
   }
@@ -263,7 +367,7 @@ export const HabitCard = ({
     const weeklyPct = Math.min(100, Math.round((completedCount / targetPerWeek) * 100));
 
     const categoryColor = getCategoryById(habit.category)?.color || '#6B7280';
-    const categoryBg = resolveCategoryBgColor(habit.category);
+    const categoryBg = resolveCategoryBgColorFromText(habit.category);
     const categoryTextColor = resolveCategoryTextColor(habit.category);
     return (
       <div className="relative" ref={cardRef}>
@@ -290,7 +394,7 @@ export const HabitCard = ({
                   <span className="flex items-center gap-1">
                     <MoveUpRight className="h-3 w-3" />
                     {habit.total_completions} total
-                    <span className="text-[10px] text-gray-500">({habit.target_frequency}x/week)</span>
+                    <span className="text-[10px] text-gray-500">({formatFrequency(habit.target_frequency)})</span>
                   </span>
                 </div>
               </div>
@@ -411,7 +515,7 @@ export const HabitCard = ({
     <div className="relative" ref={cardRef}>
       <Card
         className="mb-4 group relative cursor-pointer hover:bg-gray-100"
-        onClick={() => setShowInlineEdit(true)}
+        onClick={() => setShowInlineEdit(!showInlineEdit)}
       >
         {/* Plus button for future habits */}
         {habit.phase === 'future' && (

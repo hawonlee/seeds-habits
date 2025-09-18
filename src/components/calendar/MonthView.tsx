@@ -89,41 +89,6 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
     return days;
   };
 
-  const getHabitsForDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
-    const isAfterCreatedDay = (habit: Habit, d: Date) => {
-      const created = new Date(habit.created_at);
-      const createdEnd = new Date(created);
-      createdEnd.setHours(23, 59, 59, 999);
-      return d > createdEnd;
-    };
-
-    // Get habits that are scheduled for this specific date
-    const scheduledHabitIds = getScheduledHabitsForDate(date);
-    const scheduledHabits = habits.filter(habit => scheduledHabitIds.includes(habit.id));
-    
-    // Get habits that should appear based on their frequency (current habits only)
-    const frequencyHabits = habits.filter(habit => {
-      if (habit.phase === 'future') return false;
-      if (habit.phase !== 'current') return false;
-      
-      // Don't include if already scheduled for this date
-      if (scheduledHabitIds.includes(habit.id)) return false;
-      
-      // Do not appear on or before the creation day
-      if (!isAfterCreatedDay(habit, date)) return false;
-      
-      // Check if habit should be done on this day based on frequency
-      return shouldHabitBeDoneOnDate(habit, date, dayOfWeek);
-    });
-    
-    // Combine scheduled habits and frequency-based habits
-    return [...scheduledHabits, ...frequencyHabits];
-  };
-
   const shouldHabitBeDoneOnDate = (habit: Habit, date: Date, dayOfWeek: number) => {
     // If target_frequency is 7, it's daily
     if (habit.target_frequency === 7) {
@@ -166,9 +131,19 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
     const activeHabits = habits.filter(habit => habit.phase === 'current');
     const completedHabits = habits.filter(habit => isHabitCompletedOnDate(habit.id, date));
     
+    // Helper function to check if a habit should appear on a given date based on creation date
+    const isHabitActiveOnDate = (habit: Habit, checkDate: Date): boolean => {
+      const createdDate = new Date(habit.created_at);
+      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+      const currentDateOnly = new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
+      return currentDateOnly >= createdDateOnly;
+    };
+    
     // Get habits that are specifically assigned to this day
     const scheduledHabitIds = getScheduledHabitsForDate(date);
-    const scheduledHabits = activeHabits.filter(habit => scheduledHabitIds.includes(habit.id));
+    const scheduledHabits = activeHabits.filter(habit => 
+      scheduledHabitIds.includes(habit.id) && isHabitActiveOnDate(habit, date)
+    );
     
     // Get daily habits (target_frequency = 7) that should appear on this day
     const dailyHabits = activeHabits.filter(habit => {
@@ -176,16 +151,16 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
       if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
       
       // Only show daily habits from the day they were created onwards
-      const createdDate = new Date(habit.created_at);
-      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      return currentDateOnly >= createdDateOnly;
+      return isHabitActiveOnDate(habit, date);
     });
     
     // Get custom day habits that should appear on this day
     const customDayHabits = activeHabits.filter(habit => {
       if (habit.target_frequency < 2 || habit.target_frequency > 6) return false;
       if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
+      
+      // Only show custom day habits from the day they were created onwards
+      if (!isHabitActiveOnDate(habit, date)) return false;
       
       // Check if this habit has custom days defined and this day is one of them
       const hasCustomDaysField = Object.prototype.hasOwnProperty.call(habit as any, 'custom_days');
@@ -202,7 +177,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
     
     // My habits are all other current habits that aren't specifically assigned to this day
     const myHabits = activeHabits.filter(habit => 
-      !plannedHabits.some(p => p.id === habit.id)
+      !plannedHabits.some(p => p.id === habit.id) && isHabitActiveOnDate(habit, date)
     );
     
     const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
@@ -216,6 +191,11 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
       isPast, 
       isFuture 
     };
+  };
+
+  const getHabitsForDate = (date: Date) => {
+    const { plannedHabits } = getDetailedHabitsForDate(date);
+    return plannedHabits;
   };
 
 
@@ -370,7 +350,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                                 onCheckIn={() => handleHabitCheckIn(habit, date, isHabitCompletedOnDate(habit.id, date))}
                                 onUndoCheckIn={() => handleHabitCheckIn(habit, date, true)}
                                 onMoveHabit={() => {}}
-                                variant="week"
+                                variant="calendar"
                                 weekStartDate={weekStart}
                                 isCompletedOnDate={isHabitCompletedOnDate}
                                 selectedDate={date}
@@ -394,7 +374,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                                 onCheckIn={() => handleHabitCheckIn(habit, date, isHabitCompletedOnDate(habit.id, date))}
                                 onUndoCheckIn={() => handleHabitCheckIn(habit, date, true)}
                                 onMoveHabit={() => {}}
-                                variant="week"
+                                variant="calendar"
                                 weekStartDate={weekStart}
                                 isCompletedOnDate={isHabitCompletedOnDate}
                                 selectedDate={date}
@@ -418,7 +398,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                                 onCheckIn={() => handleHabitCheckIn(habit, date, isHabitCompletedOnDate(habit.id, date))}
                                 onUndoCheckIn={() => handleHabitCheckIn(habit, date, true)}
                                 onMoveHabit={() => {}}
-                                variant="week"
+                                variant="calendar"
                                 weekStartDate={weekStart}
                                 isCompletedOnDate={isHabitCompletedOnDate}
                                 selectedDate={date}

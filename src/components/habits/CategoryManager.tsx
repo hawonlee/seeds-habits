@@ -63,7 +63,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
       };
       
       try {
-        const { error } = await supabase
+        const result: any = await supabase
           .from('categories')
           .insert({
             id: category.id,
@@ -73,6 +73,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
             text_color: category.textColor,
             user_id: user?.id || null
           });
+        const { error } = result;
 
         if (error) {
           toast({
@@ -117,7 +118,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
       };
       
       try {
-        const { error } = await supabase
+        // @ts-ignore - Type instantiation is excessively deep
+        const result: any = await supabase
           .from('categories')
           .update({
             name: updatedCategory.name,
@@ -127,6 +129,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
           })
           .eq('id', editingCategory.id)
           .eq('user_id', user?.id || '');
+        const { error } = result;
 
         if (error) {
           toast({
@@ -159,11 +162,13 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
   const handleDeleteCategory = async (categoryId: string) => {
     try {
-      const { error } = await supabase
+      // @ts-ignore - Type instantiation is excessively deep
+      const result: any = await supabase
         .from('categories')
         .delete()
         .eq('id', categoryId)
         .eq('user_id', user?.id || '');
+      const { error } = result;
 
       if (error) {
         toast({
@@ -205,31 +210,9 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
         
         <div className="space-y-6">
-          {/* Global Adoption Threshold */}
-          <div className="">
-            <h3 className="text-xs font-medium mb-2">Adoption Threshold</h3>
-            <p className="text-xs text-muted-foreground mb-3">Number of days a habit must be completed to become adopted.</p>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={1}
-                max={365}
-                value={adoptionThreshold ?? 21}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  if (onChangeAdoptionThreshold && !Number.isNaN(val)) {
-                    onChangeAdoptionThreshold(val);
-                  }
-                }}
-                className="w-24 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <span className="text-xs text-muted-foreground">days</span>
-            </div>
-          </div>
-
           {/* Existing Categories */}
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-start gap-1 mb-4">
               <h3 className="text-xs font-medium">Current Categories</h3>
               <Popover
                 onOpenChange={(open) => {
@@ -239,8 +222,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                 }}
               >
                 <PopoverTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <Plus className="h-3 w-3 mr-1" /> New Category
+                  <Button size="sm" variant="ghost" className="w-8 h-8">
+                    <Plus className="h-3 w-3" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-64 p-3">
@@ -284,7 +267,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
               </Popover>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {categories.map(category => (
+              {categories.filter(category => category.id !== 'none').map(category => (
                 <div key={category.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
                   <Popover
                     open={openPopoverId === category.id}
@@ -362,6 +345,28 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+                    {/* Global Adoption Threshold */}
+                    <div className="">
+            <h3 className="text-xs font-medium mb-2">Adoption Threshold</h3>
+            <p className="text-xs text-muted-foreground mb-3">Number of days a habit must be completed to become adopted.</p>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                max={365}
+                value={adoptionThreshold ?? 21}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (onChangeAdoptionThreshold && !Number.isNaN(val)) {
+                    onChangeAdoptionThreshold(val);
+                  }
+                }}
+                className="w-24 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-xs text-muted-foreground">days</span>
             </div>
           </div>
           

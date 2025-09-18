@@ -10,7 +10,7 @@ import {
   Plus
 } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
-import { getCategoryClasses, getCategoryById, resolveCategoryBgColor, resolveCategoryBgColorFromText } from "@/lib/categories";
+import { getCategoryClasses, getCategoryById, resolveCategoryBgColor, resolveCategoryBgColorFromText, formatFrequency } from "@/lib/categories";
 import { useHabitCompletions } from "@/hooks/useHabitCompletions";
 import { InlineEditDropdown } from "./InlineEditDropdown";
 import { useState, useRef } from "react";
@@ -110,7 +110,7 @@ export const HabitTableRow = ({
     <div className="relative" ref={rowRef}>
       <div 
         className={containerClasses}
-        onClick={() => setShowInlineEdit(true)}
+        onClick={() => setShowInlineEdit(!showInlineEdit)}
       >
       {/* Plus button for future habits */}
       {habit.phase === 'future' && (
@@ -149,6 +149,7 @@ export const HabitTableRow = ({
                 <MoveUpRight className="h-3 w-3" />
                 {habit.total_completions} total
               </span>
+              <span className="text-[10px] text-gray-500">({formatFrequency(habit.target_frequency)})</span>
             </div>
 
           </div>
@@ -202,7 +203,7 @@ export const HabitTableRow = ({
 
         <div className="relative w-24 h-12">
           <div className={`absolute inset-0 flex items-center justify-end pr-3`}>
-            <ProgressCircle value={weeklyProgressPct} size={50} strokeWidth={5} color={resolveCategoryBgColor(habit.category)} label={`${completedThisWeek}/${targetPerWeek}`} />
+            <ProgressCircle value={weeklyProgressPct} size={50} strokeWidth={5} color={resolveCategoryBgColorFromText(habit.category)} label={`${completedThisWeek}/${targetPerWeek}`} />
           </div>
 {/* 
           {habit.phase === 'current' && (

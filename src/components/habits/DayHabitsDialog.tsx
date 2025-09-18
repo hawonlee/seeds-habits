@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle, Circle, RotateCcw, Calendar } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
+import { formatFrequency } from "@/lib/categories";
 
 interface DayHabitsDialogProps {
   open: boolean;
@@ -102,7 +103,7 @@ export const DayHabitsDialog = ({
                         <div className="flex-1">
                           <h4 className="font-medium text-green-800">{habit.title}</h4>
                           <div className="flex items-center gap-4 mt-1 text-sm text-green-600">
-                            <span>{habit.target_frequency}x/week</span>
+                            <span>{formatFrequency(habit.target_frequency)}</span>
                             <span>{habit.streak} day streak</span>
                             {habit.phase === 'adopted' && (
                               <span className="flex items-center gap-1">
@@ -145,7 +146,7 @@ export const DayHabitsDialog = ({
                         <div className="flex-1">
                           <h4 className="font-medium">{habit.title}</h4>
                           <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                            <span>{habit.target_frequency}x/week</span>
+                            <span>{formatFrequency(habit.target_frequency)}</span>
                             <span>{habit.streak} day streak</span>
                             <Badge variant={habit.phase === 'adopted' ? 'default' : 'secondary'}>
                               {habit.phase}

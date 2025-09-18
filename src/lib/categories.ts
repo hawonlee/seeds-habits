@@ -82,7 +82,7 @@ export const fetchCategories = async (userId: string): Promise<Category[]> => {
   try {
     const { data, error } = await supabase
       .from('categories')
-      .select('*')
+      .select('id, name, color, bg_color, text_color')
       .eq('user_id', userId)
       .order('name');
 
@@ -91,13 +91,13 @@ export const fetchCategories = async (userId: string): Promise<Category[]> => {
       return FALLBACK_CATEGORIES;
     }
 
-    const dbCategories = data?.map(cat => ({
+    const dbCategories: Category[] = (data || []).map((cat: any) => ({
       id: cat.id,
       name: cat.name,
       color: cat.color,
       bgColor: cat.bg_color,
       textColor: cat.text_color
-    })) || [];
+    }));
 
     // Always include the "none" category at the beginning
     const noneCategory = FALLBACK_CATEGORIES.find(cat => cat.id === 'none')!;
@@ -254,6 +254,17 @@ export const resolveCategoryBgColorFromText = (categoryId: string): string => {
   };
   
   return textColorMap[category?.textColor || 'text-gray-800'] || '#1f2937';
+};
+
+// Helper function to format frequency display
+export const formatFrequency = (targetFrequency: number): string => {
+  if (targetFrequency === 7) {
+    return '1x/day';
+  } else if (targetFrequency >= 1 && targetFrequency <= 6) {
+    return `${targetFrequency}x/week`;
+  } else {
+    return `${targetFrequency}x/week`;
+  }
 };
 
 // For backward compatibility

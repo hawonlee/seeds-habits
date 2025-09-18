@@ -147,7 +147,10 @@ export const EditHabitDialog = ({
             <Button variant="outline" onClick={() => onOpenChange(false)} className="">
               Cancel
             </Button>
-            <Button onClick={onUpdateHabit} className="">
+            <Button onClick={() => {
+              onUpdateHabit();
+              onOpenChange(false);
+            }} className="">
               Save
             </Button>
           </div>

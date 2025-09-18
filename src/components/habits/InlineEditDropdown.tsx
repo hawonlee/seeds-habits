@@ -30,6 +30,13 @@ export const InlineEditDropdown = ({
   anchorRect,
   onAdopt
 }: InlineEditDropdownProps) => {
+  const [isLocallyOpen, setIsLocallyOpen] = useState(isOpen);
+  
+  // Sync local state with prop
+  useEffect(() => {
+    setIsLocallyOpen(isOpen);
+  }, [isOpen]);
+  
   const [editedHabit, setEditedHabit] = useState({
     title: habit.title,
     notes: habit.notes || '',
@@ -132,27 +139,35 @@ export const InlineEditDropdown = ({
   // Close dropdown when clicking outside - handled by backdrop
 
   const handleSave = () => {
-    onUpdate({ id: habit.id, ...editedHabit });
-    onClose();
+    try {
+      onUpdate({ id: habit.id, ...editedHabit });
+    } catch (error) {
+      console.error('Error updating habit:', error);
+    } finally {
+      setIsLocallyOpen(false);
+      onClose();
+    }
   };
 
   const handleDelete = () => {
     onDelete(habit.id);
+    setIsLocallyOpen(false);
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isLocallyOpen) return null;
 
   return createPortal(
     <>
       {/* Backdrop to capture outside clicks */}
       <div 
-        className="fixed inset-0 z-40 bg-transparent" 
-        onMouseDown={(e) => {
+        className="fixed inset-0 z-[45] bg-transparent" 
+        onClick={(e) => {
           // Don't close if Select is open
           if (isSelectOpen) {
             return;
           }
+          setIsLocallyOpen(false);
           onClose();
         }} 
       />
@@ -165,6 +180,7 @@ export const InlineEditDropdown = ({
           left: `${(coords?.left ?? -9999) as number}px`,
           visibility: coords ? 'visible' : 'hidden',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -390,7 +406,10 @@ export const InlineEditDropdown = ({
               Delete
             </Button> */}
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={onClose}>
+              <Button variant="ghost" size="sm" onClick={() => {
+                setIsLocallyOpen(false);
+                onClose();
+              }}>
                 Cancel
               </Button>
               <Button size="sm" onClick={handleSave}>

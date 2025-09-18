@@ -94,9 +94,9 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
 
     const isAfterCreatedDay = (habit: Habit, d: Date) => {
       const created = new Date(habit.created_at);
-      const createdEnd = new Date(created);
-      createdEnd.setHours(23, 59, 59, 999);
-      return d > createdEnd;
+      const createdDateOnly = new Date(created.getFullYear(), created.getMonth(), created.getDate());
+      const currentDateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return currentDateOnly >= createdDateOnly;
     };
 
     // Get habits that are scheduled for this specific date
@@ -175,9 +175,19 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
     const activeHabits = habits.filter(habit => habit.phase === 'current');
     const completedHabits = getCompletedHabitsForDate(date);
     
+    // Helper function to check if a habit should appear on a given date based on creation date
+    const isHabitActiveOnDate = (habit: Habit, checkDate: Date): boolean => {
+      const createdDate = new Date(habit.created_at);
+      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
+      const currentDateOnly = new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
+      return currentDateOnly >= createdDateOnly;
+    };
+    
     // Get habits that are specifically assigned to this day
     const scheduledHabitIds = getScheduledHabitsForDate(date);
-    const scheduledHabits = activeHabits.filter(habit => scheduledHabitIds.includes(habit.id));
+    const scheduledHabits = activeHabits.filter(habit => 
+      scheduledHabitIds.includes(habit.id) && isHabitActiveOnDate(habit, date)
+    );
     
     // Get daily habits (target_frequency = 7) that should appear on this day
     const dailyHabits = activeHabits.filter(habit => {
@@ -185,16 +195,16 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
       if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
       
       // Only show daily habits from the day they were created onwards
-      const createdDate = new Date(habit.created_at);
-      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      return currentDateOnly >= createdDateOnly;
+      return isHabitActiveOnDate(habit, date);
     });
     
     // Get custom day habits that should appear on this day
     const customDayHabits = activeHabits.filter(habit => {
       if (habit.target_frequency < 2 || habit.target_frequency > 6) return false;
       if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
+      
+      // Only show custom day habits from the day they were created onwards
+      if (!isHabitActiveOnDate(habit, date)) return false;
       
       // Check if this habit has custom days defined and this day is one of them
       const hasCustomDaysField = Object.prototype.hasOwnProperty.call(habit as any, 'custom_days');
@@ -211,7 +221,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
     
     // My habits are all other current habits that aren't specifically assigned to this day
     const myHabits = activeHabits.filter(habit => 
-      !plannedHabits.some(p => p.id === habit.id)
+      !plannedHabits.some(p => p.id === habit.id) && isHabitActiveOnDate(habit, date)
     );
 
     return {
