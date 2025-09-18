@@ -18,7 +18,6 @@ import { HabitCard } from "@/components/habits/HabitCard";
 import { UserDropdown } from "@/components/habits/UserDropdown";
 import { UnifiedCalendar } from "@/components/calendar/UnifiedCalendar";
 import { DayHabitsDialog } from "@/components/habits/DayHabitsDialog";
-import { HabitCardSkeleton } from "@/components/habits/HabitCardSkeleton";
 import { Button } from "@/components/ui/button";
 import { SegmentedToggle } from "@/components/ui/segmented-toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";

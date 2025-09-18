@@ -18,9 +18,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onTogglePanel,
 }) => {
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex bg-gray-50 flex-col">
       {/* Header */}
-      <div className="h-14 px-4 w-full bg-white flex-shrink-0 flex items-center">
+      <div className="h-14 px-4 w-full flex-shrink-0 flex items-center">
         <div className="flex w-full items-center justify-end gap-2">
           <div className="flex items-center gap-4">
             {/* Segmented Toggle */}

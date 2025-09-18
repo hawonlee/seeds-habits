@@ -222,7 +222,7 @@ export const HabitCard = ({
                 e.stopPropagation();
                 onMoveHabit(habit.id, 'current');
               }}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-green-600 hover:bg-green-700 text-white shadow-lg z-10 h-8 w-8"
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-green-600 hover:bg-green-700 text-white z-10 h-8 w-8"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -371,7 +371,7 @@ export const HabitCard = ({
     const categoryTextColor = resolveCategoryTextColor(habit.category);
     return (
       <div className="relative" ref={cardRef}>
-        <Card className="border-gray-200 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setShowInlineEdit(true)}>
+        <Card className="border-gray-200 cursor-pointer bg-gray-100 hover:bg-gray-200 transition-colors duration-200" onClick={() => setShowInlineEdit(true)}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-3">
 
@@ -525,7 +525,7 @@ export const HabitCard = ({
               e.stopPropagation();
               onMoveHabit(habit.id, 'current');
             }}
-            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-green-600 hover:bg-green-700 text-white shadow-lg z-10 h-8 w-8 p-0"
+            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-green-600 hover:bg-green-700 text-white z-10 h-8 w-8 p-0"
           >
             <Plus className="h-4 w-4" />
           </Button>

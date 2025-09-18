@@ -330,7 +330,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
               onDrop={handleDrop}
             >
               <div className="p-1 h-full">
-                <div className={`calendar-cell-inner h-full border rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                <div className={`calendar-cell-inner h-full border rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-gray-100 border-gray-300' : 'bg-gray-50'}`}>
                   <div className="flex flex-col gap-1 min-h-20 max-h-64 overflow-y-auto pr-1">
                   {/* Completed Habits */}
                   {completedHabits.slice(0, 3).map(habit => (
@@ -385,7 +385,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
       {/* Selected Day Details */}
       {selectedDay && (
         <div className="mt-4 flex-1 min-h-0 overflow-hidden">
-          <Card className="bg-gray-100 border-none h-full flex flex-col">
+          <Card className=" border-none h-full flex flex-col">
             <CardContent className="flex-1 overflow-auto">
               {(() => {
                 const { activeHabits, completedHabits, plannedHabits, myHabits, isPast, isFuture } = getDetailedHabitsForDate(selectedDay);

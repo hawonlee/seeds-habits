@@ -78,7 +78,7 @@ export const CurrentHabitsList = ({
     return `${startStr} - ${endStr}`;
   };
   return (
-    <div className="h-full bg-white overflow-y-auto">
+    <div className="h-full overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-medium">Current Habits</h2>
         <div>
@@ -102,7 +102,7 @@ export const CurrentHabitsList = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="bg-white rounded-lg overflow-hidden">
+        <div className="rounded-lg overflow-hidden">
           {/* Week Navigation */}
           <div className="flex justify-between pb-4">
             <div className="flex items-center justify-center gap-10">

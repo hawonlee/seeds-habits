@@ -103,7 +103,7 @@ export const HabitTableRow = ({
   };
 
   const containerClasses = displayVariant === 'card'
-    ? 'flex items-center px-4 py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-shadow cursor-pointer group relative'
+    ? 'flex items-center px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-shadow cursor-pointer group relative'
     : 'flex items-center px-4 py-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer group relative';
 
   return (
