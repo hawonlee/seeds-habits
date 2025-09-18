@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Habit } from '@/integrations/supabase/types';
+import { Habit } from '@/hooks/useHabits';
 import { FutureHabitsList } from './FutureHabitsList';
 import { AdoptedHabitsList } from './AdoptedHabitsList';
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { COLOR_OPTIONS, findColorOptionByValue } from '@/lib/colorOptions';
 
 export interface Category {
   id: string;
@@ -20,58 +21,58 @@ export const FALLBACK_CATEGORIES: Category[] = [
   {
     id: 'personal',
     name: 'Personal',
-    color: '#3B82F6', // Blue
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-800'
+    color: '#1E40AF',
+    bgColor: 'bg-transparent',
+    textColor: 'text-transparent'
   },
   {
     id: 'health',
     name: 'Health',
-    color: '#10B981', // Green
-    bgColor: 'bg-green-100',
-    textColor: 'text-green-800'
+    color: '#166534',
+    bgColor: 'bg-transparent',
+    textColor: 'text-transparent'
   },
   {
     id: 'learning',
     name: 'Learning',
-    color: '#8B5CF6', // Purple
-    bgColor: 'bg-purple-100',
-    textColor: 'text-purple-800'
+    color: '#6B21A8',
+    bgColor: 'bg-transparent',
+    textColor: 'text-transparent'
   },
   {
     id: 'work',
     name: 'Work',
-    color: '#F59E0B', // Amber
-    bgColor: 'bg-amber-100',
-    textColor: 'text-amber-800'
+    color: '#92400E',
+    bgColor: 'bg-transparent',
+    textColor: 'text-transparent'
   },
   {
     id: 'social',
     name: 'Social',
-    color: '#EF4444', // Red
-    bgColor: 'bg-red-100',
-    textColor: 'text-red-800'
+    color: '#991B1B',
+    bgColor: 'bg-transparent',
+    textColor: 'text-transparent'
   },
   {
     id: 'fitness',
     name: 'Fitness',
-    color: '#06B6D4', // Cyan
-    bgColor: 'bg-cyan-100',
-    textColor: 'text-cyan-800'
+    color: '#155E75',
+    bgColor: 'bg-transparent',
+    textColor: 'text-transparent'
   },
   {
     id: 'mindfulness',
     name: 'Mindfulness',
-    color: '#84CC16', // Lime
-    bgColor: 'bg-lime-100',
-    textColor: 'text-lime-800'
+    color: '#166534',
+    bgColor: 'bg-transparent',
+    textColor: 'text-transparent'
   },
   {
     id: 'creative',
     name: 'Creative',
-    color: '#EC4899', // Pink
-    bgColor: 'bg-pink-100',
-    textColor: 'text-pink-800'
+    color: '#6B21A8',
+    bgColor: 'bg-transparent',
+    textColor: 'text-transparent'
   }
 ];
 
@@ -115,6 +116,11 @@ export const getCategories = (): Category[] => {
   return categoriesCache || [];
 };
 
+// Allow components to update the in-memory cache so UI reflects changes immediately
+export const setCategoriesCache = (categories: Category[]): void => {
+  categoriesCache = categories;
+};
+
 export const getCategoryById = (id: string): Category | undefined => {
   const categories = getCategories();
   return categories.find(category => category.id === id);
@@ -133,7 +139,46 @@ export const getCategoryClasses = (categoryId: string): { bgColor: string; textC
   };
 };
 
-// Get actual color values for inline styles
+// UNIFIED COLOR SYSTEM - All components should use this function
+// Returns the primary color from the database for consistent theming
+export const getCategoryPrimaryColor = (categoryId: string): string => {
+  const category = getCategoryById(categoryId);
+  return category?.color || '#6B7280'; // Default gray
+};
+
+// New helpers for palette-based colors (inline hex)
+export const getCategoryPalette = (categoryId: string): { bgHex: string; textHex: string } => {
+  const primary = getCategoryPrimaryColor(categoryId);
+  const palette = findColorOptionByValue(primary);
+  if (!palette) {
+    return { bgHex: '#F3F4F6', textHex: primary };
+  }
+  return { bgHex: palette.bgHex, textHex: palette.textHex };
+};
+
+// Helper function to determine if a color is light or dark
+const isLightColor = (hex: string): boolean => {
+  // Remove # if present
+  const color = hex.replace('#', '');
+  
+  // Convert to RGB
+  const r = parseInt(color.substr(0, 2), 16);
+  const g = parseInt(color.substr(2, 2), 16);
+  const b = parseInt(color.substr(4, 2), 16);
+  
+  // Calculate luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  return luminance > 0.5;
+};
+
+// Get appropriate text color for a given background color
+export const getCategoryTextColor = (categoryId: string): string => {
+  const primaryColor = getCategoryPrimaryColor(categoryId);
+  return isLightColor(primaryColor) ? '#000000' : '#ffffff';
+};
+
+// Get actual color values for inline styles - DEPRECATED, use getCategoryPrimaryColor
 export const getCategoryColors = (categoryId: string): { backgroundColor: string; color: string } => {
   const category = getCategoryById(categoryId);
   
@@ -182,78 +227,31 @@ export const resolveCategoryBgColor = (categoryId: string): string => {
     return 'transparent';
   }
   
-  // Map known bg classes to HSLA defined in tailwind.config.ts overrides
-  const map: Record<string, string> = {
-    'bg-red-100': 'hsla(0, 34%, 91%, 1)',
-    'bg-orange-100': 'hsla(40, 30%, 90%, 1)',
-    'bg-amber-100': 'hsla(40, 30%, 90%, 1)',
-    'bg-yellow-100': 'hsla(57, 67%, 86%, 1)',
-    'bg-green-100': 'hsla(94, 24%, 87%, 1)',
-    'bg-blue-100': 'hsla(180, 11%, 89%, 1)',
-    'bg-purple-100': 'hsla(300, 12%, 89%, 1)',
-    'bg-pink-100': 'hsla(300, 12%, 89%, 1)',
-    'bg-lime-100': 'hsla(94, 24%, 87%, 1)',
-    'bg-cyan-100': 'hsla(180, 11%, 89%, 1)'
-  };
-  return map[cls] || '#e5e7eb';
+  // Prefer palette mapping based on the stored primary color
+  const category = getCategoryById(categoryId);
+  const palette = category ? findColorOptionByValue(category.color) : undefined;
+  if (palette) return palette.bgHex;
+  return '#e5e7eb';
 };
 
 // Resolve text color to a concrete color value
 export const resolveCategoryTextColor = (categoryId: string): string => {
   const category = getCategoryById(categoryId);
-  
-  // Handle transparent case - use black text
   if (category?.bgColor === 'bg-transparent') {
     return '#000000';
   }
-  
-  // Map text color classes to actual color values
-  const textColorMap: Record<string, string> = {
-    'text-black': '#000000',
-    'text-red-800': '#991b1b',
-    'text-orange-800': '#9a3412',
-    'text-amber-800': '#92400e',
-    'text-yellow-800': '#854d0e',
-    'text-green-800': '#166534',
-    'text-blue-800': '#1e40af',
-    'text-purple-800': '#6b21a8',
-    'text-pink-800': '#9d174d',
-    'text-lime-800': '#365314',
-    'text-cyan-800': '#155e75',
-    'text-indigo-800': '#3730a3',
-    'text-gray-800': '#1f2937'
-  };
-  
-  return textColorMap[category?.textColor || 'text-gray-800'] || '#1f2937';
+  const palette = category ? findColorOptionByValue(category.color) : undefined;
+  return palette?.textHex || '#1f2937';
 };
 
 // Resolve background color using the same colors as textColorMap
 export const resolveCategoryBgColorFromText = (categoryId: string): string => {
   const category = getCategoryById(categoryId);
-  
-  // Handle transparent case - use transparent background
   if (category?.bgColor === 'bg-transparent') {
     return 'transparent';
   }
-  
-  // Use the exact same color values as textColorMap
-  const textColorMap: Record<string, string> = {
-    'text-black': '#000000',
-    'text-red-800': '#991b1b',
-    'text-orange-800': '#9a3412',
-    'text-amber-800': '#92400e',
-    'text-yellow-800': '#854d0e',
-    'text-green-800': '#166534',
-    'text-blue-800': '#1e40af',
-    'text-purple-800': '#6b21a8',
-    'text-pink-800': '#9d174d',
-    'text-lime-800': '#365314',
-    'text-cyan-800': '#155e75',
-    'text-indigo-800': '#3730a3',
-    'text-gray-800': '#1f2937'
-  };
-  
-  return textColorMap[category?.textColor || 'text-gray-800'] || '#1f2937';
+  const palette = category ? findColorOptionByValue(category.color) : undefined;
+  return palette?.textHex || '#1f2937';
 };
 
 // Helper function to format frequency display

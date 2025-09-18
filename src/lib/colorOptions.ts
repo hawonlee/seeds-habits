@@ -1,29 +1,29 @@
 export interface ColorOption {
   name: string;
+  // value is the primary/text hex used for accents (checkbox/progress/border/text)
   value: string;
-  bg: string;
-  text: string;
+  // bgHex is the background hex used for badges and calendar item backgrounds
+  bgHex: string;
+  // textHex mirrors value for clarity
+  textHex: string;
 }
 
+// Centralized six-color palette. Change hexes here to update globally.
 export const COLOR_OPTIONS: ColorOption[] = [
-  { name: 'Blue', value: '#3B82F6', bg: 'bg-blue-100', text: 'text-blue-800' },
-  { name: 'Green', value: '#10B981', bg: 'bg-green-100', text: 'text-green-800' },
-  { name: 'Purple', value: '#8B5CF6', bg: 'bg-purple-100', text: 'text-purple-800' },
-  { name: 'Amber', value: '#F59E0B', bg: 'bg-amber-100', text: 'text-amber-800' },
-  { name: 'Red', value: '#EF4444', bg: 'bg-red-100', text: 'text-red-800' },
-  { name: 'Cyan', value: '#06B6D4', bg: 'bg-cyan-100', text: 'text-cyan-800' },
-  { name: 'Lime', value: '#84CC16', bg: 'bg-lime-100', text: 'text-lime-800' },
-  { name: 'Pink', value: '#EC4899', bg: 'bg-pink-100', text: 'text-pink-800' },
-  { name: 'Indigo', value: '#6366F1', bg: 'bg-indigo-100', text: 'text-indigo-800' },
-  { name: 'Orange', value: '#F97316', bg: 'bg-orange-100', text: 'text-orange-800' }
+  { name: 'Blue',   value: '#1E40AF', bgHex: '#E6F0FF', textHex: '#1E40AF' },
+  { name: 'Green',  value: '#166534', bgHex: '#E8F3E6', textHex: '#166534' },
+  { name: 'Purple', value: '#6B21A8', bgHex: '#EFE6F4', textHex: '#6B21A8' },
+  { name: 'Amber',  value: '#92400E', bgHex: '#F7EFE2', textHex: '#92400E' },
+  { name: 'Red',    value: '#991B1B', bgHex: '#F6EAEA', textHex: '#991B1B' },
+  { name: 'Cyan',   value: '#155E75', bgHex: '#E6F3F6', textHex: '#155E75' },
 ];
 
-// Helper function to find a color option by hex value
+// Helper: find by the primary/text hex value
 export const findColorOptionByValue = (value: string): ColorOption | undefined => {
-  return COLOR_OPTIONS.find(color => color.value === value);
+  return COLOR_OPTIONS.find(color => color.value.toLowerCase() === value.toLowerCase());
 };
 
-// Helper function to find a color option by name
+// Helper: find by name
 export const findColorOptionByName = (name: string): ColorOption | undefined => {
   return COLOR_OPTIONS.find(color => color.name.toLowerCase() === name.toLowerCase());
 };

@@ -7,10 +7,11 @@ import {
   Calendar, 
   MoveUpRight,
   TrendingUp, 
-  Plus
+  Plus,
+  Repeat
 } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
-import { getCategoryClasses, getCategoryById, resolveCategoryBgColor, resolveCategoryBgColorFromText, formatFrequency } from "@/lib/categories";
+import { getCategoryClasses, getCategoryById, getCategoryColor, formatFrequency, getCategoryPalette } from "@/lib/categories";
 import { useHabitCompletions } from "@/hooks/useHabitCompletions";
 import { InlineEditDropdown } from "./InlineEditDropdown";
 import { useState, useRef } from "react";
@@ -133,26 +134,26 @@ export const HabitTableRow = ({
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-medium text-xs truncate">{habit.title}</h3>
               {habit.category !== 'none' && (
-                <Badge
-                  className={`${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor} border-0 px-2 py-0.5 text-xs`}
-                >
+                <Badge categoryId={habit.category} className="">
                   {getCategoryById(habit.category)?.name || habit.category}
                 </Badge>
               )}
             </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
+              {/* <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 {new Date(habit.created_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}
-              </span>
+              </span> */}
               <span className="flex items-center gap-1">
                 <MoveUpRight className="h-3 w-3" />
                 {habit.total_completions} total
-              </span>
-              <span className="text-[10px] text-gray-500">({formatFrequency(habit.target_frequency)})</span>
-            </div>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Repeat className="h-3 w-3" />
+                  {formatFrequency(habit.target_frequency)}
+                </span>            </div>
 
-          </div>
+            </div>
 
 
 
@@ -188,7 +189,7 @@ export const HabitTableRow = ({
                   checked={isCompleted}
                   onCheckedChange={() => handleDayCheckIn(day, isCompleted)}
                   className={checkboxSize}
-                  customColor={resolveCategoryBgColorFromText(habit.category)}
+                  categoryId={habit.category}
                 />
               </div>
               
@@ -203,7 +204,7 @@ export const HabitTableRow = ({
 
         <div className="relative w-24 h-12">
           <div className={`absolute inset-0 flex items-center justify-end pr-3`}>
-            <ProgressCircle value={weeklyProgressPct} size={50} strokeWidth={5} color={resolveCategoryBgColorFromText(habit.category)} label={`${completedThisWeek}/${targetPerWeek}`} />
+            <ProgressCircle value={weeklyProgressPct} size={50} strokeWidth={5} color={getCategoryById(habit.category)?.color || '#6B7280'} label={`${completedThisWeek}/${targetPerWeek}`} />
           </div>
 {/* 
           {habit.phase === 'current' && (

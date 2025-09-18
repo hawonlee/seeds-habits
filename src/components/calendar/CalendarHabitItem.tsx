@@ -1,6 +1,6 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Habit } from "@/hooks/useHabits";
-import { getCategoryClasses } from "@/lib/categories";
+import { getCategoryPalette } from "@/lib/categories";
 import React from "react";
 
 interface CalendarHabitItemProps {
@@ -28,11 +28,14 @@ export const CalendarHabitItem: React.FC<CalendarHabitItemProps> = ({
     }
   };
 
+  const { bgHex, textHex } = getCategoryPalette(habit.category);
+
   return (
     <div
-      className={`group text-xs p-1 rounded flex items-center gap-1.5 truncate ${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor}`}
+      className={`group text-xs p-1 rounded flex items-center gap-1.5 truncate`}
       title={`${habit.title}${isScheduled ? ' (Scheduled - Right-click to unschedule)' : ''}`}
       onContextMenu={handleRightClick}
+      style={{ backgroundColor: bgHex, color: textHex }}
     >
       <Checkbox
         checked={isCompleted}

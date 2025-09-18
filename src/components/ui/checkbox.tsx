@@ -3,30 +3,36 @@ import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 import { Check } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { getCategoryPrimaryColor } from "@/lib/categories"
+import { findColorOptionByValue } from "@/lib/colorOptions"
 
 interface CheckboxProps extends React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> {
   customColor?: string;
+  categoryId?: string;
 }
 
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   CheckboxProps
->(({ className, customColor, style, ...props }, ref) => {
+>(({ className, customColor, categoryId, style, ...props }, ref) => {
   const customStyle = React.useMemo(() => {
-    if (!customColor) return style;
+    const primary = customColor || (categoryId ? getCategoryPrimaryColor(categoryId) : null);
+    if (!primary) return style;
+    const palette = findColorOptionByValue(primary);
+    const textHex = palette?.textHex || primary;
     
     return {
       ...style,
       color: 'inherit',
-      borderColor: customColor,
-      '--checkbox-checked-bg': customColor,
-      '--checkbox-checked-border': customColor,
+      borderColor: textHex,
+      '--checkbox-checked-bg': textHex,
+      '--checkbox-checked-border': textHex,
       ...(props.checked && {
-        backgroundColor: customColor,
-        borderColor: customColor,
+        backgroundColor: textHex,
+        borderColor: textHex,
       })
     } as React.CSSProperties;
-  }, [customColor, style, props.checked]);
+  }, [customColor, categoryId, style, props.checked]);
 
   return (
     <CheckboxPrimitive.Root

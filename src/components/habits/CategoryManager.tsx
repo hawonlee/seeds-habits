@@ -4,12 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Palette, LayoutGrid } from 'lucide-react';
-import { Category, fetchCategories, getCategories } from '@/lib/categories';
+import { Category, fetchCategories, getCategories, setCategoriesCache } from '@/lib/categories';
 import { useAuth } from '@/hooks/useAuth';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { COLOR_OPTIONS, findColorOptionByValue } from '@/lib/colorOptions';
+import { getCategoryPalette } from '@/lib/categories';
 
 interface CategoryManagerProps {
   onCategoryChange?: (categories: Category[]) => void;
@@ -54,12 +55,13 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
   const handleAddCategory = async () => {
     if (newCategory.name && newCategory.color) {
+      const palette = findColorOptionByValue(newCategory.color);
       const category: Category = {
         id: newCategory.name.toLowerCase().replace(/\s+/g, '-'),
         name: newCategory.name,
         color: newCategory.color,
-        bgColor: findColorOptionByValue(newCategory.color)?.bg || 'bg-gray-100',
-        textColor: findColorOptionByValue(newCategory.color)?.text || 'text-gray-800'
+        bgColor: palette ? palette.bgHex : '#F3F4F6',
+        textColor: palette ? palette.textHex : '#1F2937'
       };
       
       try {
@@ -86,6 +88,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
         const updatedCategories = [...categories, category];
         setCategories(updatedCategories);
+        setCategoriesCache(updatedCategories);
         setNewCategory({ name: '', color: '#3B82F6' });
         onCategoryChange?.(updatedCategories);
         
@@ -109,12 +112,13 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
   const handleUpdateCategory = async () => {
     if (editingCategory && newCategory.name && newCategory.color) {
+      const palette = findColorOptionByValue(newCategory.color);
       const updatedCategory: Category = {
         ...editingCategory,
         name: newCategory.name,
         color: newCategory.color,
-        bgColor: findColorOptionByValue(newCategory.color)?.bg || 'bg-gray-100',
-        textColor: findColorOptionByValue(newCategory.color)?.text || 'text-gray-800'
+        bgColor: palette ? palette.bgHex : '#F3F4F6',
+        textColor: palette ? palette.textHex : '#1F2937'
       };
       
       try {
@@ -144,6 +148,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
           c.id === editingCategory.id ? updatedCategory : c
         );
         setCategories(updatedCategories);
+        setCategoriesCache(updatedCategories);
         setEditingCategory(null);
         setNewCategory({ name: '', color: '#3B82F6' });
         onCategoryChange?.(updatedCategories);
@@ -181,6 +186,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
       const updatedCategories = categories.filter(c => c.id !== categoryId);
       setCategories(updatedCategories);
+      setCategoriesCache(updatedCategories);
       onCategoryChange?.(updatedCategories);
       
       // Removed success toast per request
@@ -238,14 +244,13 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                     </div>
                     <div>
                       <label className="text-xs font-medium mb-2 block">Color</label>
-                      <div className="grid grid-cols-5 gap-2">
+                      <div className="grid grid-cols-3 gap-2">
                         {colorOptions.map(color => (
                           <button
                             key={color.value}
                             onClick={() => setNewCategory({ ...newCategory, color: color.value })}
-                            className={`w-10 h-10 rounded-md border-2 transition-all ${color.bg} ${
-                              newCategory.color === color.value ? 'border-gray-400 scale-105' : 'border-transparent hover:border-gray-400'
-                            }`}
+                            className={`w-full h-10 rounded-md border-2 transition-all`}
+                            style={{ backgroundColor: color.bgHex, borderColor: newCategory.color === color.value ? '#9CA3AF' : 'transparent' }}
                             aria-label={color.name}
                           />
                         ))}
@@ -283,10 +288,17 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                   >
                     <PopoverTrigger asChild>
                       <button className="flex items-center gap-3 focus:outline-none">
-                        <div className={`w-4 h-4 rounded-sm ${category.bgColor}`} />
-                        <Badge className={`${category.bgColor} ${category.textColor} border-0`}>
-                          {category.name}
-                        </Badge>
+                        {(() => {
+                          const { bgHex, textHex } = getCategoryPalette(category.id);
+                          return (
+                            <>
+                              <div className="w-5 h-5 rounded-sm border" style={{ backgroundColor: bgHex, borderColor: textHex }} />
+                              <Badge categoryId={category.id} className="text-xs p-1 px-2">
+                                {category.name}
+                              </Badge>
+                            </>
+                          );
+                        })()}
                       </button>
                     </PopoverTrigger>
                     <PopoverContent align="start" className="w-64 p-3">
@@ -300,14 +312,13 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                         </div>
                         <div>
                           <label className="text-xs font-medium mb-2 block">Color</label>
-                          <div className="grid grid-cols-5 gap-2">
+                          <div className="grid grid-cols-3 gap-2">
                             {colorOptions.map(color => (
                               <button
                                 key={color.value}
                                 onClick={() => setNewCategory({ ...newCategory, color: color.value })}
-                                className={`w-10 h-10 rounded-md border-2  transition-all ${color.bg} ${
-                                  newCategory.color === color.value ? 'border-gray-400 scale-105' : 'border-transparent hover:border-gray-400'
-                                }`}
+                            className={`w-full h-10 rounded-md border-2  transition-all`}
+                            style={{ backgroundColor: color.bgHex, borderColor: newCategory.color === color.value ? '#9CA3AF' : 'transparent' }}
                                 aria-label={color.name}
                               />
                             ))}
@@ -340,7 +351,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                   </Popover>
                   <div className="flex gap-1">
                     <Button size="sm" variant="ghost" onClick={() => handleDeleteCategory(category.id)}>
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 text-gray-400" />
                     </Button>
                   </div>
                 </div>

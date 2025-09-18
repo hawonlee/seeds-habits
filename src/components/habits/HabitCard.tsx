@@ -13,10 +13,11 @@ import {
   ChevronRight,
   Plus,
   MoveUpRight,
+  Repeat,
   Check
 } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
-import { getCategoryClasses, getCategoryById, resolveCategoryBgColor, resolveCategoryTextColor, resolveCategoryBgColorFromText, formatFrequency } from "@/lib/categories";
+import { getCategoryClasses, getCategoryById, getCategoryPrimaryColor, formatFrequency, getCategoryPalette } from "@/lib/categories";
 import { InlineEditDropdown } from "./InlineEditDropdown";
 import { useState, useRef } from "react";
 import { Progress } from "@/components/ui/progress";
@@ -105,9 +106,7 @@ export const HabitCard = ({
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium">{habit.title}</span>
                     {habit.category !== 'none' && (
-                      <Badge
-                        className={`${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor} `}
-                      >
+                      <Badge categoryId={habit.category}>
                         {getCategoryById(habit.category)?.name || habit.category}
                       </Badge>
                     )}
@@ -171,9 +170,7 @@ export const HabitCard = ({
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-medium text-sm">{habit.title}</h3>
             {habit.category !== 'none' && (
-              <Badge
-                className={`${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor} border-0 px-2 py-0.5 text-xs`}
-              >
+              <Badge categoryId={habit.category} className="border-0 px-2 py-0.5 text-xs">
                 {getCategoryById(habit.category)?.name || habit.category}
               </Badge>
             )}
@@ -189,7 +186,7 @@ export const HabitCard = ({
             </span>
           </div>
           <div className="mt-3 flex items-center gap-3">
-            <ProgressCircle value={adoptionProgressPct} size={28} strokeWidth={6} color={resolveCategoryBgColorFromText(habit.category)} />
+            <ProgressCircle value={adoptionProgressPct} size={28} strokeWidth={6} color={getCategoryPrimaryColor(habit.category)} />
             <div className="text-xs text-muted-foreground ml-auto">{habit.streak}/{adoptionThreshold} days</div>
           </div>
         </CardContent>
@@ -203,10 +200,10 @@ export const HabitCard = ({
     const done = isCompletedOnDate
       ? isCompletedOnDate(habit.id, targetDate)
       : (() => {
-          const dayString = targetDate.toISOString().split('T')[0];
-          const lastCompletedLocal = habit.last_completed ? new Date(habit.last_completed).toISOString().split('T')[0] : null;
-          return lastCompletedLocal === dayString;
-        })();
+        const dayString = targetDate.toISOString().split('T')[0];
+        const lastCompletedLocal = habit.last_completed ? new Date(habit.last_completed).toISOString().split('T')[0] : null;
+        return lastCompletedLocal === dayString;
+      })();
 
     return (
       <div className="relative" ref={cardRef}>
@@ -231,8 +228,8 @@ export const HabitCard = ({
           <CardContent className="">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
-                <Checkbox 
-                  checked={done} 
+                <Checkbox
+                  checked={done}
                   onCheckedChange={(checked) => {
                     if (checked) {
                       onCheckInForDate ? onCheckInForDate(habit.id, targetDate) : onCheckIn(habit.id);
@@ -241,15 +238,13 @@ export const HabitCard = ({
                     }
                   }}
                   className="mt-1"
-                  customColor={resolveCategoryBgColorFromText(habit.category)}
+                  categoryId={habit.category}
                 />
                 <div className="flex-1">
                   <CardTitle className="flex items-center gap-2 text-xs">
                     {habit.title}
                     {habit.category !== 'none' && (
-                      <Badge
-                        className={`${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor} border-0 px-2 py-0.5`}
-                      >
+                      <Badge categoryId={habit.category} className="border-0 px-2 py-0.5">
                         {getCategoryById(habit.category)?.name || habit.category}
                       </Badge>
                     )}
@@ -259,45 +254,47 @@ export const HabitCard = ({
                       <MoveUpRight className="h-4 w-4" />
                       {habit.streak}
                     </span>
-                    <span className="text-xs text-gray-500">({formatFrequency(habit.target_frequency)})</span>
-                  </div>
+                    <span className="flex items-center gap-1">
+                      <Repeat className="h-3 w-3" />
+                      {formatFrequency(habit.target_frequency)}
+                    </span>                  </div>
                 </div>
               </div>
               {(() => {
-              const todayDate = new Date();
-              const startOfWeek = new Date(todayDate);
-              startOfWeek.setDate(todayDate.getDate() - todayDate.getDay());
-              const weekDays = Array.from({ length: 7 }, (_, i) => {
-                const d = new Date(startOfWeek);
-                d.setDate(startOfWeek.getDate() + i);
-                return d;
-              });
-              const completedCount = weekDays.reduce((count, d) => {
-                const dayString = d.toISOString().split('T')[0];
-                const lastCompletedLocal = habit.last_completed ? new Date(habit.last_completed).toISOString().split('T')[0] : null;
-                const isDone = lastCompletedLocal === dayString;
-                return count + (isDone ? 1 : 0);
-              }, 0);
-              const targetPerWeek = Math.max(1, habit.target_frequency || 1);
-              const weeklyPct = Math.min(100, Math.round((completedCount / targetPerWeek) * 100));
-              const categoryBg = resolveCategoryBgColorFromText(habit.category);
+                const todayDate = new Date();
+                const startOfWeek = new Date(todayDate);
+                startOfWeek.setDate(todayDate.getDate() - todayDate.getDay());
+                const weekDays = Array.from({ length: 7 }, (_, i) => {
+                  const d = new Date(startOfWeek);
+                  d.setDate(startOfWeek.getDate() + i);
+                  return d;
+                });
+                const completedCount = weekDays.reduce((count, d) => {
+                  const dayString = d.toISOString().split('T')[0];
+                  const lastCompletedLocal = habit.last_completed ? new Date(habit.last_completed).toISOString().split('T')[0] : null;
+                  const isDone = lastCompletedLocal === dayString;
+                  return count + (isDone ? 1 : 0);
+                }, 0);
+                const targetPerWeek = Math.max(1, habit.target_frequency || 1);
+                const weeklyPct = Math.min(100, Math.round((completedCount / targetPerWeek) * 100));
+                const categoryBg = getCategoryPrimaryColor(habit.category);
 
-              return (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-center">
-                    <ProgressCircle
-                      value={weeklyPct}
-                      size={50}
-                      strokeWidth={5}
-                      color={categoryBg}
-                      label={`${completedCount}/${targetPerWeek}`}
-                    />
+                return (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-center">
+                      <ProgressCircle
+                        value={weeklyPct}
+                        size={50}
+                        strokeWidth={5}
+                        color={categoryBg}
+                        label={`${completedCount}/${targetPerWeek}`}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
             </div>
-            
+
           </CardContent>
         </Card>
 
@@ -366,26 +363,24 @@ export const HabitCard = ({
     const targetPerWeek = Math.max(1, habit.target_frequency || 1);
     const weeklyPct = Math.min(100, Math.round((completedCount / targetPerWeek) * 100));
 
-    const categoryColor = getCategoryById(habit.category)?.color || '#6B7280';
-    const categoryBg = resolveCategoryBgColorFromText(habit.category);
-    const categoryTextColor = resolveCategoryTextColor(habit.category);
+    const categoryColor = getCategoryPrimaryColor(habit.category);
     return (
       <div className="relative" ref={cardRef}>
-        <Card className="border-gray-200 cursor-pointer bg-gray-100 hover:bg-gray-200 transition-colors duration-200" onClick={() => setShowInlineEdit(true)}>
+        <Card className="border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors duration-200" onClick={() => setShowInlineEdit(true)}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-3">
 
               <div className="flex flex-col items-start gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium truncate max-w-[12rem]">{habit.title}</span>
-  
+
                   {habit.category !== 'none' && (
-                    <Badge className={`${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor} border-0 px-1.5 py-0.5 text-[10px]`}>
+                    <Badge categoryId={habit.category}>
                       {getCategoryById(habit.category)?.name || habit.category}
                     </Badge>
                   )}
                 </div>
-  
+
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   {/* <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
@@ -394,14 +389,18 @@ export const HabitCard = ({
                   <span className="flex items-center gap-1">
                     <MoveUpRight className="h-3 w-3" />
                     {habit.total_completions} total
-                    <span className="text-[10px] text-gray-500">({formatFrequency(habit.target_frequency)})</span>
                   </span>
+                  <span className="flex items-center gap-1">
+                    <Repeat className="h-3 w-3" />
+                    {formatFrequency(habit.target_frequency)}
+                  </span>
+
                 </div>
               </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex gap-1 h-[50px] items-center">
-                    {Array.from({ length: 7 }, (_, i) => {
+              <div className="flex items-center gap-4">
+                <div className="flex gap-1 h-[50px] items-center">
+                  {Array.from({ length: 7 }, (_, i) => {
                     const day = new Date(start);
                     day.setDate(start.getDate() + i);
                     const dayDone = isCompletedOnDate
@@ -413,15 +412,15 @@ export const HabitCard = ({
                       })();
                     const isToday = day.toDateString() === new Date().toDateString();
                     const isSelectedDay = day.toDateString() === targetDate.toDateString();
-                      const sizeClasses = isSelectedDay ? 'w-10 h-10' : 'w-6 h-6';
+                    const sizeClasses = isSelectedDay ? 'w-10 h-10' : 'w-6 h-6';
                     return (
                       <div
                         key={i}
-                          className={`${sizeClasses} rounded border flex items-center justify-center text-[10px] ${dayDone ? 'text-white' : ''}`}
+                        className={`${sizeClasses} rounded border flex items-center justify-center text-[10px] ${dayDone ? 'text-white' : ''}`}
                         title={`${day.toLocaleDateString('en-US', { weekday: 'short' })} ${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                         style={{
-                          backgroundColor: dayDone ? categoryTextColor : 'white',
-                          borderColor: dayDone ? categoryTextColor : (isToday ? '#A8A29E' : '#E5E7EB')
+                          backgroundColor: dayDone ? categoryColor : 'white',
+                          borderColor: dayDone ? categoryColor : (isToday ? '#A8A29E' : '#E5E7EB')
                         }}
                       >
                         {isSelectedDay ? (
@@ -437,11 +436,11 @@ export const HabitCard = ({
                               }}
                               onClick={(e) => e.stopPropagation()}
                               className="h-4 w-4"
-                              customColor={resolveCategoryBgColorFromText(habit.category)}
+                              categoryId={habit.category}
                             />
                           ) : (
-                              <button
-                                className="text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-100 w-full h-full flex flex-col items-center justify-center rounded duration-200"
+                            <button
+                              className="text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-100 w-full h-full flex flex-col items-center justify-center rounded duration-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (onCheckInForDate) onCheckInForDate(habit.id, day);
@@ -449,8 +448,8 @@ export const HabitCard = ({
                               }}
                               title={`Check in for ${day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}
                             >
-                                {day.getDate()}
-                                <Check className="h-3 w-3" />
+                              {day.getDate()}
+                              <Check className="h-3 w-3" />
                             </button>
                           )
                         ) : (
@@ -468,7 +467,7 @@ export const HabitCard = ({
                       value={weeklyPct}
                       size={50}
                       strokeWidth={5}
-                      color={categoryBg}
+                      color={categoryColor}
                       label={`${completedCount}/${targetPerWeek}`}
                     />
                   </div>
@@ -582,10 +581,10 @@ export const HabitCard = ({
                       <div
                         key={i}
                         className={`w-7 h-7 rounded border flex items-center justify-center text-xs ${isCompleted
-                            ? 'bg-lime-100 border-lime-200 text-foreground'
-                            : isToday
-                              ? 'border-gray-300 bg-gray-50'
-                              : 'border-gray-200 bg-gray-50'
+                          ? 'bg-lime-100 border-lime-200 text-foreground'
+                          : isToday
+                            ? 'border-gray-300 bg-gray-50'
+                            : 'border-gray-200 bg-gray-50'
                           }`}
                         title={`${day.toLocaleDateString('en-US', { weekday: 'short' })} ${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                       >
@@ -633,7 +632,7 @@ export const HabitCard = ({
           )}
 
           <div className="mt-4 flex items-center gap-3">
-            <ProgressCircle value={adoptionProgressPct} size={32} strokeWidth={6} color={resolveCategoryBgColorFromText(habit.category)} />
+            <ProgressCircle value={adoptionProgressPct} size={32} strokeWidth={6} color={getCategoryPrimaryColor(habit.category)} />
             <div className="text-xs text-muted-foreground ml-auto">{habit.streak}/{adoptionThreshold} days</div>
           </div>
         </CardContent>
