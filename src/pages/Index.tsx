@@ -21,6 +21,7 @@ import { DayHabitsDialog } from "@/components/habits/DayHabitsDialog";
 import { Button } from "@/components/ui/button";
 import { SegmentedToggle } from "@/components/ui/segmented-toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { LandingPage } from "@/pages/LandingPage";
 import {
   Loader2,
   Calendar,
@@ -196,18 +197,7 @@ const Index = () => {
 
   if (!loading && !user) {
     // Not logged in -> show landing/auth page
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-6">
-        <div className="w-full max-w-md text-center">
-          <h1 className="text-2xl font-bold mb-2">Seeds</h1>
-          <p className="text-sm text-muted-foreground mb-6">Build habits</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Button onClick={() => navigate('/auth')}>Sign In</Button>
-            <Button variant="outline" onClick={() => navigate('/auth')}>Create Account</Button>
-          </div>
-        </div>
-      </div>
-    );
+    return <LandingPage />;
   }
 
   return (

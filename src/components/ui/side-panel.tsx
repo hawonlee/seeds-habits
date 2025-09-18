@@ -78,7 +78,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`${isCollapsed ? 'w-0' : ''} relative h-full bg-white overflow-hidden ${pointerClass} ${className} ${isResizing ? 'transition-none' : 'transition-all duration-300 ease-in-out'} ${position === 'right' ? 'border-l border-gray-200' : 'border-r border-gray-200'}`}
+      className={`${isCollapsed ? 'w-0' : ''} fixed md:relative ${position === 'right' ? 'right-0' : 'left-0'} top-0 bottom-0 z-40 md:z-auto h-full bg-white overflow-hidden ${pointerClass} ${className} ${isResizing ? 'transition-none' : 'transition-all duration-300 ease-in-out'} ${position === 'right' ? 'border-l border-gray-200' : 'border-r border-gray-200'} shadow-lg md:shadow-none`}
       style={{ width: isCollapsed ? 0 : panelWidth }}
       aria-hidden={isCollapsed}
     >

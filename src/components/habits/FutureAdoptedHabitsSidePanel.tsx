@@ -73,6 +73,7 @@ export const FutureAdoptedHabitsSidePanel: React.FC<FutureAdoptedHabitsSidePanel
   
         <Button
             size="sm"
+            variant="ghost"
             onClick={() => onAddHabit(activeTab)}
             className="h-8 w-8"
           >

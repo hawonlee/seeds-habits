@@ -47,6 +47,7 @@ export const CombinedHabitsPanel: React.FC<CombinedHabitsPanelProps> = ({
         <div className="flex items-center justify-end mb-3">
           <Button
             size="sm"
+            variant="ghost"
             onClick={() => onAddHabit(activeTab)}
             className="h-8 px-3"
           >

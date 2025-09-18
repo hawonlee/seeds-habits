@@ -37,20 +37,20 @@ export const UserDropdown = ({
           </Button>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="start" className="w-56 mb-2">
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium">{displayName}</p>
           <p className="text-xs text-muted-foreground">{profile?.email || user.email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onOpenSettings}>
+        {/* <DropdownMenuItem onClick={onOpenSettings}>
           <Settings className="mr-2 h-4 w-4" />
-          Settings
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
+          <p className="text-xs">Settings</p>
+        </DropdownMenuItem> */}
+        {/* <DropdownMenuSeparator /> */}
         <DropdownMenuItem onClick={onSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
+          <p className="text-xs">Log Out</p>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
