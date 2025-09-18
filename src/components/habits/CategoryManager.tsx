@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Palette, LayoutGrid } from 'lucide-react';
 import { Category, fetchCategories, getCategories } from '@/lib/categories';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,6 +25,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -89,10 +91,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         setNewCategory({ name: '', color: '#3B82F6' });
         onCategoryChange?.(updatedCategories);
         
-        toast({
-          title: "Success",
-          description: "Category added successfully",
-        });
+        // Removed success toast per request
       } catch (error) {
         console.error('Error adding category:', error);
         toast({
@@ -106,10 +105,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
   const handleEditCategory = (category: Category) => {
     setEditingCategory(category);
-    setNewCategory({
-      name: category.name,
-      color: category.color
-    });
+    setNewCategory({ name: category.name, color: category.color });
+    setOpenPopoverId(category.id);
   };
 
   const handleUpdateCategory = async () => {
@@ -150,10 +147,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         setNewCategory({ name: '', color: '#3B82F6' });
         onCategoryChange?.(updatedCategories);
         
-        toast({
-          title: "Success",
-          description: "Category updated successfully",
-        });
+        // Removed success toast per request
       } catch (error) {
         console.error('Error updating category:', error);
         toast({
@@ -185,10 +179,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
       setCategories(updatedCategories);
       onCategoryChange?.(updatedCategories);
       
-      toast({
-        title: "Success",
-        description: "Category deleted successfully",
-      });
+      // Removed success toast per request
     } catch (error) {
       console.error('Error deleting category:', error);
       toast({
@@ -212,15 +203,13 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Manage Categories</DialogTitle>
-        </DialogHeader>
+
         
         <div className="space-y-6">
           {/* Global Adoption Threshold */}
-          <div className="p-3 border rounded-lg">
-            <h3 className="text-lg font-medium mb-2">Adoption Threshold</h3>
-            <p className="text-sm text-muted-foreground mb-3">Number of days a habit must be completed to become adopted.</p>
+          <div className="">
+            <h3 className="text-xs font-medium mb-2">Adoption Threshold</h3>
+            <p className="text-xs text-muted-foreground mb-3">Number of days a habit must be completed to become adopted.</p>
             <div className="flex items-center gap-2">
               <Input
                 type="number"
@@ -241,37 +230,134 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
           {/* Existing Categories */}
           <div>
-            <h3 className="text-lg font-medium mb-4">Current Categories</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-medium">Current Categories</h3>
+              <Popover
+                onOpenChange={(open) => {
+                  if (open) {
+                    setNewCategory({ name: '', color: '#3B82F6' });
+                  }
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-3 w-3 mr-1" /> New Category
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-3">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium">Name</label>
+                      <Input
+                        placeholder="Category name"
+                        value={newCategory.name || ''}
+                        onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium mb-2 block">Color</label>
+                      <div className="grid grid-cols-5 gap-2">
+                        {colorOptions.map(color => (
+                          <button
+                            key={color.value}
+                            onClick={() => setNewCategory({ ...newCategory, color: color.value })}
+                            className={`w-10 h-10 rounded-md border-2 transition-all ${color.bg} ${
+                              newCategory.color === color.value ? 'border-gray-400 scale-105' : 'border-transparent hover:border-gray-400'
+                            }`}
+                            aria-label={color.name}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        disabled={!newCategory.name || !newCategory.color}
+                        onClick={async () => {
+                          await handleAddCategory();
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               {categories.map(category => (
-                <div
-                  key={category.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: category.color }}
-                    />
-                    <Badge
-                      className={`${category.bgColor} ${category.textColor} border-0`}
-                    >
-                      {category.name}
-                    </Badge>
-                  </div>
+                <div key={category.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                  <Popover
+                    open={openPopoverId === category.id}
+                    onOpenChange={(open) => {
+                      if (open) {
+                        setEditingCategory(category);
+                        setNewCategory({ name: category.name, color: category.color });
+                        setOpenPopoverId(category.id);
+                      } else {
+                        setOpenPopoverId(null);
+                      }
+                    }}
+                  >
+                    <PopoverTrigger asChild>
+                      <button className="flex items-center gap-3 focus:outline-none">
+                        <div className={`w-4 h-4 rounded-sm ${category.bgColor}`} />
+                        <Badge className={`${category.bgColor} ${category.textColor} border-0`}>
+                          {category.name}
+                        </Badge>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-64 p-3">
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs font-medium">Name</label>
+                          <Input
+                            value={newCategory.name || ''}
+                            onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium mb-2 block">Color</label>
+                          <div className="grid grid-cols-5 gap-2">
+                            {colorOptions.map(color => (
+                              <button
+                                key={color.value}
+                                onClick={() => setNewCategory({ ...newCategory, color: color.value })}
+                                className={`w-10 h-10 rounded-md border-2  transition-all ${color.bg} ${
+                                  newCategory.color === color.value ? 'border-gray-400 scale-105' : 'border-transparent hover:border-gray-400'
+                                }`}
+                                aria-label={color.name}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setOpenPopoverId(null);
+                              setEditingCategory(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            disabled={!newCategory.name || !newCategory.color}
+                            onClick={async () => {
+                              await handleUpdateCategory();
+                              setOpenPopoverId(null);
+                            }}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEditCategory(category)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDeleteCategory(category.id)}
-                    >
+                    <Button size="sm" variant="ghost" onClick={() => handleDeleteCategory(category.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -279,60 +365,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
               ))}
             </div>
           </div>
-
-          {/* Add/Edit Category Form */}
-          <div>
-            <h3 className="text-lg font-medium mb-4">
-              {editingCategory ? 'Edit Category' : 'Add New Category'}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Category Name</label>
-                <Input
-                  placeholder="Enter category name"
-                  value={newCategory.name || ''}
-                  onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-2 block">Color</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {colorOptions.map(color => (
-                    <button
-                      key={color.value}
-                      onClick={() => setNewCategory({ ...newCategory, color: color.value })}
-                      className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center transition-all ${
-                        newCategory.color === color.value
-                          ? 'border-gray-900 scale-110'
-                          : 'border-gray-200 hover:border-gray-400'
-                      }`}
-                      style={{ backgroundColor: color.value }}
-                    >
-                      {newCategory.color === color.value && (
-                        <div className="w-3 h-3 bg-white rounded-full" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
-                  disabled={!newCategory.name || !newCategory.color}
-                >
-                  {/* <Plus className="h-4 w-4 mr-2" /> */}
-                  {editingCategory ? 'Update' : 'Add'} Category
-                </Button>
-                {editingCategory && (
-                  <Button variant="outline" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+          
         </div>
       </DialogContent>
     </Dialog>

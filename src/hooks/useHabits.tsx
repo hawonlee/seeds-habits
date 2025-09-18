@@ -151,10 +151,7 @@ export const useHabits = () => {
           delete habitsCache[user.id];
         }
         
-        toast({
-          title: "Success",
-          description: "Habit added successfully",
-        });
+        // Removed success toast per request
         return { data };
       }
     } catch (error) {
@@ -190,10 +187,7 @@ export const useHabits = () => {
           delete habitsCache[user.id];
         }
         
-        toast({
-          title: "Success",
-          description: "Habit updated successfully",
-        });
+        // Removed success toast per request
         return { data };
       }
     } catch (error) {
@@ -227,10 +221,7 @@ export const useHabits = () => {
           delete habitsCache[user.id];
         }
         
-        toast({
-          title: "Success",
-          description: "Habit deleted successfully",
-        });
+        // Removed success toast per request
         return { success: true };
       }
     } catch (error) {
@@ -317,10 +308,7 @@ export const useHabits = () => {
       const result = await updateHabit(id, updates);
       
       if (!result.error) {
-        toast({
-          title: "Success",
-          description: "Check-in undone successfully",
-        });
+        // Removed success toast per request
       }
 
       return result;

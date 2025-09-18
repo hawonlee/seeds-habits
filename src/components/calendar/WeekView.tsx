@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CalendarHabitItem } from "@/components/calendar/CalendarHabitItem";
 import { Calendar as CalendarIcon, CheckCircle, Circle, RotateCcw } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { HabitCard } from "@/components/habits/HabitCard";
@@ -235,7 +236,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
   return (
     <div className="focus:outline-none flex flex-col h-full">
       {/* Day headers above the week */}
-      <div className="grid grid-cols-7 gap-4 mb-4">
+      <div className="grid grid-cols-7 gap-4 mb-4 px-1">
         {weekDates.map((date, index) => {
           const isToday = date.toDateString() === new Date().toDateString();
           const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
@@ -267,7 +268,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
       </div>
 
       {/* Week days */}
-      <div className="grid grid-cols-7 border border-gray-200 overflow-hidden">
+      <div className="grid grid-cols-7 overflow-hidden px-1">
         {weekDates.map((date, index) => {
           const habitsForDay = getHabitsForDate(date);
           const completedHabits = getCompletedHabitsForDate(date);
@@ -298,78 +299,45 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
             <div
               key={date.toISOString()}
               className={`
-                  aspect-square border-r border-b border-gray-200 cursor-pointer transition-colors relative
-                  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-gray-100 focus:outline-none' : ''}
-                  ${index % 7 === 6 ? 'border-r-0' : ''}
-                  ${index >= 0 ? 'border-b-0' : ''}
+                  cursor-pointer transition-colors relative
+                 
                 `}
               onClick={() => handleDayClick(date)}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              <div className="p-2 h-full flex flex-col">
-                <div className="flex-1 flex flex-col gap-1 overflow-hidden">
+              <div className="p-1 h-full">
+                <div className={`calendar-cell-inner h-full border  rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-gray-100' : 'bg-gray-50'}`}>
+                  <div className="flex flex-col gap-1 max-h-64 overflow-y-auto pr-1">
                   {/* Completed Habits */}
-                  {completedHabits.slice(0, 3).map(habit => {
-                    const isScheduled = isHabitScheduledOnDate(habit.id, date);
-                    const handleRightClick = (e: React.MouseEvent) => {
-                      if (isScheduled && onHabitUnschedule) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onHabitUnschedule(habit.id, date);
-                      }
-                    };
-                    return (
-                      <div
-                        key={habit.id}
-                        className={`text-xs p-1 rounded flex items-center gap-1 ${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor}`}
-                        title={`${habit.title}${isScheduled ? ' (Scheduled - Right-click to unschedule)' : ''}`}
-                        onContextMenu={handleRightClick}
-                      >
-                        <Checkbox
-                          checked={isHabitCompletedOnDate(habit.id, date)}
-                          onCheckedChange={() => handleHabitCheckIn(habit, date, isHabitCompletedOnDate(habit.id, date))}
-                          onClick={(e) => e.stopPropagation()}
-                          className="h-4 w-4 mt-0"
-                          customColor={getCategoryById(habit.category)?.color || '#6B7280'}
-                        />
-                        <span className="truncate">{habit.title}</span>
-                      </div>
-                    );
-                  })}
+                  {completedHabits.slice(0, 3).map(habit => (
+                    <CalendarHabitItem
+                      key={habit.id}
+                      habit={habit}
+                      date={date}
+                      isCompleted={isHabitCompletedOnDate(habit.id, date)}
+                      onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
+                      isScheduled={isHabitScheduledOnDate(habit.id, date)}
+                      onUnschedule={onHabitUnschedule}
+                    />
+                  ))}
 
                   {/* Remaining Habits */}
                   {habitsForDay
                     .filter(h => !completedHabits.some(c => c.id === h.id))
                     .slice(0, 3 - completedHabits.length)
-                    .map(habit => {
-                      const isScheduled = isHabitScheduledOnDate(habit.id, date);
-                      const handleRightClick = (e: React.MouseEvent) => {
-                        if (isScheduled && onHabitUnschedule) {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onHabitUnschedule(habit.id, date);
-                        }
-                      };
-                      return (
-                        <div
-                          key={habit.id}
-                          className={`text-xs p-1 rounded flex items-center gap-1 ${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor}`}
-                          title={`${habit.title}${isScheduled ? ' (Scheduled - Right-click to unschedule)' : ''}`}
-                          onContextMenu={handleRightClick}
-                        >
-                          <Checkbox
-                            checked={isHabitCompletedOnDate(habit.id, date)}
-                            onCheckedChange={() => handleHabitCheckIn(habit, date, isHabitCompletedOnDate(habit.id, date))}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4 mt-0"
-                            customColor={getCategoryById(habit.category)?.color || '#6B7280'}
-                          />
-                          <span className="truncate">{habit.title}</span>
-                        </div>
-                      );
-                    })}
+                    .map(habit => (
+                      <CalendarHabitItem
+                        key={habit.id}
+                        habit={habit}
+                        date={date}
+                        isCompleted={isHabitCompletedOnDate(habit.id, date)}
+                        onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
+                        isScheduled={isHabitScheduledOnDate(habit.id, date)}
+                        onUnschedule={onHabitUnschedule}
+                      />
+                    ))}
 
                   {/* Overflow indicator */}
                   {habitsForDay.length > 3 && (
@@ -384,6 +352,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
                         No habits
                       </div>
                     )} */}
+                  </div>
                 </div>
               </div>
             </div>
@@ -394,91 +363,55 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
       {/* Selected Day Details */}
       {selectedDay && (
         <div className="mt-4 flex-1 min-h-0 overflow-hidden">
-          <Card className="bg-white border-none">
-            <CardContent className="h-full overflow-auto">
+          <Card className="bg-gray-100 border-none h-full flex flex-col">
+            <CardContent className="flex-1 overflow-auto">
               {(() => {
                 const { activeHabits, completedHabits, remainingHabits, nonGridHabits, isPast, isFuture } = getDetailedHabitsForDate(selectedDay);
 
                 return (
                   <div className="space-y-4">
 
-                    <h3 className="text-xs font-medium text-gray-700 flex items-center gap-2">
-                      Planned Habits
-                    </h3>
-                    
-                    <div className="space-y-2">
-                      {/* Remaining Habits */}
-                      {remainingHabits.length > 0 && (
-                        <div>
-                          <div className="grid gap-3">
-                            {remainingHabits.map(habit => (
-                              <HabitCard
-                                key={habit.id}
-                                habit={habit}
-                                adoptionThreshold={7}
-                                onCheckIn={(id) => handleHabitCheckIn(habit, selectedDay, isHabitCompletedOnDate(habit.id, selectedDay))}
-                                onUndoCheckIn={() => handleHabitCheckIn(habit, selectedDay, true)}
-                                onMoveHabit={() => { }}
-                                variant="week"
-                                weekStartDate={weekDates[0]}
-                                isCompletedOnDate={isHabitCompletedOnDate}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-  
-                      {/* Completed Habits */}
-                      {completedHabits.length > 0 && (
-                        <div>
-                          <div className="grid gap-3">
-                            {completedHabits.map(habit => (
-                              <HabitCard
-                                key={habit.id}
-                                habit={habit}
-                                adoptionThreshold={7}
-                                onCheckIn={(id) => handleHabitCheckIn(habit, selectedDay, isHabitCompletedOnDate(habit.id, selectedDay))}
-                                onUndoCheckIn={() => handleHabitCheckIn(habit, selectedDay, true)}
-                                onMoveHabit={() => { }}
-                                variant="week"
-                                weekStartDate={weekDates[0]}
-                                isCompletedOnDate={isHabitCompletedOnDate}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-  
-  
-                    </div>
-                   
-
-
-                    {/* Non-grid habits (no custom days selected) */}
-                    {nonGridHabits.length > 0 && (
-                      <div className="space-y-2">
-                        <h3 className="text-xs font-medium text-gray-700 flex items-center">
-                          My Habits
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Planned Habits column */}
+                      <div>
+                        <h3 className="text-xs font-medium text-gray-700 flex items-center gap-2 mb-2">
+                          Planned Habits
                         </h3>
-                        <div className="grid gap-2">
-                          {nonGridHabits.map(habit => (
-                            <HabitCard
+                        <div className="grid gap-3">
+                          {remainingHabits.map(habit => (
+                            <CalendarHabitItem
                               key={habit.id}
                               habit={habit}
-                              adoptionThreshold={7}
-                              onCheckIn={(id) => handleHabitCheckIn(habit, selectedDay, isHabitCompletedOnDate(habit.id, selectedDay))}
-                              onUndoCheckIn={() => handleHabitCheckIn(habit, selectedDay, true)}
-                              onMoveHabit={() => {}}
-                              variant="week"
-                              weekStartDate={weekDates[0]}
-                              isCompletedOnDate={isHabitCompletedOnDate}
+                              date={selectedDay}
+                              isCompleted={isHabitCompletedOnDate(habit.id, selectedDay)}
+                              onToggle={(h, d, done) => handleHabitCheckIn(h, d, done)}
+                              isScheduled={isHabitScheduledOnDate ? isHabitScheduledOnDate(habit.id, selectedDay) : false}
+                              onUnschedule={onHabitUnschedule}
                             />
                           ))}
                         </div>
                       </div>
-                    )}
 
-
+                      {/* My Habits column */}
+                      <div>
+                        <h3 className="text-xs font-medium text-gray-700 flex items-center mb-2">
+                          My Habits
+                        </h3>
+                        <div className="grid gap-2">
+                          {nonGridHabits.map(habit => (
+                            <CalendarHabitItem
+                              key={habit.id}
+                              habit={habit}
+                              date={selectedDay}
+                              isCompleted={isHabitCompletedOnDate(habit.id, selectedDay)}
+                              onToggle={(h, d, done) => handleHabitCheckIn(h, d, done)}
+                              isScheduled={isHabitScheduledOnDate ? isHabitScheduledOnDate(habit.id, selectedDay) : false}
+                              onUnschedule={onHabitUnschedule}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
                     {/* No habits message */}
                     {activeHabits.length === 0 && (

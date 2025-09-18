@@ -195,6 +195,22 @@ const Index = () => {
   const displayName = profile?.name || user?.email?.split('@')[0] || 'Guest';
   const userInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase();
 
+  if (!loading && !user) {
+    // Not logged in -> show landing/auth page
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center p-6">
+        <div className="w-full max-w-md text-center">
+          <h1 className="text-2xl font-bold mb-2">Seeds</h1>
+          <p className="text-sm text-muted-foreground mb-6">Build habits</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Button onClick={() => navigate('/auth')}>Sign In</Button>
+            <Button variant="outline" onClick={() => navigate('/auth')}>Create Account</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-white overflow-hidden">
 
@@ -229,36 +245,16 @@ const Index = () => {
         {/* Habit Dashboard */}
         {habitsLoading ? (
           <div className="flex gap-4 h-[calc(100vh-200px)]">
-            {/* Current Habits Skeleton */}
-            <div className="flex-1 h-full bg-white rounded-lg border p-4 overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <h2 className="text-sm font-semibold">Current Habits</h2>
-                  <div className="h-5 w-8 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-                <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-              </div>
-              <div className="space-y-4">
-                <HabitCardSkeleton variant="current" />
-                <HabitCardSkeleton variant="current" />
-                <HabitCardSkeleton variant="current" />
+            <div className="flex-1 h-full bg-white rounded-lg border p-4 overflow-y-auto flex items-center justify-center">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <div className="h-5 w-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+                Loading current habits...
               </div>
             </div>
-            
-            {/* Combined Panel Skeleton */}
-            <div className="w-80 h-full bg-white rounded-lg border p-4 overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <h2 className="text-sm font-medium">Future & Adopted</h2>
-                  <div className="h-5 w-8 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-                <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-              </div>
-              <div className="space-y-4">
-                <HabitCardSkeleton variant="future" />
-                <HabitCardSkeleton variant="adopted" showActions={false} />
+            <div className="w-80 h-full bg-white rounded-lg border p-4 overflow-y-auto flex items-center justify-center">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <div className="h-5 w-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+                Loading panel...
               </div>
             </div>
           </div>

@@ -145,8 +145,8 @@ export const UnifiedCalendar = ({ habits, schedules, onCheckIn, onUndoCheckIn, o
   };
 
   return (
-    <div className="">
-      <div className="mb-4">
+    <div className="h-full flex flex-col">
+      <div className="mb-4 flex-shrink-0">
         <CalendarHeader
           title={getTitle()}
           calendarViewMode={calendarViewMode}
@@ -156,8 +156,10 @@ export const UnifiedCalendar = ({ habits, schedules, onCheckIn, onUndoCheckIn, o
           onToday={handleToday}
         />
       </div>
-      <div className="">
-        {renderContent()}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="h-full">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );

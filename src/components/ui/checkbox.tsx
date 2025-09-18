@@ -17,13 +17,13 @@ const Checkbox = React.forwardRef<
     
     return {
       ...style,
+      color: 'inherit',
       borderColor: customColor,
       '--checkbox-checked-bg': customColor,
       '--checkbox-checked-border': customColor,
       ...(props.checked && {
         backgroundColor: customColor,
         borderColor: customColor,
-        color: 'white', // Ensure checkmark is white when checked
       })
     } as React.CSSProperties;
   }, [customColor, style, props.checked]);
@@ -32,7 +32,7 @@ const Checkbox = React.forwardRef<
     <CheckboxPrimitive.Root
       ref={ref}
       className={cn(
-        "peer h-3.5 w-3.5 shrink-0 rounded-[2px] border border-primary ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+        "peer h-3.5 w-3.5 shrink-0 rounded-[2px] border ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       style={customStyle}

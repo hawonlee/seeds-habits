@@ -46,7 +46,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 px-12 overflow-hidden min-h-0">
+      <div className="flex-1 px-32 pt-6 pb-2 overflow-hidden min-h-0">
         {children}
       </div>
     </div>

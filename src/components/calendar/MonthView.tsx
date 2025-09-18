@@ -1,4 +1,5 @@
 import { Checkbox } from "@/components/ui/checkbox";
+import { CalendarHabitItem } from "@/components/calendar/CalendarHabitItem";
 import { Habit } from "@/hooks/useHabits";
 import { getCategoryClasses, getCategoryById, resolveCategoryBgColor } from "@/lib/categories";
 import { useHabitCompletions } from "@/hooks/useHabitCompletions";
@@ -57,22 +58,29 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
     const days = [];
     
     // Add days from previous month to fill the first week
-    const prevMonth = new Date(year, month - 1, 0);
-    const daysInPrevMonth = prevMonth.getDate();
+    // Use (year, month, 0) to get last day of the previous month reliably
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      days.push(new Date(year, month - 1, daysInPrevMonth - i));
+      const d = new Date(year, month - 1, daysInPrevMonth - i);
+      // Normalize to noon to avoid DST/UTC rendering issues when using UTC conversions
+      d.setHours(12, 0, 0, 0);
+      days.push(d);
     }
     
     // Add days of the current month
     for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day));
+      const d = new Date(year, month, day);
+      d.setHours(12, 0, 0, 0);
+      days.push(d);
     }
     
     // Calculate how many more days we need to fill exactly 6 rows (42 cells)
     const totalCells = 42; // 6 rows × 7 days
     const remainingCells = totalCells - days.length;
     for (let day = 1; day <= remainingCells; day++) {
-      days.push(new Date(year, month + 1, day));
+      const d = new Date(year, month + 1, day);
+      d.setHours(12, 0, 0, 0);
+      days.push(d);
     }
     
     return days;
@@ -189,7 +197,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
   return (
     <div className="w-full focus:outline-none">
       {/* Day headers above the table */}
-      <div className="grid grid-cols-7 mb-2">
+      <div className="grid grid-cols-7 mb-2 px-1">
         {dayNames.map(day => (
           <div key={day} className="text-center text-xs font-normal text-gray-600">
             {day}
@@ -198,7 +206,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
       </div>
       
       {/* Scrollable calendar container */}
-      <div className="h-[600px] overflow-y-auto overflow-x-hidden scrollbar-hide border border-gray-200 focus:outline-none">
+      <div className="h-[600px] overflow-y-auto overflow-x-hidden scrollbar-hide focus:outline-none">
         <div className="grid grid-cols-7">
         {/* Calendar days */}
         {days.map((date, index) => {
@@ -234,11 +242,14 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
             }
           };
 
-          const dateKey = date.toISOString().split('T')[0];
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, '0');
+          const dd = String(date.getDate()).padStart(2, '0');
+          const dateKey = `${y}-${m}-${dd}`;
           const isOpen = openDateKey === dateKey;
           return (
             <Popover
-              key={date.toISOString()}
+              key={`cell-${y}-${m}-${index}`}
               open={isOpen}
               onOpenChange={(open) => {
                 setOpenDateKey(open ? dateKey : null);
@@ -248,7 +259,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
               <PopoverTrigger asChild>
                 <div
                   className={`
-                    aspect-square border-r border-b border-gray-200 cursor-pointer transition-colors relative
+                    aspect-square cursor-pointer transition-colors relative
                     ${isCurrentMonth ? '' : 'opacity-50'}
                     ${index % 7 === 6 ? 'border-r-0' : ''}
                     ${index >= 35 ? 'border-b-0' : ''}
@@ -257,7 +268,8 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  <div className="p-2 h-full flex flex-col">
+                  <div className="p-1 h-full">
+                    <div className="calendar-cell-inner h-full border bg-gray-50  rounded-md p-2 flex flex-col">
                     {/* Date number */}
                     <div className="h-8 flex items-center justify-end mb-1">
                       <div className={`
@@ -272,35 +284,17 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
 
                     {/* Habits for this day */}
                     <div className="flex-1 flex flex-col gap-1 overflow-hidden">
-                      {isCurrentMonth && habitsForDay.slice(0, 3).map(habit => {
-                        const isCompleted = isHabitCompletedOnDate(habit.id, date);
-                        const isScheduled = isHabitScheduledOnDate(habit.id, date);
-                        const handleRightClick = (e: React.MouseEvent) => {
-                          if (isScheduled && onHabitUnschedule) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onHabitUnschedule(habit.id, date);
-                          }
-                        };
-
-                        return (
-                          <div
-                            key={habit.id}
-                            className={`text-xs p-1 rounded flex items-center gap-1 truncate ${getCategoryClasses(habit.category).bgColor} ${getCategoryClasses(habit.category).textColor}`}
-                            title={`${habit.title}${isScheduled ? ' (Scheduled - Right-click to unschedule)' : ''}`}
-                            onContextMenu={handleRightClick}
-                          >
-                            <Checkbox
-                              checked={isCompleted}
-                              onCheckedChange={() => handleHabitCheckIn(habit, date, isCompleted)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="h-4 w-4 flex-shrink-0 mt-0"
-                              customColor={resolveCategoryBgColor(habit.category)}
-                            />
-                            <span className="truncate">{habit.title}</span>
-                          </div>
-                        );
-                      })}
+                      {isCurrentMonth && habitsForDay.slice(0, 3).map(habit => (
+                        <CalendarHabitItem
+                          key={habit.id}
+                          habit={habit}
+                          date={date}
+                          isCompleted={isHabitCompletedOnDate(habit.id, date)}
+                          onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
+                          isScheduled={isHabitScheduledOnDate(habit.id, date)}
+                          onUnschedule={onHabitUnschedule}
+                        />
+                      ))}
 
                       {isCurrentMonth && habitsForDay.length > 3 && (
                         <div className="text-xs text-muted-foreground">
@@ -308,7 +302,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                         </div>
                       )}
 
-                      {isCurrentMonth && habitsForDay.length === 0 && (
+                      {/* {isCurrentMonth && habitsForDay.length === 0 && (
                         <div className="mt-auto">
                           <button
                             className="text-gray-400 hover:text-gray-600 text-xs"
@@ -320,7 +314,8 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                             +
                           </button>
                         </div>
-                      )}
+                      )} */}
+                    </div>
                     </div>
                   </div>
                 </div>
@@ -346,6 +341,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                                 variant="week"
                                 weekStartDate={weekStart}
                                 isCompletedOnDate={isHabitCompletedOnDate}
+                                selectedDate={date}
                                 onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
                                 onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
                               />
@@ -369,6 +365,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                                 variant="week"
                                 weekStartDate={weekStart}
                                 isCompletedOnDate={isHabitCompletedOnDate}
+                                selectedDate={date}
                                 onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
                                 onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
                               />

@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { ProgressCircle } from "@/components/ui/progress-circle";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Calendar, 
+  MoveUpRight,
   TrendingUp, 
   Plus
 } from "lucide-react";
@@ -22,6 +25,7 @@ interface HabitTableRowProps {
   onCheckIn: (id: string, date?: Date) => void;
   onUndoCheckIn: (id: string, date?: Date) => void;
   onMoveHabit: (id: string, phase: Habit['phase']) => void;
+  displayVariant?: 'table' | 'card';
 }
 
 export const HabitTableRow = ({
@@ -33,7 +37,8 @@ export const HabitTableRow = ({
   onUpdateHabit,
   onCheckIn,
   onUndoCheckIn,
-  onMoveHabit
+  onMoveHabit,
+  displayVariant = 'table'
 }: HabitTableRowProps) => {
   const [showInlineEdit, setShowInlineEdit] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
@@ -50,6 +55,11 @@ export const HabitTableRow = ({
 
   const weekDays = getWeekDays();
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  // Weekly progress based on target_frequency
+  const completedThisWeek = weekDays.reduce((count, d) => count + (isHabitCompletedOnDate(habit.id, d) ? 1 : 0), 0);
+  const targetPerWeek = Math.max(1, Math.min(7, habit.target_frequency || 1));
+  const weeklyProgressPct = Math.min(100, (completedThisWeek / targetPerWeek) * 100);
 
   const handleDayCheckIn = async (day: Date, isCompleted: boolean) => {
     // Use only the database-backed completion system
@@ -92,10 +102,14 @@ export const HabitTableRow = ({
     return false;
   };
 
+  const containerClasses = displayVariant === 'card'
+    ? 'flex items-center px-4 py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-shadow cursor-pointer group relative'
+    : 'flex items-center px-4 py-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer group relative';
+
   return (
     <div className="relative" ref={rowRef}>
       <div 
-        className="flex items-center px-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer group relative"
+        className={containerClasses}
         onClick={() => setShowInlineEdit(true)}
       >
       {/* Plus button for future habits */}
@@ -130,30 +144,16 @@ export const HabitTableRow = ({
                 {new Date(habit.created_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })}
               </span>
               <span className="flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                {habit.streak}/{adoptionThreshold}
+                <MoveUpRight className="h-3 w-3" />
+                {habit.total_completions} total
               </span>
             </div>
-            <div className="mt-1">
-              <div className="relative w-full h-1.5 bg-gray-200 rounded-full">
-                <div
-                  className="absolute left-0 top-0 h-1.5 bg-black rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min((habit.streak / adoptionThreshold) * 100, 100)}%` }}
-                />
-              </div>
-            </div>
+
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-6 px-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveHabit(habit.id, 'adopted');
-            }}
-          >
-            Adopt
-          </Button>
+
+
+
+          {/* Adopt button moved to hover state in the right info area */}
         </div>
       </div>
 
@@ -196,9 +196,31 @@ export const HabitTableRow = ({
             </div>
           );
         })}
-      </div>
-      
-      {showInlineEdit && (
+        </div>
+
+        <div className="relative w-24 h-12">
+          <div className={`absolute inset-0 flex items-center justify-end pr-3`}>
+            <ProgressCircle value={weeklyProgressPct} size={50} strokeWidth={5} color={resolveCategoryBgColor(habit.category)} label={`${completedThisWeek}/${targetPerWeek}`} />
+          </div>
+{/* 
+          {habit.phase === 'current' && (
+            <div className="absolute inset-0 hidden group-hover:flex items-center justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-3"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveHabit(habit.id, 'adopted');
+                }}
+              >
+                Adopt
+              </Button>
+            </div>
+          )} */}
+        </div>
+
+        {showInlineEdit && (
         <InlineEditDropdown
           habit={habit}
           isOpen={showInlineEdit}
@@ -209,6 +231,10 @@ export const HabitTableRow = ({
           }}
           onDelete={(id) => {
             onDeleteHabit(id);
+            setShowInlineEdit(false);
+          }}
+          onAdopt={(id) => {
+            onMoveHabit(id, 'adopted');
             setShowInlineEdit(false);
           }}
           position={{

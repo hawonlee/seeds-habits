@@ -242,6 +242,9 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
                         variant="week"
                         weekStartDate={weekStartDate}
                         isCompletedOnDate={isHabitCompletedOnDate}
+                        selectedDate={currentDate}
+                        onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
+                        onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
                       />
                     </div>
                   );
@@ -254,8 +257,8 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
           }
           {remainingHabits.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <Circle className="h-5 w-5" />
+              <h3 className="text-xs font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                {/* <Circle className="h-5 w-5" /> */}
                 {isFuture ? 'Planned Habits' : 'Remaining Habits'} ({remainingHabits.length})
               </h3>
               <div className="grid gap-3">
@@ -279,6 +282,9 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
                         variant="week"
                         weekStartDate={weekStartDate}
                         isCompletedOnDate={isHabitCompletedOnDate}
+                        selectedDate={currentDate}
+                        onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
+                        onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
                       />
                     </div>
                   );

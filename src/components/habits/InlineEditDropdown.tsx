@@ -17,6 +17,7 @@ interface InlineEditDropdownProps {
   onDelete: (id: string) => void;
   position?: { top: number; left: number };
   anchorRect?: DOMRect | null;
+  onAdopt?: (id: string) => void;
 }
 
 export const InlineEditDropdown = ({
@@ -26,7 +27,8 @@ export const InlineEditDropdown = ({
   onUpdate,
   onDelete,
   position,
-  anchorRect
+  anchorRect,
+  onAdopt
 }: InlineEditDropdownProps) => {
   const [editedHabit, setEditedHabit] = useState({
     title: habit.title,
@@ -132,14 +134,30 @@ export const InlineEditDropdown = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">{editedHabit.title}</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              className="w-8 h-8"
-            >
-              <Trash className="h-3 w-3" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {habit.phase === 'current' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-3"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAdopt?.(habit.id);
+                    onClose();
+                  }}
+                >
+                  Adopt
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDelete}
+                className="w-8 h-8"
+              >
+                <Trash className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

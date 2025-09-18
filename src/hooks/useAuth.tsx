@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     } else {
       toast({
-        title: "Success",
+        // Removed success toast per request
         description: "Account created successfully! You are now signed in.",
       });
     }

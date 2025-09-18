@@ -21,9 +21,9 @@ interface CurrentHabitsListProps {
   onMoveHabit: (id: string, phase: Habit['phase']) => void;
 }
 
-export const CurrentHabitsList = ({ 
-  habits, 
-  onAddHabit, 
+export const CurrentHabitsList = ({
+  habits,
+  onAddHabit,
   adoptionThreshold,
   onChangeAdoptionThreshold,
   onEditHabit,
@@ -78,9 +78,9 @@ export const CurrentHabitsList = ({
     return `${startStr} - ${endStr}`;
   };
   return (
-    <div className="h-full bg-white py-4 overflow-y-auto">
+    <div className="h-full bg-white overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium">Current Habits</h2>
+        <h2 className="text-sm font-medium">Current Habits</h2>
         <div>
           <CategoryManager adoptionThreshold={adoptionThreshold} onChangeAdoptionThreshold={onChangeAdoptionThreshold} />
           <Button
@@ -102,74 +102,74 @@ export const CurrentHabitsList = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {/* Table Header */}
-          <div className="px-4 bg-gray-50 border-b border-gray-200">
-            {/* Week Navigation */}
-            <div className="flex items-center justify-end mb-3 gap-10">
+        <div className="bg-white rounded-lg overflow-hidden">
+          {/* Week Navigation */}
+          <div className="flex justify-between pb-4">
+            <div className="flex items-center justify-center gap-10">
               <div className="text-xs font-medium text-gray-700">
                 {formatWeekRange()}
               </div>
+
+            </div>
+
+            <div className="flex items-center justify-center gap-4">
+              {/* Day Headers above checkbox columns */}
               <div className="flex items-center">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={goToPreviousWeek}
-                  className="h-4 w-4 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={goToCurrentWeek}
-                  className="h-8 px-3 text-xs font-medium"
-                >
-                  Today
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={goToNextWeek}
-                  className="h-4 w-4 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center">
+                  {weekDays.map((day, index) => {
+                    const today = new Date();
+                    const isToday = day.toDateString() === today.toDateString();
+                    return (
+                      <div
+                        key={index}
+                        className={`flex items-center justify-center gap-1 min-w-[32px] w-12 text-center`}
+                      >
+                        <div className={`text-xs font-medium p-2  ${isToday ? 'text-black' : 'text-gray-400'} `}>{dayNames[day.getDay()]}</div>
+                        {/* <div className={`text-xs text-gray-400  ${isToday ? 'text-white bg-red-300 rounded-sm' : ''}`}>{day.getDate()}</div> */}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+  
+              <div className="flex items-end justify-end w-24 px-2">
+                <div className="flex items-center justify-end">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={goToPreviousWeek}
+                    className="h-4 w-4 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={goToCurrentWeek}
+                    className="h-8 px-3 text-xs font-medium"
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={goToNextWeek}
+                    className="h-4 w-4 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-            
-            {/* Day Headers */}
-            <div className="flex items-center">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-gray-900">Habit</h3>
-              </div>
-              <div className="flex items-center ml-4">
-                {weekDays.map((day, index) => {
-                  const today = new Date();
-                  const isToday = day.toDateString() === today.toDateString();
-                  
-                  return (
-                    <div 
-                      key={index} 
-                      className={`min-w-[32px] w-12 text-center ${
-                        isToday ? 'bg-gray-100' : ''
-                      }`}
-                    >
-                      <div className="text-xs font-medium text-gray-500 py-2">{dayNames[day.getDay()]}</div>
-                      <div className="text-xs text-gray-400">{day.getDate()}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+
           </div>
-          
-          {/* Table Rows */}
-          <div className="divide-y divide-gray-100">
+
+          {/* Card Rows */}
+          <div className="space-y-3">
             {habits.map(habit => (
-              <HabitTableRow 
-                key={habit.id} 
-                habit={habit} 
+              <HabitTableRow
+                key={habit.id}
+                habit={habit}
                 adoptionThreshold={adoptionThreshold}
                 currentWeek={currentWeek}
                 onEditHabit={onEditHabit}
@@ -178,6 +178,7 @@ export const CurrentHabitsList = ({
                 onCheckIn={onCheckIn}
                 onUndoCheckIn={onUndoCheckIn}
                 onMoveHabit={onMoveHabit}
+                displayVariant="card"
               />
             ))}
           </div>

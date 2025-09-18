@@ -76,7 +76,7 @@ export const useProfile = () => {
       } else {
         setProfile(data);
         toast({
-          title: "Success",
+          // Removed success toast per request
           description: "Profile updated successfully",
         });
         return { data };
