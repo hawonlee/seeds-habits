@@ -32,10 +32,15 @@ export interface BadgeProps
 }
 
 function Badge({ className, variant, categoryId, ...props }: BadgeProps) {
+  // Don't render badge for "none" category
+  if (categoryId === 'none') {
+    return null;
+  }
+  
   const primaryColor = categoryId ? getCategoryPrimaryColor(categoryId) : null;
   const palette = primaryColor ? findColorOptionByValue(primaryColor) : undefined;
-  const bgHex = palette?.bgHex || '#F3F4F6';
-  const textHex = palette?.textHex || primaryColor || '#1F2937';
+  const bgHex = palette?.bgHex || '#FAFAFA';
+  const textHex = palette?.textHex || primaryColor || '#262626';
 
   return (
     <div

@@ -88,7 +88,7 @@ export const EditHabitDialog = ({
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
                         {category.id === 'none' ? (
-                          <div className="w-3 h-3 rounded-full border border-gray-300 bg-transparent" />
+                          <div className="w-3 h-3 rounded-full border border-neutral-300 bg-transparent" />
                         ) : (
                           <div
                             className="w-3 h-3 rounded-full border"

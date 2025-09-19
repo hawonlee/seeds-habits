@@ -104,8 +104,8 @@ export const HabitTableRow = ({
   };
 
   const containerClasses = displayVariant === 'card'
-    ? 'flex items-center px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-shadow cursor-pointer group relative'
-    : 'flex items-center px-4 py-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer group relative';
+    ? 'flex items-center px-4 py-3 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-shadow cursor-pointer group relative'
+    : 'flex items-center px-4 py-2 border-b border-neutral-100 hover:bg-neutral-50 cursor-pointer group relative';
 
   return (
     <div className="relative" ref={rowRef}>
@@ -204,7 +204,7 @@ export const HabitTableRow = ({
 
         <div className="relative w-24 h-12">
           <div className={`absolute inset-0 flex items-center justify-end pr-3`}>
-            <ProgressCircle value={weeklyProgressPct} size={50} strokeWidth={5} color={getCategoryById(habit.category)?.color || '#6B7280'} label={`${completedThisWeek}/${targetPerWeek}`} />
+            <ProgressCircle value={weeklyProgressPct} size={50} strokeWidth={5} color={getCategoryById(habit.category)?.color || '#737373'} label={`${completedThisWeek}/${targetPerWeek}`} />
           </div>
 {/* 
           {habit.phase === 'current' && (

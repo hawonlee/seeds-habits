@@ -38,13 +38,13 @@ export const FutureAdoptedHabitsSidePanel: React.FC<FutureAdoptedHabitsSidePanel
     <div className="">
       {/* Tab Toggle */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex bg-gray-100 rounded-lg p-1">
+        <div className="flex bg-neutral-100 rounded-lg p-1">
           <button
             onClick={() => setActiveTab('future')}
             className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'future'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white text-neutral-900 shadow-sm'
+                : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
             <div className="flex text-xs items-center justify-center gap-2">
@@ -58,8 +58,8 @@ export const FutureAdoptedHabitsSidePanel: React.FC<FutureAdoptedHabitsSidePanel
             onClick={() => setActiveTab('adopted')}
             className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'adopted'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white text-neutral-900 shadow-sm'
+                : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
             <div className="flex text-xs items-center justify-center gap-2">
@@ -84,7 +84,7 @@ export const FutureAdoptedHabitsSidePanel: React.FC<FutureAdoptedHabitsSidePanel
       {/* Points Display for Adopted */}
       {activeTab === 'adopted' && (
         <div className="flex items-center justify-start mb-4 text-center gap-2">
-          <div className="text-xxs text-gray-500">Total Points</div>
+          <div className="text-xxs text-neutral-500">Total Points</div>
           <div className="text-xs font-semibold text-amber-600">{totalPoints}</div>
         </div>
       )}

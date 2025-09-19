@@ -175,7 +175,7 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
 
   const getDateStatus = () => {
     if (isToday) return { text: "Today", color: "text-green-600", bgColor: "bg-green-50", borderColor: "border-green-200" };
-    if (isPast) return { text: "Past", color: "text-gray-600", bgColor: "bg-gray-50", borderColor: "border-gray-200" };
+    if (isPast) return { text: "Past", color: "text-neutral-600", bgColor: "bg-neutral-50", borderColor: "border-neutral-200" };
     return { text: "Future", color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200" };
   };
 
@@ -212,7 +212,7 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
             <div className="">
               {currentDate.toLocaleDateString('en-US', { weekday: 'long' })}
             </div>
-            <div className={`flex items-center justify-center bg-red-600 rounded w-5 h-5 text-white ${isToday ? 'border-red-500 text-red-600' : 'border-transparent text-gray-900'}`} >
+            <div className={`flex items-center justify-center bg-red-600 rounded w-5 h-5 text-white ${isToday ? 'border-red-500 text-red-600' : 'border-transparent text-neutral-900'}`} >
               <span className="">{currentDate.getDate()}</span>
             </div>
           </div>
@@ -275,7 +275,7 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
           {/* Planned Habits */}
           {plannedHabits.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold text-gray-700 mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-neutral-700 mb-4 flex items-center gap-2">
                 Planned Habits ({plannedHabits.length})
               </h3>
               <div className="grid gap-3">
@@ -313,7 +313,7 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
           {/* My Habits */}
           {myHabits.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold text-gray-700 mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-neutral-700 mb-4 flex items-center gap-2">
                 My Habits ({myHabits.length})
               </h3>
               <div className="grid gap-3">

@@ -269,18 +269,18 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
               <div className={`
                 text-xs 
                 ${isToday ? 'text-primary' : ''}
-                ${isPast ? 'text-gray-400' : ''}
-                ${isFuture ? 'text-gray-500' : ''}
-                ${!isToday && !isPast && !isFuture ? 'text-gray-600' : ''}
+                ${isPast ? 'text-neutral-400' : ''}
+                ${isFuture ? 'text-neutral-500' : ''}
+                ${!isToday && !isPast && !isFuture ? 'text-neutral-600' : ''}
               `}>
                 {dayNames[index].substring(0, 3).toUpperCase()}
               </div>
               <div className={`
                 text-xs flex items-center gap-1
                 ${isToday ? 'text-white text-white bg-red-600 rounded w-5 h-5 flex items-center justify-center' : ''}
-                ${isPast ? 'text-gray-400' : ''}
-                ${isFuture ? 'text-gray-500' : ''}
-                ${!isToday && !isPast && !isFuture ? 'text-gray-700' : ''}
+                ${isPast ? 'text-neutral-400' : ''}
+                ${isFuture ? 'text-neutral-500' : ''}
+                ${!isToday && !isPast && !isFuture ? 'text-neutral-700' : ''}
               `}>
                 {date.getDate()}
               </div>
@@ -330,7 +330,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
               onDrop={handleDrop}
             >
               <div className="p-1 h-full">
-                <div className={`calendar-cell-inner h-full border rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-gray-100 border-gray-300' : 'bg-gray-50'}`}>
+                <div className={`calendar-cell-inner h-full border rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-neutral-100 border-neutral-300' : 'bg-neutral-50'}`}>
                   <div className="flex flex-col gap-1 min-h-20 max-h-64 overflow-y-auto pr-1">
                   {/* Completed Habits */}
                   {completedHabits.slice(0, 3).map(habit => (
@@ -363,7 +363,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
 
                   {/* Overflow indicator */}
                   {habitsForDay.length > 3 && (
-                    <div className="text-xs text-gray-500 text-center">
+                    <div className="text-xs text-neutral-500 text-center">
                       +{habitsForDay.length - 3} more
                     </div>
                   )}
@@ -396,7 +396,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Planned Habits column */}
                       <div>
-                        <h3 className="text-xs font-medium text-gray-700 flex items-center gap-2 mb-2">
+                        <h3 className="text-xs font-medium text-neutral-700 flex items-center gap-2 mb-2">
                           Planned Habits
                         </h3>
                         <div className="grid gap-3">
@@ -421,7 +421,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
 
                       {/* My Habits column */}
                       <div>
-                        <h3 className="text-xs font-medium text-gray-700 flex items-center mb-2">
+                        <h3 className="text-xs font-medium text-neutral-700 flex items-center mb-2">
                           My Habits
                         </h3>
                         <div className="grid gap-2">

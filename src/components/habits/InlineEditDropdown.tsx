@@ -174,7 +174,7 @@ export const InlineEditDropdown = ({
 
       <div
         ref={dropdownRef}
-        className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-4 min-w-80 max-w-md"
+        className="fixed z-50 bg-white border border-neutral-200 rounded-lg shadow-xl p-4 min-w-80 max-w-md"
         style={{
           top: `${(coords?.top ?? -9999) as number}px`,
           left: `${(coords?.left ?? -9999) as number}px`,
@@ -250,7 +250,7 @@ export const InlineEditDropdown = ({
                   <SelectItem key={category.id} value={category.id}>
                     <div className="flex items-center gap-2">
                       {category.id === 'none' ? (
-                        <div className="w-3 h-3 rounded-full border border-gray-300 bg-transparent" />
+                        <div className="w-3 h-3 rounded-full border border-neutral-300 bg-transparent" />
                       ) : (
                         <div
                           className="w-3 h-3 rounded-full border"
@@ -293,7 +293,7 @@ export const InlineEditDropdown = ({
                       setFrequencyValue(val);
                       setEditedHabit({...editedHabit, target_frequency: val * 7});
                     }}
-                    className="rounded-full px-2 py-1 text-center text-xs bg-gray-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="rounded-full px-2 py-1 text-center text-xs bg-neutral-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     onClick={(e) => e.stopPropagation()}
                   />
                   <span>/day</span>
@@ -326,7 +326,7 @@ export const InlineEditDropdown = ({
                       setFrequencyValue(val);
                       setEditedHabit({...editedHabit, target_frequency: val});
                     }}
-                    className="rounded-full px-2 py-1 text-center text-xs bg-gray-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="rounded-full px-2 py-1 text-center text-xs bg-neutral-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     onClick={(e) => e.stopPropagation()}
                   />
                   <span>/ week</span>

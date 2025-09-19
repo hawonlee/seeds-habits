@@ -92,7 +92,7 @@ export const HabitCard = ({
     return (
       <div className="relative" ref={cardRef}>
         <Card
-          className={`group relative ${draggable ? 'hover:bg-gray-100 cursor-pointer transition-colors duration-200' : 'hover:bg-gray-100 transition-colors duration-200'}`}
+          className={`group relative ${draggable ? 'hover:bg-neutral-100 cursor-pointer transition-colors duration-200' : 'hover:bg-neutral-100 transition-colors duration-200'}`}
           draggable={draggable}
           onDragStart={handleDragStart}
           onClick={() => setShowInlineEdit(!showInlineEdit)}
@@ -208,7 +208,7 @@ export const HabitCard = ({
     return (
       <div className="relative" ref={cardRef}>
         <Card
-          className="mb-4 group relative cursor-pointer hover:bg-gray-100"
+          className="mb-4 group relative cursor-pointer hover:bg-neutral-100"
           onClick={() => setShowInlineEdit(!showInlineEdit)}
         >
           {/* Plus button for future habits */}
@@ -366,7 +366,7 @@ export const HabitCard = ({
     const categoryColor = getCategoryPrimaryColor(habit.category);
     return (
       <div className="relative" ref={cardRef}>
-        <Card className="border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors duration-200" onClick={() => setShowInlineEdit(true)}>
+        <Card className="border-neutral-200 cursor-pointer hover:bg-neutral-100 transition-colors duration-200" onClick={() => setShowInlineEdit(true)}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-3">
 
@@ -440,7 +440,7 @@ export const HabitCard = ({
                             />
                           ) : (
                             <button
-                              className="text-gray-700 cursor-pointer hover:text-gray-900 hover:bg-gray-100 w-full h-full flex flex-col items-center justify-center rounded duration-200"
+                              className="text-neutral-700 cursor-pointer hover:text-neutral-900 hover:bg-neutral-100 w-full h-full flex flex-col items-center justify-center rounded duration-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (onCheckInForDate) onCheckInForDate(habit.id, day);
@@ -513,7 +513,7 @@ export const HabitCard = ({
   return (
     <div className="relative" ref={cardRef}>
       <Card
-        className="mb-4 group relative cursor-pointer hover:bg-gray-100"
+        className="mb-4 group relative cursor-pointer hover:bg-neutral-100"
         onClick={() => setShowInlineEdit(!showInlineEdit)}
       >
         {/* Plus button for future habits */}
@@ -583,8 +583,8 @@ export const HabitCard = ({
                         className={`w-7 h-7 rounded border flex items-center justify-center text-xs ${isCompleted
                           ? 'bg-lime-100 border-lime-200 text-foreground'
                           : isToday
-                            ? 'border-gray-300 bg-gray-50'
-                            : 'border-gray-200 bg-gray-50'
+                            ? 'border-neutral-300 bg-neutral-50'
+                            : 'border-neutral-200 bg-neutral-50'
                           }`}
                         title={`${day.toLocaleDateString('en-US', { weekday: 'short' })} ${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                       >
@@ -614,7 +614,7 @@ export const HabitCard = ({
             }, 0);
             const targetPerWeek = Math.max(1, habit.target_frequency || 1);
             const weeklyPct = Math.min(100, Math.round((completedCount / targetPerWeek) * 100));
-            const categoryColor = getCategoryById(habit.category)?.color || '#6B7280';
+            const categoryColor = getCategoryById(habit.category)?.color || '#737373';
 
             return (
               <div className="mt-3 space-y-1">

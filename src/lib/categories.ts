@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { COLOR_OPTIONS, findColorOptionByValue } from '@/lib/colorOptions';
+import { COLOR_OPTIONS, findColorOptionByValue, findColorOptionByName } from '@/lib/colorOptions';
 
 export interface Category {
   id: string;
@@ -14,9 +14,9 @@ export const FALLBACK_CATEGORIES: Category[] = [
   {
     id: 'none',
     name: 'None',
-    color: 'transparent',
+    color: '#4D4D4D', // Neutral color from palette
     bgColor: 'bg-transparent',
-    textColor: 'text-black'
+    textColor: 'text-transparent'
   },
   {
     id: 'personal',
@@ -128,14 +128,14 @@ export const getCategoryById = (id: string): Category | undefined => {
 
 export const getCategoryColor = (categoryId: string): string => {
   const category = getCategoryById(categoryId);
-  return category?.color || '#6B7280'; // Default gray
+  return category?.color || '#737373'; // Default neutral
 };
 
 export const getCategoryClasses = (categoryId: string): { bgColor: string; textColor: string } => {
   const category = getCategoryById(categoryId);
   return {
-    bgColor: category?.bgColor || 'bg-gray-100',
-    textColor: category?.textColor || 'text-gray-800'
+    bgColor: category?.bgColor || 'bg-neutral-100',
+    textColor: category?.textColor || 'text-neutral-800'
   };
 };
 
@@ -143,15 +143,24 @@ export const getCategoryClasses = (categoryId: string): { bgColor: string; textC
 // Returns the primary color from the database for consistent theming
 export const getCategoryPrimaryColor = (categoryId: string): string => {
   const category = getCategoryById(categoryId);
-  return category?.color || '#6B7280'; // Default gray
+  return category?.color || '#737373'; // Default neutral
 };
 
 // New helpers for palette-based colors (inline hex)
 export const getCategoryPalette = (categoryId: string): { bgHex: string; textHex: string } => {
+  // Special handling for "none" category - use neutral colors
+  if (categoryId === 'none') {
+    const neutralPalette = findColorOptionByName('Neutral');
+    return { 
+      bgHex: neutralPalette?.bgHex || '#C3C3C3', 
+      textHex: neutralPalette?.textHex || '#4D4D4D' 
+    };
+  }
+  
   const primary = getCategoryPrimaryColor(categoryId);
   const palette = findColorOptionByValue(primary);
   if (!palette) {
-    return { bgHex: '#F3F4F6', textHex: primary };
+    return { bgHex: '#FAFAFA', textHex: primary };
   }
   return { bgHex: palette.bgHex, textHex: palette.textHex };
 };
@@ -198,7 +207,7 @@ export const getCategoryColors = (categoryId: string): { backgroundColor: string
     'bg-green-custom': '#DCE5D5',
     'bg-blue-custom': '#E0E6E6',
     'bg-purple-custom': '#E6DFE6',
-    'bg-gray-100': '#f3f4f6'
+    'bg-neutral-100': '#f3f4f6'
   };
   
   const textColorMap: Record<string, string> = {
@@ -209,12 +218,12 @@ export const getCategoryColors = (categoryId: string): { backgroundColor: string
     'text-blue-custom-text': '#566262',
     'text-purple-custom-text': '#5F565F',
     'text-black': '#000000',
-    'text-gray-800': '#1f2937'
+    'text-neutral-800': '#1f2937'
   };
   
   return {
-    backgroundColor: bgColorMap[category?.bgColor || 'bg-gray-100'] || '#f3f4f6',
-    color: textColorMap[category?.textColor || 'text-gray-800'] || '#1f2937'
+    backgroundColor: bgColorMap[category?.bgColor || 'bg-neutral-100'] || '#f3f4f6',
+    color: textColorMap[category?.textColor || 'text-neutral-800'] || '#1f2937'
   };
 };
 

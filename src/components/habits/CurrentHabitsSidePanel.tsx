@@ -32,7 +32,7 @@ export const CurrentHabitsSidePanel: React.FC<CurrentHabitsSidePanelProps> = ({
   return (
     <div className="">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs font-medium text-gray-900">Current</h2>
+        <h2 className="text-xs font-medium text-neutral-900">Current</h2>
         <Button
           variant="ghost"
           size="sm"

@@ -60,8 +60,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         id: newCategory.name.toLowerCase().replace(/\s+/g, '-'),
         name: newCategory.name,
         color: newCategory.color,
-        bgColor: palette ? palette.bgHex : '#F3F4F6',
-        textColor: palette ? palette.textHex : '#1F2937'
+        bgColor: palette ? palette.bgHex : '#FAFAFA',
+        textColor: palette ? palette.textHex : '#262626'
       };
       
       try {
@@ -117,8 +117,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         ...editingCategory,
         name: newCategory.name,
         color: newCategory.color,
-        bgColor: palette ? palette.bgHex : '#F3F4F6',
-        textColor: palette ? palette.textHex : '#1F2937'
+        bgColor: palette ? palette.bgHex : '#FAFAFA',
+        textColor: palette ? palette.textHex : '#262626'
       };
       
       try {
@@ -273,7 +273,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
             </div>
             <div className="grid grid-cols-2 gap-3">
               {categories.filter(category => category.id !== 'none').map(category => (
-                <div key={category.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                <div key={category.id} className="flex items-center justify-between bg-neutral-50 p-3 rounded-lg">
                   <Popover
                     open={openPopoverId === category.id}
                     onOpenChange={(open) => {
@@ -351,7 +351,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                   </Popover>
                   <div className="flex gap-1">
                     <Button size="sm" variant="ghost" onClick={() => handleDeleteCategory(category.id)}>
-                      <Trash2 className="h-4 w-4 text-gray-400" />
+                      <Trash2 className="h-4 w-4 text-neutral-400" />
                     </Button>
                   </div>
                 </div>

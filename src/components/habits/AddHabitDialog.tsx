@@ -93,7 +93,7 @@ export const AddHabitDialog = ({
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
                         {category.id === 'none' ? (
-                          <div className="w-3 h-3 rounded-full border border-gray-300 bg-transparent" />
+                          <div className="w-3 h-3 rounded-full border border-neutral-300 bg-transparent" />
                         ) : (
                           <div
                             className="w-3 h-3 rounded-full border"
@@ -145,7 +145,7 @@ export const AddHabitDialog = ({
                         setFrequencyValue(val);
                         setNewHabit({...newHabit, target_frequency: val * 7});
                       }}
-                      className="rounded-full px-2 py-1 text-center text-xs bg-gray-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="rounded-full px-2 py-1 text-center text-xs bg-neutral-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <span>/day</span>
@@ -179,7 +179,7 @@ export const AddHabitDialog = ({
                         setFrequencyValue(val);
                         setNewHabit({...newHabit, target_frequency: val});
                       }}
-                      className="rounded-full px-2 py-1 text-center text-xs bg-gray-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="rounded-full px-2 py-1 text-center text-xs bg-neutral-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <span>/ week</span>
@@ -224,8 +224,8 @@ export const AddHabitDialog = ({
                     }}
                     className={`w-8 h-8 rounded-lg text-black border flex items-center justify-center text-xs font-normal transition-colors ${
                       customDays[index] 
-                        ? 'bg-gray-100 border-gray-600 text-black hover:bg-gray-100' 
-                        : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-200'
+                        ? 'bg-neutral-100 border-neutral-600 text-black hover:bg-neutral-100' 
+                        : 'bg-white border-neutral-300 text-neutral-400 hover:bg-neutral-200'
                     }`}
                   >
                     {day}

@@ -23,7 +23,7 @@ export const SegmentedToggle = ({
               "text-xs font-normal uppercase transition-colors duration-200 focus:outline-none",
               value === option.value
                 ? "text-black font-medium"
-                : "text-gray-400 hover:text-gray-600"
+                : "text-neutral-400 hover:text-neutral-600"
             )}
           >
             {option.label}

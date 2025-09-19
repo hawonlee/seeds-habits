@@ -211,7 +211,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
       {/* Day headers above the table */}
       <div className="grid grid-cols-7 mb-2 px-1">
         {dayNames.map(day => (
-          <div key={day} className="text-center text-xs font-normal text-gray-600">
+          <div key={day} className="text-center text-xs font-normal text-neutral-600">
             {day}
           </div>
         ))}
@@ -281,14 +281,14 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                   onDrop={handleDrop}
                 >
                   <div className="p-1 h-full">
-                    <div className="calendar-cell-inner h-full border bg-gray-50  rounded-md p-2 flex flex-col">
+                    <div className="calendar-cell-inner h-full border bg-neutral-50  rounded-md p-2 flex flex-col">
                     {/* Date number */}
                     <div className="h-8 flex items-center justify-end mb-1">
                       <div className={`
                         text-xs font-medium
                         ${isToday ? 'text-white bg-red-600 rounded-full w-6 h-6 flex items-center justify-center' : ''}
-                        ${!isToday && isCurrentMonth ? 'text-gray-900' : ''}
-                        ${!isToday && !isCurrentMonth ? 'text-gray-400' : ''}
+                        ${!isToday && isCurrentMonth ? 'text-neutral-900' : ''}
+                        ${!isToday && !isCurrentMonth ? 'text-neutral-400' : ''}
                      `}>
                         {date.getDate()}
                       </div>
@@ -317,7 +317,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                       {/* {isCurrentMonth && habitsForDay.length === 0 && (
                         <div className="mt-auto">
                           <button
-                            className="text-gray-400 hover:text-gray-600 text-xs"
+                            className="text-neutral-400 hover:text-neutral-600 text-xs"
                             onClick={(e) => {
                               e.stopPropagation();
                               // Add habit functionality could go here
@@ -340,7 +340,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                     <div className="space-y-3">
                       {plannedHabits.length > 0 && (
                         <div className="space-y-2">
-                          <div className="text-xs font-medium text-gray-700">Planned Habits</div>
+                          <div className="text-xs font-medium text-neutral-700">Planned Habits</div>
                           <div className="grid gap-2">
                             {plannedHabits.map(habit => (
                               <HabitCard
@@ -364,7 +364,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
 
                       {completedHabits.length > 0 && (
                         <div className="space-y-2">
-                          <div className="text-xs font-medium text-gray-700">Completed</div>
+                          <div className="text-xs font-medium text-neutral-700">Completed</div>
                           <div className="grid gap-2">
                             {completedHabits.map(habit => (
                               <HabitCard
@@ -388,7 +388,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
 
                       {myHabits.length > 0 && (
                         <div className="space-y-2">
-                          <div className="text-xs font-medium text-gray-700">My Habits</div>
+                          <div className="text-xs font-medium text-neutral-700">My Habits</div>
                           <div className="grid gap-2">
                             {myHabits.map(habit => (
                               <HabitCard

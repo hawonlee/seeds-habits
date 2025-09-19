@@ -68,7 +68,7 @@ export const DayHabitsDialog = ({
 
   const getDateStatus = () => {
     if (isToday) return { text: "Today", color: "text-green-600" };
-    if (isPast) return { text: "Past", color: "text-gray-600" };
+    if (isPast) return { text: "Past", color: "text-neutral-600" };
     return { text: "Future", color: "text-blue-600" };
   };
 
@@ -134,13 +134,13 @@ export const DayHabitsDialog = ({
           {/* Remaining Habits */}
           {remainingHabits.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-neutral-700 mb-3 flex items-center gap-2">
                 <Circle className="h-5 w-5" />
                 {isFuture ? 'Planned Habits' : 'Remaining Habits'} ({remainingHabits.length})
               </h3>
               <div className="space-y-2">
                 {remainingHabits.map(habit => (
-                  <Card key={habit.id} className="border-gray-200">
+                  <Card key={habit.id} className="border-neutral-200">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">

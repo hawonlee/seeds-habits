@@ -79,7 +79,7 @@ export const DatabaseTest = () => {
   };
 
   return (
-    <div className="p-4 border rounded-lg bg-gray-50">
+    <div className="p-4 border rounded-lg bg-neutral-50">
       <h3 className="text-lg font-semibold mb-4">Database Connection Test</h3>
       <div className="space-y-2">
         <Button onClick={testTableExists} variant="outline" className="mr-2">

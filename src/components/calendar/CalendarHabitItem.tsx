@@ -35,7 +35,10 @@ export const CalendarHabitItem: React.FC<CalendarHabitItemProps> = ({
       className={`group text-xs p-1 rounded flex items-center gap-1.5 truncate`}
       title={`${habit.title}${isScheduled ? ' (Scheduled - Right-click to unschedule)' : ''}`}
       onContextMenu={handleRightClick}
-      style={{ backgroundColor: bgHex, color: textHex }}
+      style={{ 
+        backgroundColor: habit.category === 'none' ? 'transparent' : bgHex, 
+        color: textHex 
+      }}
     >
       <Checkbox
         checked={isCompleted}

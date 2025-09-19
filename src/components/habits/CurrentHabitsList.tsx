@@ -106,7 +106,7 @@ export const CurrentHabitsList = ({
           {/* Week Navigation */}
           <div className="flex justify-between pb-4">
             <div className="flex items-center justify-center gap-10">
-              <div className="text-xs font-medium text-gray-700">
+              <div className="text-xs font-medium text-neutral-700">
                 {formatWeekRange()}
               </div>
 
@@ -124,8 +124,8 @@ export const CurrentHabitsList = ({
                         key={index}
                         className={`flex items-center justify-center gap-1 min-w-[32px] w-12 text-center`}
                       >
-                        <div className={`text-xs font-medium p-2  ${isToday ? 'text-black' : 'text-gray-400'} `}>{dayNames[day.getDay()]}</div>
-                        {/* <div className={`text-xs text-gray-400  ${isToday ? 'text-white bg-red-300 rounded-sm' : ''}`}>{day.getDate()}</div> */}
+                        <div className={`text-xs font-medium p-2  ${isToday ? 'text-black' : 'text-neutral-400'} `}>{dayNames[day.getDay()]}</div>
+                        {/* <div className={`text-xs text-neutral-400  ${isToday ? 'text-white bg-red-300 rounded-sm' : ''}`}>{day.getDate()}</div> */}
                       </div>
                     );
                   })}

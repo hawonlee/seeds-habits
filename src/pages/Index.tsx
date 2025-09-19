@@ -236,13 +236,13 @@ const Index = () => {
           <div className="flex gap-4 h-[calc(100vh-200px)]">
             <div className="flex-1 h-full bg-white rounded-lg border p-4 overflow-y-auto flex items-center justify-center">
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <div className="h-5 w-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+                <div className="h-5 w-5 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
                 Loading current habits...
               </div>
             </div>
             <div className="w-80 h-full bg-white rounded-lg border p-4 overflow-y-auto flex items-center justify-center">
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <div className="h-5 w-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+                <div className="h-5 w-5 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
                 Loading panel...
               </div>
             </div>

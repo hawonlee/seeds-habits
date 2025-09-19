@@ -51,19 +51,16 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Seeds</CardTitle>
-          <CardDescription>
-            Build habits through three phases: Future, Current, and Adopted
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen bg-neutral-100 flex pt-40 justify-center p-4">
+      <div className="flex flex-col space-y-4 bg-neutral-100 w-full max-w-md">
+        <div className="text-center">
+          <div className="text-sm font-bold">Seeds</div>
+        </div>
+        <div className="">
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger className="text-xs" value="signin">Sign In</TabsTrigger>
+              <TabsTrigger className="text-xs" value="signup">Sign Up</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
@@ -182,8 +179,8 @@ const Auth = () => {
               </form>
             </TabsContent>
           </Tabs>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
