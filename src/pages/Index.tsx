@@ -34,7 +34,7 @@ import {
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  const { habits, loading: habitsLoading, addHabit, updateHabit, deleteHabit, checkInHabit, undoCheckIn, moveHabitPhase } = useHabits();
+  const { habits, loading: habitsLoading, hasLoaded, addHabit, updateHabit, deleteHabit, checkInHabit, undoCheckIn, moveHabitPhase, refreshHabits } = useHabits();
   const { scheduleHabit, unscheduleHabit, schedules, isHabitScheduledOnDate, getScheduledHabitsForDate } = useHabitSchedules();
   const navigate = useNavigate();
 
@@ -232,31 +232,16 @@ const Index = () => {
         
 
         {/* Habit Dashboard */}
-        {habitsLoading ? (
-          <div className="flex gap-4 h-[calc(100vh-200px)]">
-            <div className="flex-1 h-full bg-white rounded-lg border p-4 overflow-y-auto flex items-center justify-center">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <div className="h-5 w-5 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
-                Loading current habits...
-              </div>
-            </div>
-            <div className="w-80 h-full bg-white rounded-lg border p-4 overflow-y-auto flex items-center justify-center">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <div className="h-5 w-5 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
-                Loading panel...
-              </div>
-            </div>
-          </div>
-        ) : showCalendar ? (
-          <div className="h-full flex">
-            {/* Main Content Area - Calendar */}
-            <div className="flex-1 h-full">
-              <MainLayout
-                showCalendar={showCalendar}
-                onViewChange={(isCalendar) => setShowCalendar(isCalendar)}
-                isCombinedPanelCollapsed={isCombinedPanelCollapsed}
-                onTogglePanel={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
-              >
+        <div className="h-full flex">
+          {/* Main Content Area */}
+          <div className="flex-1 h-full">
+            <MainLayout
+              showCalendar={showCalendar}
+              onViewChange={(isCalendar) => setShowCalendar(isCalendar)}
+              isCombinedPanelCollapsed={isCombinedPanelCollapsed}
+              onTogglePanel={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
+            >
+              {showCalendar ? (
                 <UnifiedCalendar
                   habits={habits}
                   schedules={schedules}
@@ -266,18 +251,45 @@ const Index = () => {
                   onHabitDrop={handleHabitDrop}
                   onHabitUnschedule={handleHabitUnschedule}
                 />
-              </MainLayout>
-            </div>
+              ) : (
+                <CurrentHabitsList
+                  habits={currentHabits}
+                  loading={habitsLoading || !hasLoaded}
+                  onAddHabit={() => {
+                    setAddToPhase('current');
+                    setIsAddDialogOpen(true);
+                  }}
+                  adoptionThreshold={adoptionThreshold}
+                  onChangeAdoptionThreshold={setAdoptionThreshold}
+                  onEditHabit={handleEditHabit}
+                  onDeleteHabit={handleDeleteHabit}
+                  onUpdateHabit={handleInlineUpdateHabit}
+                  onCheckIn={handleCheckIn}
+                  onUndoCheckIn={handleUndoCheckIn}
+                  onMoveHabit={handleMoveHabit}
+                  onRefreshHabits={refreshHabits}
+                />
+              )}
+            </MainLayout>
+          </div>
 
-            {/* Side Panel - Current Habits for Calendar View */}
-            <SidePanel
-              isCollapsed={isCombinedPanelCollapsed}
-              onToggleCollapse={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
-              title="Current Habits"
-              onOpenSettings={() => setShowAdoptionSettings(true)}
-              onSignOut={signOut}
-              position="right"
-            >
+          {/* Side Panel */}
+          <SidePanel
+            isCollapsed={isCombinedPanelCollapsed}
+            onToggleCollapse={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
+            title={showCalendar ? "Current Habits" : "Future & Adopted"}
+            onOpenSettings={() => setShowAdoptionSettings(true)}
+            onSignOut={signOut}
+            position="right"
+          >
+            {habitsLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <div className="h-5 w-5 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
+                  Loading panel...
+                </div>
+              </div>
+            ) : showCalendar ? (
               <CurrentHabitsSidePanel
                 habits={currentHabits}
                 onAddHabit={() => {
@@ -292,45 +304,7 @@ const Index = () => {
                 adoptionThreshold={adoptionThreshold}
                 onDragStart={handleDragStart}
               />
-            </SidePanel>
-          </div>
-        ) : (
-          <div className="h-full flex">
-            {/* Main Content Area */}
-            <div className="flex-1 h-full">
-              <MainLayout
-                showCalendar={showCalendar}
-                onViewChange={(isCalendar) => setShowCalendar(isCalendar)}
-                isCombinedPanelCollapsed={isCombinedPanelCollapsed}
-                onTogglePanel={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
-              >
-                <CurrentHabitsList
-                  habits={currentHabits}
-                  onAddHabit={() => {
-                    setAddToPhase('current');
-                    setIsAddDialogOpen(true);
-                  }}
-                  adoptionThreshold={adoptionThreshold}
-                  onChangeAdoptionThreshold={setAdoptionThreshold}
-                  onEditHabit={handleEditHabit}
-                  onDeleteHabit={handleDeleteHabit}
-                  onUpdateHabit={handleInlineUpdateHabit}
-                  onCheckIn={handleCheckIn}
-                  onUndoCheckIn={handleUndoCheckIn}
-                  onMoveHabit={handleMoveHabit}
-                />
-              </MainLayout>
-            </div>
-
-            {/* Side Panel - Future & Adopted Habits for List View */}
-            <SidePanel
-              isCollapsed={isCombinedPanelCollapsed}
-              onToggleCollapse={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
-              title="Future & Adopted"
-              onOpenSettings={() => setShowAdoptionSettings(true)}
-              onSignOut={signOut}
-              position="right"
-            >
+            ) : (
               <FutureAdoptedHabitsSidePanel
                 futureHabits={futureHabits}
                 adoptedHabits={adoptedHabits}
@@ -346,9 +320,9 @@ const Index = () => {
                 onUndoCheckIn={handleUndoCheckIn}
                 onMoveHabit={handleMoveHabit}
               />
-            </SidePanel>
-          </div>
-        )}
+            )}
+          </SidePanel>
+        </div>
 
         {/* Removed overlay DayHabitsDialog in favor of inline popovers in calendar views */}
       </main>

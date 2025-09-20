@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { invalidateHabitsCacheForUser } from './useHabits';
 
 export interface HabitCompletion {
   id: string;
@@ -11,7 +12,7 @@ export interface HabitCompletion {
   updated_at: string;
 }
 
-export const useHabitCompletions = () => {
+export const useHabitCompletions = (onHabitUpdate?: () => void) => {
   const { user } = useAuth();
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,8 +85,45 @@ export const useHabitCompletions = () => {
         return false;
       }
 
-      // Update local state
-      setCompletions(prev => [data, ...prev]);
+    // Update local state
+    setCompletions(prev => [data, ...prev]);
+    // Invalidate habits cache and request refresh immediately
+    invalidateHabitsCacheForUser(user.id);
+    onHabitUpdate?.();
+
+      // Also update the main habit's total_completions and last_completed
+      try {
+        // First get the current habit to increment total_completions
+        const { data: habitData, error: fetchError } = await supabase
+          .from('habits')
+          .select('total_completions')
+          .eq('id', habitId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching habit for update:', fetchError);
+        } else {
+          const { error: habitError } = await supabase
+            .from('habits')
+            .update({
+              total_completions: (habitData.total_completions || 0) + 1,
+              last_completed: date.toISOString()
+            })
+            .eq('id', habitId)
+            .eq('user_id', user.id);
+
+          if (habitError) {
+            console.error('Error updating habit total_completions:', habitError);
+          } else {
+            // Notify that habit data has been updated
+            onHabitUpdate?.();
+          }
+        }
+      } catch (error) {
+        console.error('Error updating habit total_completions:', error);
+      }
+
       return true;
     } catch (error) {
       console.error('Error adding habit completion:', error);
@@ -118,6 +156,42 @@ export const useHabitCompletions = () => {
           !(completion.habit_id === habitId && completion.completion_date === dateString)
         )
       );
+      // Invalidate habits cache and request refresh immediately
+      invalidateHabitsCacheForUser(user.id);
+      onHabitUpdate?.();
+
+      // Also update the main habit's total_completions (decrement)
+      try {
+        // First get the current habit to decrement total_completions
+        const { data: habitData, error: fetchError } = await supabase
+          .from('habits')
+          .select('total_completions')
+          .eq('id', habitId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching habit for update:', fetchError);
+        } else {
+          const { error: habitError } = await supabase
+            .from('habits')
+            .update({
+              total_completions: Math.max((habitData.total_completions || 0) - 1, 0)
+            })
+            .eq('id', habitId)
+            .eq('user_id', user.id);
+
+          if (habitError) {
+            console.error('Error updating habit total_completions:', habitError);
+          } else {
+            // Notify that habit data has been updated
+            onHabitUpdate?.();
+          }
+        }
+      } catch (error) {
+        console.error('Error updating habit total_completions:', error);
+      }
+
       return true;
     } catch (error) {
       console.error('Error removing habit completion:', error);

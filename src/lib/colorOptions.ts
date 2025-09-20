@@ -10,7 +10,7 @@ export interface ColorOption {
 
 // Centralized six-color palette. Change hexes here to update globally.
 export const COLOR_OPTIONS: ColorOption[] = [
-  { name: 'Neutral',   value: '#4D4D4D', bgHex: '#C3C3C3', textHex: '#4D4D4D' },
+  { name: 'Neutral',   value: '#4D4D4D', bgHex: '#DBDBDB', textHex: '#4D4D4D' },
   { name: 'Blue',   value: '#1E40AF', bgHex: '#E6F0FF', textHex: '#1E40AF' },
   { name: 'Green',  value: '#166534', bgHex: '#E8F3E6', textHex: '#166534' },
   { name: 'Purple', value: '#6B21A8', bgHex: '#EFE6F4', textHex: '#6B21A8' },

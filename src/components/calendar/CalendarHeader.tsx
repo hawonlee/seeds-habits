@@ -33,8 +33,8 @@ export const CalendarHeader = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="month">Month</SelectItem>
-            <SelectItem value="week">Week</SelectItem>
+            <SelectItem className="mb-1" value="month">Month</SelectItem>
+            <SelectItem className="mb-1" value="week">Week</SelectItem>
             <SelectItem value="day">Day</SelectItem>
           </SelectContent>
         </Select>
@@ -42,7 +42,7 @@ export const CalendarHeader = ({
        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
-            size="sm"
+            size="smallicon"
             onClick={onPrevious}
             className="p-0"
           >
@@ -60,7 +60,7 @@ export const CalendarHeader = ({
           
           <Button
             variant="ghost"
-            size="sm"
+            size="smallicon"
             onClick={onNext}
             className="p-0"
           >

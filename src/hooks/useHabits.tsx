@@ -22,11 +22,17 @@ export interface Habit {
 
 // Simple cache to prevent unnecessary refetches
 let habitsCache: { [userId: string]: { habits: Habit[], timestamp: number } } = {};
+export const invalidateHabitsCacheForUser = (userId: string) => {
+  if (userId && habitsCache[userId]) {
+    delete habitsCache[userId];
+  }
+};
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const useHabits = () => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -36,6 +42,7 @@ export const useHabits = () => {
     } else {
       setHabits([]);
       setLoading(false);
+      setHasLoaded(false);
     }
   }, [user]);
 
@@ -55,6 +62,7 @@ export const useHabits = () => {
       console.log('Using cached habits for user:', user.id);
       setHabits(cached.habits);
       setLoading(false);
+      setHasLoaded(true);
       return;
     }
 
@@ -81,6 +89,7 @@ export const useHabits = () => {
         console.log('Habits loaded:', data);
         const habitsData = data || [];
         setHabits(habitsData);
+        setHasLoaded(true);
         
         // Cache the results
         habitsCache[user.id] = {
@@ -344,6 +353,7 @@ export const useHabits = () => {
   return {
     habits,
     loading,
+    hasLoaded,
     fetchHabits,
     addHabit,
     updateHabit,
@@ -351,5 +361,6 @@ export const useHabits = () => {
     checkInHabit,
     undoCheckIn,
     moveHabitPhase,
+    refreshHabits: fetchHabits,
   };
 };

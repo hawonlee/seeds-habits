@@ -1,45 +1,84 @@
+"use client";
 import * as React from "react";
-import { ChartContainer } from "@/components/ui/chart";
-import { RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
+import { cn } from "@/lib/utils";
+
 
 interface ProgressCircleProps {
-  value: number; // 0..100
-  size?: number; // px
-  strokeWidth?: number; // px
-  color?: string;
-  trackColor?: string;
-  label?: React.ReactNode;
+ value: number;        // 0..100
+ size?: number;        // px
+ strokeWidth?: number; // px
+ color?: string;       // progress arc color
+ trackColor?: string;  // background ring color
+ label?: React.ReactNode;
+ className?: string;
+ labelClassName?: string;
 }
 
-export const ProgressCircle: React.FC<ProgressCircleProps> = ({
-  value,
-  size = 48,
-  strokeWidth = 8,
-  color = '#111827',
-  trackColor = '#E5E7EB',
-  label,
-}) => {
-  const clamped = Math.max(0, Math.min(100, value || 0));
-  const data = React.useMemo(() => [{ name: 'progress', value: clamped, fill: color }], [clamped, color]);
-  const outerRadius = Math.max(0, size / 2 - 2);
-  const innerRadius = Math.max(0, outerRadius - strokeWidth);
 
-  return (
-    <div style={{ width: size, height: size }} className="relative">
-      <ChartContainer config={{}} className="w-full h-full">
-        <RadialBarChart data={data} startAngle={90} endAngle={-270} innerRadius={innerRadius} outerRadius={outerRadius} cy="50%" cx="50%">
-          <PolarAngleAxis type="number" domain={[0, 100]} tick={false} angleAxisId={0} />
-          <RadialBar dataKey="value" background={{ fill: trackColor }} cornerRadius={strokeWidth / 2} />
-        </RadialBarChart>
-      </ChartContainer>
-      {label && (
-        <div className="absolute inset-0 flex items-center justify-center text-[8px] text-muted-foreground">
-          {label}
-        </div>
-      )}
-    </div>
-  );
+export const ProgressCircle: React.FC<ProgressCircleProps> = ({
+ value,
+ size = 40,
+ strokeWidth = 8,
+ color = "#111827",
+ trackColor = "#FFFFFF",
+ label,
+ className,
+ labelClassName,
+}) => {
+ const clamped = Math.max(0, Math.min(100, value || 0));
+ const radius = size / 2 - strokeWidth / 2;
+ const circumference = 2 * Math.PI * radius;
+ const offset = circumference * (1 - clamped / 100);
+
+
+ return (
+   <div className="relative" style={{ width: size, height: size }}>
+     <svg
+       width={size}
+       height={size}
+       style={{ transform: "rotate(-90deg)" }}
+       className={cn("relative", className)}
+     >
+       {/* Track ring */}
+       <circle
+         r={radius}
+         cx={size / 2}
+         cy={size / 2}
+         fill="transparent"
+         stroke={trackColor}
+         strokeWidth={strokeWidth}
+       />
+       {/* Progress arc */}
+       <circle
+         r={radius}
+         cx={size / 2}
+         cy={size / 2}
+         fill="transparent"
+         stroke={color}
+         strokeWidth={strokeWidth}
+         strokeLinecap="round"
+         strokeDasharray={circumference}
+         strokeDashoffset={offset}
+         style={{ transition: "stroke-dashoffset 0.35s" }}
+       />
+     </svg>
+
+
+     {/* Optional label */}
+     {label && (
+       <div
+         className={cn(
+           "absolute inset-0 flex items-center justify-center text-[8px] text-muted-foreground",
+           labelClassName
+         )}
+       >
+         {label}
+       </div>
+     )}
+   </div>
+ );
 };
+
 
 export default ProgressCircle;
 

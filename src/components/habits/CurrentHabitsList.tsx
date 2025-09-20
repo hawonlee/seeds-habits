@@ -4,12 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { HabitCard } from "./HabitCard";
-import { HabitTableRow } from "./HabitTableRow";
 import { CategoryManager } from "./CategoryManager";
 import { useState } from "react";
 
 interface CurrentHabitsListProps {
   habits: Habit[];
+  loading?: boolean;
   onAddHabit: () => void;
   adoptionThreshold: number;
   onChangeAdoptionThreshold?: (threshold: number) => void;
@@ -19,10 +19,12 @@ interface CurrentHabitsListProps {
   onCheckIn: (id: string, date?: Date) => void;
   onUndoCheckIn: (id: string, date?: Date) => void;
   onMoveHabit: (id: string, phase: Habit['phase']) => void;
+  onRefreshHabits?: () => void;
 }
 
 export const CurrentHabitsList = ({
   habits,
+  loading = false,
   onAddHabit,
   adoptionThreshold,
   onChangeAdoptionThreshold,
@@ -31,7 +33,8 @@ export const CurrentHabitsList = ({
   onUpdateHabit,
   onCheckIn,
   onUndoCheckIn,
-  onMoveHabit
+  onMoveHabit,
+  onRefreshHabits
 }: CurrentHabitsListProps) => {
   const [currentWeek, setCurrentWeek] = useState(() => {
     const today = new Date();
@@ -93,12 +96,17 @@ export const CurrentHabitsList = ({
           </Button>
         </div>
       </div>
-      {habits.length === 0 ? (
+      
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <div className="h-5 w-5 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
+          </div>
+        </div>
+      ) : habits.length === 0 ? (
         <Card>
-          <CardContent className="p-6 text-center bg-white  text-muted-foreground">
-            <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No active habits</p>
-            <p className="text-sm">Move habits from Future to start tracking</p>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p className="text-sm">No active habits</p>
           </CardContent>
         </Card>
       ) : (
@@ -165,9 +173,9 @@ export const CurrentHabitsList = ({
           </div>
 
           {/* Card Rows */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {habits.map(habit => (
-              <HabitTableRow
+              <HabitCard
                 key={habit.id}
                 habit={habit}
                 adoptionThreshold={adoptionThreshold}
@@ -178,7 +186,7 @@ export const CurrentHabitsList = ({
                 onCheckIn={onCheckIn}
                 onUndoCheckIn={onUndoCheckIn}
                 onMoveHabit={onMoveHabit}
-                displayVariant="card"
+                variant="table"
               />
             ))}
           </div>

@@ -218,7 +218,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
       </div>
       
       {/* Scrollable calendar container */}
-      <div className="h-[600px] overflow-y-auto overflow-x-hidden scrollbar-hide focus:outline-none">
+      <div className="h-[630px] overflow-y-auto overflow-x-hidden scrollbar-hide focus:outline-none">
         <div className="grid grid-cols-7">
         {/* Calendar days */}
         {days.map((date, index) => {
@@ -281,7 +281,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                   onDrop={handleDrop}
                 >
                   <div className="p-1 h-full">
-                    <div className="calendar-cell-inner h-full border bg-neutral-50  rounded-md p-2 flex flex-col">
+                    <div className="calendar-cell-inner h-full bg-neutral-200/50 rounded-md p-2 flex flex-col">
                     {/* Date number */}
                     <div className="h-8 flex items-center justify-end mb-1">
                       <div className={`
@@ -337,7 +337,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                   const { completedHabits, plannedHabits, myHabits, isFuture } = getDetailedHabitsForDate(date);
                   const weekStart = getWeekStartDate(date);
                   return (
-                    <div className="space-y-3">
+                  <div className="space-y-3">
                       {plannedHabits.length > 0 && (
                         <div className="space-y-2">
                           <div className="text-xs font-medium text-neutral-700">Planned Habits</div>
@@ -362,7 +362,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                         </div>
                       )}
 
-                      {completedHabits.length > 0 && (
+                      {/* {completedHabits.length > 0 && (
                         <div className="space-y-2">
                           <div className="text-xs font-medium text-neutral-700">Completed</div>
                           <div className="grid gap-2">
@@ -384,7 +384,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                             ))}
                           </div>
                         </div>
-                      )}
+                      )} */}
 
                       {myHabits.length > 0 && (
                         <div className="space-y-2">
@@ -411,7 +411,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                       )}
 
                       {plannedHabits.length === 0 && completedHabits.length === 0 && myHabits.length === 0 && (
-                        <div className="text-xs text-muted-foreground text-center py-2">No active habits</div>
+                        <div className="text-xs text-muted-foreground text-center py-2">No habits</div>
                       )}
                     </div>
                   );

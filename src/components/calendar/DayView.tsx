@@ -157,11 +157,6 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
 
   const handleHabitCheckIn = async (habit: Habit, date: Date, isCompleted: boolean) => {
     await toggleCompletion(habit.id, date);
-    if (isCompleted) {
-      onUndoCheckIn(habit.id, date);
-    } else {
-      onCheckIn(habit.id, date);
-    }
   };
 
   const formatDate = (date: Date) => {

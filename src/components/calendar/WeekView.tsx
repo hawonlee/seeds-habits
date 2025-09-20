@@ -159,13 +159,6 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
   const handleHabitCheckIn = async (habit: Habit, date: Date, isCompleted: boolean) => {
     // Use the database-backed completion system
     await toggleCompletion(habit.id, date);
-
-    // Also call the original functions for backward compatibility
-    if (isCompleted) {
-      onUndoCheckIn(habit.id, date);
-    } else {
-      onCheckIn(habit.id, date);
-    }
   };
 
   const getDetailedHabitsForDate = (date: Date) => {
@@ -330,7 +323,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
               onDrop={handleDrop}
             >
               <div className="p-1 h-full">
-                <div className={`calendar-cell-inner h-full border rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-neutral-100 border-neutral-300' : 'bg-neutral-50'}`}>
+                <div className={`calendar-cell-inner h-full rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-neutral-200 border border-neutral-300' : 'bg-neutral-200/50'}`}>
                   <div className="flex flex-col gap-1 min-h-20 max-h-64 overflow-y-auto pr-1">
                   {/* Completed Habits */}
                   {completedHabits.slice(0, 3).map(habit => (
@@ -382,6 +375,8 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
         })}
       </div>
 
+      <div className="w-full border-t border-neutral-200 mt-8"></div>
+
       {/* Selected Day Details */}
       {selectedDay && (
         <div className="mt-4 flex-1 min-h-0 overflow-hidden">
@@ -396,7 +391,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Planned Habits column */}
                       <div>
-                        <h3 className="text-xs font-medium text-neutral-700 flex items-center gap-2 mb-2">
+                        <h3 className="text-xs font-medium text-neutral-500 flex items-center gap-2 mb-2">
                           Planned Habits
                         </h3>
                         <div className="grid gap-3">
@@ -421,7 +416,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
 
                       {/* My Habits column */}
                       <div>
-                        <h3 className="text-xs font-medium text-neutral-700 flex items-center mb-2">
+                        <h3 className="text-xs font-medium text-neutral-500 flex items-center mb-2">
                           My Habits
                         </h3>
                         <div className="grid gap-2">
@@ -448,14 +443,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
                     {/* No habits message */}
                     {activeHabits.length === 0 && (
                       <div className="text-center py-12 text-muted-foreground">
-                        <CalendarIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                        <p className="text-xl font-medium">No active habits</p>
-                        <p className="text-sm">
-                          {isFuture
-                            ? "No habits are planned for this day"
-                            : "No habits were active on this day"
-                          }
-                        </p>
+                        <p className="text-sm">No active habits</p>
                       </div>
                     )}
                   </div>
