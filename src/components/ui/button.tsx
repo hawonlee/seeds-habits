@@ -32,6 +32,7 @@ const buttonVariants = cva(
         skinny: "px-5 py-2",
         icon: "h-10 w-10",
         smallicon: "h-8 w-8",
+        frequency: "p-2",
       },
     },
     defaultVariants: {

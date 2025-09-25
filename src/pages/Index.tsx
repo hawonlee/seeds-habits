@@ -39,6 +39,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [addToPhase, setAddToPhase] = useState<'future' | 'current' | 'adopted'>('future');
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [showAdoptionSettings, setShowAdoptionSettings] = useState(false);
@@ -61,6 +62,12 @@ const Index = () => {
   const currentHabits = habits.filter(h => h.phase === 'current');
   const adoptedHabits = habits.filter(h => h.phase === 'adopted');
   const futureHabits = habits.filter(h => h.phase === 'future');
+
+  // Debug logging
+  console.log('All habits:', habits);
+  console.log('Adopted habits:', adoptedHabits);
+  console.log('Current habits:', currentHabits);
+  console.log('Future habits:', futureHabits);
 
   const handleAddHabit = async () => {
     if (!newHabit.title.trim()) return;
@@ -97,6 +104,7 @@ const Index = () => {
       target_frequency: habit.target_frequency,
       leniency_threshold: habit.leniency_threshold
     });
+    setIsEditDialogOpen(true);
   };
 
   const handleUpdateHabit = async () => {
@@ -111,6 +119,7 @@ const Index = () => {
     });
 
     setEditingHabit(null);
+    setIsEditDialogOpen(false);
     setNewHabit({
       title: '',
       notes: '',
@@ -137,7 +146,20 @@ const Index = () => {
   };
 
   const handleMoveHabit = async (id: string, newPhase: Habit['phase']) => {
-    await moveHabitPhase(id, newPhase);
+    try {
+      console.log('Moving habit:', id, 'to phase:', newPhase);
+      const result = await moveHabitPhase(id, newPhase);
+      if (result?.error) {
+        console.error('Error moving habit:', result.error);
+      } else {
+        console.log('Successfully moved habit');
+        // Reset dialog state after successful move
+        setEditingHabit(null);
+        setIsEditDialogOpen(false);
+      }
+    } catch (error) {
+      console.error('Error in handleMoveHabit:', error);
+    }
   };
 
   const handleCheckIn = async (id: string, date?: Date) => {
@@ -222,12 +244,15 @@ const Index = () => {
         />
 
         <EditHabitDialog
-          open={!!editingHabit}
-          onOpenChange={() => setEditingHabit(null)}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
           editingHabit={editingHabit}
           newHabit={newHabit}
           setNewHabit={setNewHabit}
           onUpdateHabit={handleUpdateHabit}
+          onDelete={handleDeleteHabit}
+          onAdopt={(id) => handleMoveHabit(id, 'adopted')}
+          onMoveToFuture={(id) => handleMoveHabit(id, 'future')}
         />
         
 

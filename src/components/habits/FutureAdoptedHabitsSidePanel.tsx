@@ -38,10 +38,10 @@ export const FutureAdoptedHabitsSidePanel: React.FC<FutureAdoptedHabitsSidePanel
     <div className="">
       {/* Tab Toggle */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex bg-neutral-100 rounded-lg p-1">
+        <div className="flex bg-neutral-100 rounded-full p-1">
           <button
             onClick={() => setActiveTab('future')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 py-2 px-3 rounded-full text-sm  transition-colors ${
               activeTab === 'future'
                 ? 'bg-white text-neutral-900 shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900'
@@ -56,7 +56,7 @@ export const FutureAdoptedHabitsSidePanel: React.FC<FutureAdoptedHabitsSidePanel
           </button>
           <button
             onClick={() => setActiveTab('adopted')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 py-2 px-3 rounded-full text-sm transition-colors ${
               activeTab === 'adopted'
                 ? 'bg-white text-neutral-900 shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900'
@@ -82,12 +82,12 @@ export const FutureAdoptedHabitsSidePanel: React.FC<FutureAdoptedHabitsSidePanel
       </div>
 
       {/* Points Display for Adopted */}
-      {activeTab === 'adopted' && (
+      {/* {activeTab === 'adopted' && (
         <div className="flex items-center justify-start mb-4 text-center gap-2">
           <div className="text-xxs text-neutral-500">Total Points</div>
           <div className="text-xs font-semibold text-amber-600">{totalPoints}</div>
         </div>
-      )}
+      )} */}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">

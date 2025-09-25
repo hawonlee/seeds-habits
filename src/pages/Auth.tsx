@@ -52,21 +52,22 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-neutral-100 flex pt-40 justify-center p-4">
-      <div className="flex flex-col space-y-4 bg-neutral-100 w-full max-w-md">
-        <div className="text-center">
-          <div className="text-sm font-bold">Seeds</div>
+      <div className="flex flex-col space-y-6 bg-neutral-100 w-full max-w-md">
+        <div className="items-center justify-center text-center flex gap-2">
+          <img src="/logo.png" alt="Seeds" className="w-5 h-5" />
+          <div className="text-sm font-medium">Seeds</div>
         </div>
         <div className="">
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger className="text-xs" value="signin">Sign In</TabsTrigger>
-              <TabsTrigger className="text-xs" value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid rounded-full w-full mx-auto grid-cols-2">
+              <TabsTrigger className="rounded-full text-xs py-2" value="signin">Sign In</TabsTrigger>
+              <TabsTrigger className="rounded-full text-xs py-2" value="signup">Sign Up</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label className="text-xs" htmlFor="signin-email">Email</Label>
                   <Input
                     id="signin-email"
                     type="email"
@@ -77,7 +78,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <Label className="text-xs" htmlFor="signin-password">Password</Label>
                   <div className="relative">
                     <Input
                       id="signin-password"
@@ -119,7 +120,7 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Name</Label>
+                  <Label className="text-xs" htmlFor="signup-name">Name</Label>
                   <Input
                     id="signup-name"
                     type="text"
@@ -129,7 +130,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label className="text-xs" htmlFor="signup-email">Email</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -140,7 +141,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label className="text-xs" htmlFor="signup-password">Password</Label>
                   <div className="relative">
                     <Input
                       id="signup-password"

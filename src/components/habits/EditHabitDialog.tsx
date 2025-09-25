@@ -2,11 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 import { DEFAULT_CATEGORIES, fetchCategories, getCategories, getCategoryClasses, resolveCategoryBgColor, type Category } from "@/lib/categories";
+import { calculateWeeklyTarget, createEmptyCustomDays, deriveStandardFrequencyFromWeekly, type FrequencyPeriod } from "@/lib/frequency";
 import { useAuth } from "@/hooks/useAuth";
+import { Trash, MoreHorizontal, Settings, CheckCircle, Clock } from "lucide-react";
 
 interface EditHabitDialogProps {
   open: boolean;
@@ -21,6 +24,9 @@ interface EditHabitDialogProps {
   };
   setNewHabit: (habit: any) => void;
   onUpdateHabit: () => void;
+  onDelete?: (id: string) => void;
+  onAdopt?: (id: string) => void;
+  onMoveToFuture?: (id: string) => void;
 }
 
 export const EditHabitDialog = ({
@@ -29,11 +35,20 @@ export const EditHabitDialog = ({
   editingHabit,
   newHabit,
   setNewHabit,
-  onUpdateHabit
+  onUpdateHabit,
+  onDelete,
+  onAdopt,
+  onMoveToFuture
 }: EditHabitDialogProps) => {
   const [categories, setCategories] = useState<Category[]>(getCategories());
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
   const { user } = useAuth();
+
+  // Frequency editing state
+  const [frequencyValue, setFrequencyValue] = useState(1);
+  const [frequencyPeriod, setFrequencyPeriod] = useState<FrequencyPeriod>('daily');
+  const [customDays, setCustomDays] = useState<boolean[]>(createEmptyCustomDays());
 
   useEffect(() => {
     const load = async () => {
@@ -51,22 +66,72 @@ export const EditHabitDialog = ({
     };
     load();
   }, [user?.id]);
+
+  // Initialize frequency state based on existing habit
+  useEffect(() => {
+    if (frequencyPeriod === 'custom') return;
+
+    const { value, period } = deriveStandardFrequencyFromWeekly(newHabit.target_frequency);
+    setFrequencyValue(value);
+    setFrequencyPeriod(period);
+  }, [newHabit.target_frequency, frequencyPeriod]);
+
+  useEffect(() => {
+    if (!open) {
+      // Reset form state when dialog closes
+      console.log('Dialog closed, resetting state');
+    }
+  }, [open]);
+
+  const handleDelete = () => {
+    if (onDelete && editingHabit?.id) {
+      onDelete(editingHabit.id);
+      onOpenChange(false);
+    }
+  };
+
+  const handleAdopt = async () => {
+    if (onAdopt && editingHabit?.id) {
+      console.log('Adopting habit:', editingHabit.id);
+      await onAdopt(editingHabit.id);
+      onOpenChange(false);
+    }
+  };
+
+  const handleMoveToFuture = async () => {
+    if (onMoveToFuture && editingHabit?.id) {
+      console.log('Moving habit to future:', editingHabit.id);
+      await onMoveToFuture(editingHabit.id);
+      onOpenChange(false);
+    }
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    console.log('EditHabitDialog onOpenChange:', isOpen);
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent 
+        onEscapeKeyDown={() => handleOpenChange(false)}
+      >
         <DialogHeader>
-          <DialogTitle>Edit Habit</DialogTitle>
+          <DialogTitle className="text-sm font-medium">{newHabit.title}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-medium">Habit Title</label>
-            <Input
-              placeholder="Morning Exercise..."
-              value={newHabit.title}
-              onChange={(e) => setNewHabit({...newHabit, title: e.target.value})}
-            />
+        <div className="space-y-5">
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium">Habit Name</label>
+              <Input
+                placeholder="Morning Exercise..."
+                value={newHabit.title}
+                onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
+              />
+            </div>
           </div>
-          <div>
+
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-medium">Notes</label>
             <Textarea
               placeholder="Add details about your habit..."
@@ -74,11 +139,16 @@ export const EditHabitDialog = ({
               onChange={(e) => setNewHabit({...newHabit, notes: e.target.value})}
             />
           </div>
-          <div>
+
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-medium">Category</label>
-            <Select value={newHabit.category} onValueChange={(value) => setNewHabit({...newHabit, category: value})}>
+            <Select 
+              value={newHabit.category} 
+              onValueChange={(value) => setNewHabit({...newHabit, category: value})}
+              onOpenChange={setIsSelectOpen}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {categories.length === 0 ? (
@@ -92,10 +162,7 @@ export const EditHabitDialog = ({
                         ) : (
                           <div
                             className="w-3 h-3 rounded-full border"
-                            style={{
-                              backgroundColor: category.color || resolveCategoryBgColor(category.id),
-                              borderColor: category.color || resolveCategoryBgColor(category.id)
-                            }}
+                            style={{ backgroundColor: resolveCategoryBgColor(category.id), borderColor: resolveCategoryBgColor(category.id) }}
                           />
                         )}
                         <span>{category.name}</span>
@@ -105,52 +172,136 @@ export const EditHabitDialog = ({
                 )}
               </SelectContent>
             </Select>
-            {/* {newHabit.category && (
-              <div className="mt-2">
-                <Badge
-                  className={`${getCategoryClasses(newHabit.category).bgColor} ${getCategoryClasses(newHabit.category).textColor} border-0`}
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium">Target Frequency</label>
+            <div className="flex gap-2">
+              <div className="flex flex-1 items-center gap-2">
+                {frequencyPeriod === 'custom' ? (
+                  <div className="flex flex-wrap gap-1">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                      <Button
+                        key={day}
+                        type="button"
+                        variant={customDays[index] ? 'outlinefilled' : 'outlineinactive'}
+                        size="sm"
+                        onClick={() => {
+                          const updatedCustomDays = [...customDays];
+                          updatedCustomDays[index] = !updatedCustomDays[index];
+                          setCustomDays(updatedCustomDays);
+                          const selectedCount = updatedCustomDays.filter(Boolean).length;
+                          setNewHabit({ ...newHabit, target_frequency: Math.max(1, selectedCount) });
+                        }}
+                        className={`w-10 h-10 rounded-lg text-xs flex items-center justify-center border transition-colors ${
+                          customDays[index]
+                            ? 'bg-neutral-800 border-neutral-600 text-white hover:bg-neutral-800'
+                            : 'bg-white border-neutral-300 text-neutral-400 hover:bg-neutral-200'
+                        }`}
+                      >
+                        {day}
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <Input
+                    type="number"
+                    min="1"
+                    value={frequencyValue}
+                    onChange={(e) => {
+                      const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                      setFrequencyValue(val);
+                      setNewHabit({ ...newHabit, target_frequency: calculateWeeklyTarget(val, frequencyPeriod) });
+                    }}
+                    className="w-16"
+                  />
+                )}
+                <Select
+                  value={frequencyPeriod}
+                  onValueChange={(value: FrequencyPeriod) => {
+                    setFrequencyPeriod(value);
+                    if (value === 'custom') {
+                      setCustomDays(createEmptyCustomDays());
+                      setNewHabit({ ...newHabit, target_frequency: 1 });
+                    } else {
+                      const val = Math.max(1, frequencyValue);
+                      setNewHabit({ ...newHabit, target_frequency: calculateWeeklyTarget(val, value) });
+                    }
+                  }}
                 >
-                  {DEFAULT_CATEGORIES.find(c => c.id === newHabit.category)?.name}
-                </Badge>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">per day</SelectItem>
+                    <SelectItem value="weekly">per week</SelectItem>
+                    <SelectItem value="monthly">per month</SelectItem>
+                    <SelectItem value="custom">custom</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )} */}
+            </div>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-medium">Target Frequency (per week)</label>
-              <Select value={newHabit.target_frequency.toString()} onValueChange={(value) => setNewHabit({...newHabit, target_frequency: parseInt(value)})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1,2,3,4,5,6,7].map(num => (
-                    <SelectItem key={num} value={num.toString()}>{num}x</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
+            <div className="flex flex-col gap-1">
               <label className="text-xs font-medium">Leniency Threshold (days)</label>
-              <Select value={newHabit.leniency_threshold.toString()} onValueChange={(value) => setNewHabit({...newHabit, leniency_threshold: parseInt(value)})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1,2,3,4,5].map(num => (
-                    <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                type="number"
+                min="1"
+                max="5"
+                value={newHabit.leniency_threshold}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 1;
+                  setNewHabit({...newHabit, leniency_threshold: val});
+                }}
+                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
             </div>
           </div>
+
+          {/* Settings Dropdown */}
+          <div className="absolute right-4 top-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {editingHabit?.phase === 'current' && onAdopt && (
+                  <DropdownMenuItem onClick={handleAdopt}>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <p className="text-xs">Sucess</p>
+                  </DropdownMenuItem>
+                )}
+                {(editingHabit?.phase === 'current' || editingHabit?.phase === 'adopted') && onMoveToFuture && (
+                  <DropdownMenuItem onClick={handleMoveToFuture}>
+                    <Clock className="h-4 w-4 mr-2" />
+                    <p className="text-xs">Make Future Habit</p>
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <DropdownMenuItem 
+                    onClick={handleDelete}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash className="h-4 w-4 mr-2" />
+                    <p className="text-xs">Delete</p>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
           <div className="flex w-full justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="">
-              Cancel
-            </Button>
-            <Button onClick={() => {
+              <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+            <Button size="sm" onClick={() => {
               onUpdateHabit();
               onOpenChange(false);
-            }} className="">
+            }}>
               Save
             </Button>
           </div>

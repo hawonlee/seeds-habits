@@ -16,4 +16,10 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    exclude: [
+      "chunk-UA3AQ3YB",
+      "chunk-SAS3QWGD"
+    ]
+  },
 }));

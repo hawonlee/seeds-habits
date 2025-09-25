@@ -25,6 +25,8 @@ export default {
 				'xxs': ['0.6rem', { lineHeight: '0.75rem' }], // 10px
 			},
 			colors: {
+				habitbg: '#F3F3F3',
+				habitbghover: '#EDEDED',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

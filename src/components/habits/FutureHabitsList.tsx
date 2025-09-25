@@ -54,7 +54,7 @@ export const FutureHabitsList = ({
 
   return (
     <div className="h-full bg-white overflow-y-auto">
-      {!hideHeader && (
+      {/* {!hideHeader && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Button
@@ -65,9 +65,7 @@ export const FutureHabitsList = ({
             >
               <PanelRight className="h-4 w-4" />
             </Button>
-            {/* <div className="w-3 h-3 bg-blue-500 rounded-full"></div> */}
             <h2 className="text-sm font-medium">FUTURE</h2>
-            {/* <Badge variant="secondary">{habits.length}</Badge> */}
           </div>
           <Button
             size="sm"
@@ -78,29 +76,30 @@ export const FutureHabitsList = ({
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-      )}
+      )} */}
       <div className="space-y-4">
         {habits.length === 0 ? (
-          <Card>
-            <CardContent className="text-center text-muted-foreground">
-              <p className="text-xs">No future habits yet</p>
-            </CardContent>
-          </Card>
+          <div className="p-6 text-center text-muted-foreground">
+            <p className="text-xs">No future habits yet</p>
+          </div>
         ) : (
-          habits.map(habit => (
-            <HabitCard 
-              key={habit.id} 
-              variant="compact"
-              habit={habit} 
-              adoptionThreshold={adoptionThreshold}
-              onCheckIn={onCheckIn}
-              onUndoCheckIn={onUndoCheckIn}
-              onMoveHabit={onMoveHabit}
-              onEditHabit={onEditHabit}
-              onDeleteHabit={onDeleteHabit}
-              onUpdateHabit={onUpdateHabit}
-            />
-          ))
+          habits.map(habit => {
+            console.log('Future habit data:', habit);
+            return (
+              <HabitCard 
+                key={habit.id} 
+                variant="compact"
+                habit={habit} 
+                adoptionThreshold={adoptionThreshold}
+                onCheckIn={onCheckIn}
+                onUndoCheckIn={onUndoCheckIn}
+                onMoveHabit={onMoveHabit}
+                onEditHabit={onEditHabit}
+                onDeleteHabit={onDeleteHabit}
+                onUpdateHabit={onUpdateHabit}
+              />
+            );
+          })
         )}
       </div>
     </div>

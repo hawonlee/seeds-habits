@@ -331,19 +331,26 @@ export const useHabits = () => {
     if (!user) return { error: 'No user found' };
 
     try {
+      console.log('moveHabitPhase called with:', { id, newPhase });
       const habit = habits.find(h => h.id === id);
       if (!habit) {
+        console.log('Habit not found:', id);
         return { error: 'Habit not found' };
       }
 
+      console.log('Found habit:', habit);
       const updates: Partial<Habit> = { phase: newPhase };
       
       // Award points for adoption
       if (newPhase === 'adopted' && habit.points === 0) {
         updates.points = 50;
+        console.log('Awarding 50 points for adoption');
       }
 
-      return await updateHabit(id, updates);
+      console.log('Updating habit with:', updates);
+      const result = await updateHabit(id, updates);
+      console.log('Update result:', result);
+      return result;
     } catch (error) {
       console.error('Error moving habit phase:', error);
       return { error };

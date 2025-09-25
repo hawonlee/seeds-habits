@@ -185,30 +185,6 @@ export const InlineEditDropdown = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">{editedHabit.title}</h3>
-            <div className="flex items-center gap-1">
-              {habit.phase === 'current' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-3"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAdopt?.(habit.id);
-                    onClose();
-                  }}
-                >
-                  Adopt
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDelete}
-                className="w-8 h-8"
-              >
-                <Trash className="h-3 w-3" />
-              </Button>
-            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -396,7 +372,37 @@ export const InlineEditDropdown = ({
           </div>
         </div>
 
-          <div className="flex w-full justify-end gap-2">
+        {/* Settings Section */}
+        <div className="border-t pt-4">
+          <h4 className="text-xs font-medium text-muted-foreground mb-3">Settings</h4>
+          <div className="flex gap-2">
+            {habit.phase === 'current' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAdopt?.(habit.id);
+                  onClose();
+                }}
+              >
+                Adopt
+              </Button>
+            )}
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDelete}
+              className="flex-1"
+            >
+              <Trash className="h-3 w-3 mr-1" />
+              Delete
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex w-full justify-end gap-2">
             {/* <Button 
               variant="destructive" 
               size="sm"

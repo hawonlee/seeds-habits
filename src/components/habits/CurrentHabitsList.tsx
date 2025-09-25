@@ -104,11 +104,9 @@ export const CurrentHabitsList = ({
           </div>
         </div>
       ) : habits.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
-            <p className="text-sm">No active habits</p>
-          </CardContent>
-        </Card>
+        <div className="w-full text-muted-foreground">
+          <p className="text-sm text-left">No active habits</p>
+        </div>
       ) : (
         <div className="rounded-lg overflow-hidden">
           {/* Week Navigation */}

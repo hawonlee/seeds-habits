@@ -1,0 +1,162 @@
+import { Habit } from "@/hooks/useHabits";
+
+interface HabitCardDates {
+  todayDate: Date;
+  lastCompletedKey: string | null;
+  isCheckedInToday: boolean;
+}
+
+interface WeekUtilsOptions {
+  habit: Habit;
+  customIsCompleted?: (habitId: string, date: Date) => boolean;
+  isHabitCompletedOnDate: (habitId: string, date: Date) => boolean;
+  lastCompletedKey: string | null;
+}
+
+interface CompletionHandlerOptions {
+  habit: Habit;
+  onCheckIn: (id: string) => void;
+  onUndoCheckIn: (id: string) => void;
+  onCheckInForDate?: (id: string, date: Date) => void;
+  onUndoCheckInForDate?: (id: string, date: Date) => void;
+  toggleCompletion: (habitId: string, date: Date) => Promise<boolean> | void;
+  isHabitCompletedOnDate: (habitId: string, date: Date) => boolean;
+  customIsCompleted?: (habitId: string, date: Date) => boolean;
+  lastCompletedKey: string | null;
+}
+
+export const getHabitDates = (habit: Habit): HabitCardDates => {
+  const todayDate = new Date();
+  const todayKey = toDateKey(todayDate);
+  const lastCompletedKey = habit.last_completed ? toDateKey(new Date(habit.last_completed)) : null;
+
+  return {
+    todayDate,
+    lastCompletedKey,
+    isCheckedInToday: lastCompletedKey === todayKey
+  };
+};
+
+export const createWeekUtils = ({ habit, customIsCompleted, isHabitCompletedOnDate, lastCompletedKey }: WeekUtilsOptions) => {
+  const isDoneOnDate = (date: Date) => {
+    if (customIsCompleted) {
+      return customIsCompleted(habit.id, date);
+    }
+    const dateKey = toDateKey(date);
+    return isHabitCompletedOnDate(habit.id, date) || lastCompletedKey === dateKey;
+  };
+
+  const getWeekStart = (date: Date) => {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(date.getDate() - date.getDay());
+    return start;
+  };
+
+  const getWeekDaysFromStart = (start?: Date) => {
+    if (!start) return [];
+    const normalized = getWeekStart(start);
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(normalized);
+      day.setDate(normalized.getDate() + i);
+      return day;
+    });
+  };
+
+  const sharedCompletedCounts = (days: Date[]) =>
+    days.reduce((count, d) => count + (isDoneOnDate(d) ? 1 : 0), 0);
+
+  return {
+    isDoneOnDate,
+    getWeekDaysFromStart,
+    sharedCompletedCounts
+  };
+};
+
+export const createProgressUtils = (
+  habit: Habit,
+  getWeekDaysFromStart: (start?: Date) => Date[],
+  sharedCompletedCounts: (days: Date[]) => number
+) => {
+  const targetPerWeek = Math.max(1, Math.min(7, habit.target_frequency || 1));
+
+  const getWeeklyProgressPct = (completed: number) =>
+    Math.min(100, (completed / targetPerWeek) * 100);
+
+  const getWeekSummary = (start?: Date) => {
+    const days = getWeekDaysFromStart(start);
+    const completed = sharedCompletedCounts(days);
+    return {
+      days,
+      completed,
+      progressPct: getWeeklyProgressPct(completed)
+    };
+  };
+
+  return {
+    targetPerWeek,
+    getWeeklyProgressPct,
+    getWeekSummary
+  };
+};
+
+export const createCompletionHandlers = ({
+  habit,
+  onCheckIn,
+  onUndoCheckIn,
+  onCheckInForDate,
+  onUndoCheckInForDate,
+  toggleCompletion,
+  isHabitCompletedOnDate,
+  customIsCompleted,
+  lastCompletedKey
+}: CompletionHandlerOptions) => {
+  const weekUtils = createWeekUtils({ habit, customIsCompleted, isHabitCompletedOnDate, lastCompletedKey });
+
+  const setDateCompletion = async (date: Date, next: boolean) => {
+    const currentlyDone = weekUtils.isDoneOnDate(date);
+    if (next === currentlyDone) return;
+
+    const shouldToggleLocally = !onCheckInForDate && !onUndoCheckInForDate;
+
+    if (shouldToggleLocally) {
+      await toggleCompletion(habit.id, date);
+    }
+
+    if (next) {
+      if (onCheckInForDate) {
+        onCheckInForDate(habit.id, date);
+      } else if (onCheckIn) {
+        onCheckIn(habit.id);
+      }
+    } else {
+      if (onUndoCheckInForDate) {
+        onUndoCheckInForDate(habit.id, date);
+      } else if (onUndoCheckIn) {
+        onUndoCheckIn(habit.id);
+      }
+    }
+  };
+
+  const toggleDateCompletion = async (date: Date) => {
+    await setDateCompletion(date, !weekUtils.isDoneOnDate(date));
+  };
+
+  const handleToggleToday = (next: boolean | 'indeterminate') => {
+    if (next === true && !weekUtils.isDoneOnDate(new Date())) {
+      onCheckIn(habit.id);
+    } else if (next === false && weekUtils.isDoneOnDate(new Date())) {
+      onUndoCheckIn(habit.id);
+    }
+  };
+
+  return {
+    ...weekUtils,
+    setDateCompletion,
+    toggleDateCompletion,
+    handleToggleToday
+  };
+};
+
+const toDateKey = (date: Date) => date.toISOString().split('T')[0];
+

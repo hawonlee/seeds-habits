@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 import { DEFAULT_CATEGORIES, fetchCategories, getCategories, getCategoryClasses, resolveCategoryBgColor, type Category } from "@/lib/categories";
+import { calculateWeeklyTarget, createEmptyCustomDays, deriveStandardFrequencyFromWeekly, type FrequencyPeriod } from "@/lib/frequency";
 import { useAuth } from "@/hooks/useAuth";
 
 interface AddHabitDialogProps {
@@ -31,9 +32,9 @@ export const AddHabitDialog = ({
   setNewHabit,
   onAddHabit
 }: AddHabitDialogProps) => {
-  const [frequencyType, setFrequencyType] = useState<'daily' | 'weekly' | 'custom'>('daily');
   const [frequencyValue, setFrequencyValue] = useState(1);
-  const [customDays, setCustomDays] = useState<boolean[]>([false, false, false, false, false, false, false]);
+  const [frequencyPeriod, setFrequencyPeriod] = useState<FrequencyPeriod>('daily');
+  const [customDays, setCustomDays] = useState<boolean[]>(createEmptyCustomDays());
   const [categories, setCategories] = useState<Category[]>(getCategories());
   const [loadingCategories, setLoadingCategories] = useState(false);
   const { user } = useAuth();
@@ -54,24 +55,32 @@ export const AddHabitDialog = ({
     };
     load();
   }, [user?.id]);
+
+  useEffect(() => {
+    if (frequencyPeriod === 'custom') return;
+
+    const { value, period } = deriveStandardFrequencyFromWeekly(newHabit.target_frequency);
+    setFrequencyValue(value);
+    setFrequencyPeriod(period);
+  }, [newHabit.target_frequency, frequencyPeriod]);
   
   const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add a New {addToPhase === 'future' ? 'Future' : addToPhase === 'current' ? 'Current' : 'Adopted'} Habit </DialogTitle>
+          <DialogTitle className="text-sm font-medium">Add a New {addToPhase === 'future' ? 'Future' : addToPhase === 'current' ? 'Current' : 'Adopted'} Habit </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-medium">Habit Title</label>
+        <div className="space-y-5">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium">Habit Name</label>
             <Input
               placeholder="Morning Exercise..."
               value={newHabit.title}
               onChange={(e) => setNewHabit({...newHabit, title: e.target.value})}
             />
           </div>
-          <div>
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-medium">Notes</label>
             <Textarea
               placeholder="Add details about your habit..."
@@ -79,7 +88,7 @@ export const AddHabitDialog = ({
               onChange={(e) => setNewHabit({...newHabit, notes: e.target.value})}
             />
           </div>
-          <div>
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-medium">Category</label>
             <Select value={newHabit.category} onValueChange={(value) => setNewHabit({...newHabit, category: value})}>
               <SelectTrigger>
@@ -97,7 +106,7 @@ export const AddHabitDialog = ({
                         ) : (
                           <div
                             className="w-3 h-3 rounded-full border"
-                            style={{ backgroundColor: category.color || resolveCategoryBgColor(category.id), borderColor: category.color || resolveCategoryBgColor(category.id) }}
+                            style={{ backgroundColor: category.bgColor ? resolveCategoryBgColor(category.id) : 'transparent', borderColor: category.bgColor ? resolveCategoryBgColor(category.id) : 'transparent' }}
                           />
                         )}
                         <span>{category.name}</span>
@@ -117,130 +126,79 @@ export const AddHabitDialog = ({
               </div>
             )} */}
           </div>
-          <div>
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-medium">Target Frequency</label>
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={frequencyType === 'daily' ? 'outlinefilled' : 'outlineinactive'}
-                size="sm"
-                onClick={() => {
-                  setFrequencyType('daily');
-                  setFrequencyValue(1);
-                  setCustomDays([false, false, false, false, false, false, false]);
-                  // Ensure the persisted target is 7/week when choosing 1/day by default
-                  setNewHabit({...newHabit, target_frequency: 7});
-                }}
-                className={`flex-1`}
-              >
-                {frequencyType === 'daily' ? (
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={frequencyValue}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 1;
-                        setFrequencyValue(val);
-                        setNewHabit({...newHabit, target_frequency: val * 7});
-                      }}
-                      className="rounded-full px-2 py-1 text-center text-xs bg-neutral-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <span>/day</span>
+              <div className="flex flex-1 items-center gap-2">
+                {frequencyPeriod === 'custom' ? (
+                  <div className="flex flex-wrap gap-1">
+                    {dayNames.map((day, index) => (
+                      <Button
+                        key={day}
+                        type="button"
+                        onClick={() => {
+                          const updatedCustomDays = [...customDays];
+                          updatedCustomDays[index] = !updatedCustomDays[index];
+                          setCustomDays(updatedCustomDays);
+                          const selectedCount = updatedCustomDays.filter(Boolean).length;
+                          setNewHabit({ ...newHabit, target_frequency: Math.max(1, selectedCount) });
+                        }}
+                        className={`w-10 h-10 rounded-lg text-xs flex items-center justify-center border transition-colors ${
+                          customDays[index]
+                            ? 'bg-neutral-800 border-neutral-600 text-white hover:bg-neutral-800'
+                            : 'bg-white border-neutral-300 text-neutral-400 hover:bg-neutral-200'
+                        }`}
+                      >
+                        {day}
+                      </Button>
+                    ))}
                   </div>
                 ) : (
-                  'Daily'
+                  <Input
+                    type="number"
+                    min="1"
+                    value={frequencyValue}
+                    onChange={(e) => {
+                      const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                      setFrequencyValue(val);
+                      setNewHabit({ ...newHabit, target_frequency: calculateWeeklyTarget(val, frequencyPeriod) });
+                    }}
+                    className="w-16"
+                  />
                 )}
-              </Button>
-              <Button
-                type="button"
-                variant={frequencyType === 'weekly' ? 'outlinefilled' : 'outlineinactive'}
-                size="sm"
-                onClick={() => {
-                  setFrequencyType('weekly');
-                  setFrequencyValue(1);
-                  setCustomDays([false, false, false, false, false, false, false]);
-                  // Default weekly target to 1/week when switching to Weekly
-                  setNewHabit({...newHabit, target_frequency: 1});
-                }}
-                className={`flex-1`}
-              >
-                {frequencyType === 'weekly' ? (
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="number"
-                      min="1"
-                      max="7"
-                      value={frequencyValue}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 1;
-                        setFrequencyValue(val);
-                        setNewHabit({...newHabit, target_frequency: val});
-                      }}
-                      className="rounded-full px-2 py-1 text-center text-xs bg-neutral-200 border-none outline-none text-black [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <span>/ week</span>
-                  </div>
-                ) : (
-                  'Weekly'
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant={frequencyType === 'custom' ? 'outlinefilled' : 'outlineinactive'}
-                size="sm"
-                onClick={() => {
-                  setFrequencyType('custom');
-                  setFrequencyValue(1);
-                  setCustomDays([false, false, false, false, false, false, false]);
-                }}
-                className={`flex-1`}
-              >
-                Custom Days
-              </Button>
+                <Select
+                  value={frequencyPeriod}
+                  onValueChange={(value: FrequencyPeriod) => {
+                    setFrequencyPeriod(value);
+                    if (value === 'custom') {
+                      setCustomDays(createEmptyCustomDays());
+                      setNewHabit({ ...newHabit, target_frequency: 1 });
+                    } else {
+                      const val = Math.max(1, frequencyValue);
+                      setNewHabit({ ...newHabit, target_frequency: calculateWeeklyTarget(val, value) });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">per day</SelectItem>
+                    <SelectItem value="weekly">per week</SelectItem>
+                    <SelectItem value="monthly">per month</SelectItem>
+                    <SelectItem value="custom">custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-
-          {/* Custom Days Selector */}
-          {frequencyType === 'custom' && (
-            <div>
-              {/* <label className="text-xs font-medium">Select days of the week</label> */}
-              <div className="flex gap-2 mt-2">
-                {dayNames.map((day, index) => (
-                  <Button
-                    key={day}
-                    type="button"
-                    onClick={() => {
-                      const newCustomDays = [...customDays];
-                      newCustomDays[index] = !newCustomDays[index];
-                      setCustomDays(newCustomDays);
-                      // Calculate target frequency based on selected days
-                      const selectedCount = newCustomDays.filter(Boolean).length;
-                      setNewHabit({...newHabit, target_frequency: selectedCount});
-                    }}
-                    className={`w-8 h-8 rounded-lg text-black border flex items-center justify-center text-xs font-normal transition-colors ${
-                      customDays[index] 
-                        ? 'bg-neutral-100 border-neutral-600 text-black hover:bg-neutral-100' 
-                        : 'bg-white border-neutral-300 text-neutral-400 hover:bg-neutral-200'
-                    }`}
-                  >
-                    {day}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div>
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-medium">Leniency Threshold (days)</label>
             <Input
               type="number"
               min="1"
-              max="5"
+              // max="5"
               value={newHabit.leniency_threshold}
               onChange={(e) => {
                 const val = parseInt(e.target.value) || 1;

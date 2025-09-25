@@ -34,7 +34,14 @@ export const AdoptedHabitsList = ({
   onToggleCollapse,
   hideHeader = false
 }: AdoptedHabitsListProps) => {
+  // Debug logging
+  console.log('AdoptedHabitsList received habits:', habits);
+  console.log('AdoptedHabitsList habits length:', habits.length);
+  console.log('AdoptedHabitsList isCollapsed:', isCollapsed);
+  console.log('AdoptedHabitsList hideHeader:', hideHeader);
+  
   if (isCollapsed) {
+    console.log('AdoptedHabitsList: Rendering collapsed view');
     return (
       <div className="h-full flex flex-col items-center justify-center bg-neutral-50 rounded-lg border">
         <Button
@@ -54,7 +61,7 @@ export const AdoptedHabitsList = ({
 
   return (
     <div className="h-full bg-white overflow-y-auto">
-      {!hideHeader && (
+      {/* {!hideHeader && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="group relative">
@@ -78,19 +85,17 @@ export const AdoptedHabitsList = ({
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-      )}
+      )} */}
       <div className="space-y-4">
         {habits.length === 0 ? (
-          <Card>
-            <CardContent className="text-center text-muted-foreground">
-              <p className="text-xs">No adopted habits yet</p>
-            </CardContent>
-          </Card>
+          <div className="p-6 text-center text-muted-foreground">
+            <p className="text-xs">No adopted habits yet</p>
+          </div>
         ) : (
           habits.map(habit => (
-            <HabitCard 
-              key={habit.id} 
-              habit={habit} 
+            <HabitCard
+              key={habit.id}
+              habit={habit}
               adoptionThreshold={adoptionThreshold}
               onCheckIn={onCheckIn}
               onUndoCheckIn={onUndoCheckIn}

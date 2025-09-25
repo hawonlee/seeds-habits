@@ -10,13 +10,14 @@ export interface ColorOption {
 
 // Centralized six-color palette. Change hexes here to update globally.
 export const COLOR_OPTIONS: ColorOption[] = [
-  { name: 'Neutral',   value: '#4D4D4D', bgHex: '#DBDBDB', textHex: '#4D4D4D' },
-  { name: 'Blue',   value: '#1E40AF', bgHex: '#E6F0FF', textHex: '#1E40AF' },
-  { name: 'Green',  value: '#166534', bgHex: '#E8F3E6', textHex: '#166534' },
-  { name: 'Purple', value: '#6B21A8', bgHex: '#EFE6F4', textHex: '#6B21A8' },
-  { name: 'Amber',  value: '#92400E', bgHex: '#F7EFE2', textHex: '#92400E' },
-  { name: 'Red',    value: '#991B1B', bgHex: '#F6EAEA', textHex: '#991B1B' },
-  { name: 'Cyan',   value: '#155E75', bgHex: '#E6F3F6', textHex: '#155E75' },
+  { name: 'Red',    value: '#5B3E3F', bgHex: '#E9DFDF', textHex: '#5B3E3F' },
+  { name: 'Amber',  value: '#6C682D', bgHex: '#E7E5C0', textHex: '#6C682D' },
+  { name: 'Green',  value: '#4B6039', bgHex: '#DDE6D5', textHex: '#4B6039' },
+  // { name: 'Cyan',   value: '#155E75', bgHex: '#E6F3F6', textHex: '#155E75' },
+  { name: 'Blue',   value: '#3C4C5D', bgHex: '#D9DEE3', textHex: '#3C4C5D' },
+  { name: 'Purple', value: '#513B5E', bgHex: '#E2DBE6', textHex: '#513B5E' },
+  { name: 'Neutral',   value: '#4D4D4D', bgHex: '#DEDEDE', textHex: '#4D4D4D' },
+
 ];
 
 // Helper: find by the primary/text hex value

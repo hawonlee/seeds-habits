@@ -32,7 +32,7 @@ export const CurrentHabitsSidePanel: React.FC<CurrentHabitsSidePanelProps> = ({
   return (
     <div className="">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs font-medium text-neutral-900">Current</h2>
+        <h2 className="text-xs text-neutral-900">Current</h2>
         <Button
           variant="ghost"
           size="sm"
@@ -44,13 +44,9 @@ export const CurrentHabitsSidePanel: React.FC<CurrentHabitsSidePanelProps> = ({
       </div>
 
       {habits.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center text-muted-foreground">
-            <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No active habits</p>
-            <p className="text-sm">Add a habit to get started</p>
-          </CardContent>
-        </Card>
+        <div className="p-6 text-center text-muted-foreground">
+          <p className="text-xs">No active habits</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {habits.map(habit => (

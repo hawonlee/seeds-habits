@@ -323,8 +323,8 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
               onDrop={handleDrop}
             >
               <div className="p-1 h-full">
-                <div className={`calendar-cell-inner h-full rounded-md p-2 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-neutral-200 border border-neutral-300' : 'bg-neutral-200/50'}`}>
-                  <div className="flex flex-col gap-1 min-h-20 max-h-64 overflow-y-auto pr-1">
+                <div className={`calendar-cell-inner h-full rounded-md p-2 hover:bg-habitbghover transition-colors duration-200 flex flex-col  ${selectedDay && selectedDay.toDateString() === date.toDateString() ? 'bg-habitbghover' : 'bg-habitbg'}`}>
+                  <div className="flex flex-col gap-1 min-h-20 max-h-64 overflow-y-auto">
                   {/* Completed Habits */}
                   {completedHabits.slice(0, 3).map(habit => (
                     <CalendarHabitItem

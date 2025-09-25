@@ -281,7 +281,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                   onDrop={handleDrop}
                 >
                   <div className="p-1 h-full">
-                    <div className="calendar-cell-inner h-full bg-neutral-200/50 rounded-md p-2 flex flex-col">
+                    <div className="calendar-cell-inner h-full bg-habitbg rounded-md p-2 flex flex-col">
                     {/* Date number */}
                     <div className="h-8 flex items-center justify-end mb-1">
                       <div className={`
