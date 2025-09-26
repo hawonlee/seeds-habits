@@ -6,18 +6,23 @@ import { WeekView } from "./WeekView";
 import { DayView } from "./DayView";
 import { Habit } from "@/hooks/useHabits";
 import { HabitSchedule } from "@/hooks/useHabitSchedules";
+import type { Database } from "@/integrations/supabase/types";
+
+type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
 interface UnifiedCalendarProps {
   habits: Habit[];
   schedules: HabitSchedule[];
+  diaryEntries?: DiaryEntry[];
   onCheckIn: (id: string, date: Date) => void;
   onUndoCheckIn: (id: string, date: Date) => void;
   onDayClick: (date: Date, habits: Habit[]) => void;
   onHabitDrop?: (habitId: string, date: Date) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
+  onDiaryEntryClick?: (entry: DiaryEntry) => void;
 }
 
-export const UnifiedCalendar = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule }: UnifiedCalendarProps) => {
+export const UnifiedCalendar = ({ habits, schedules, diaryEntries = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onDiaryEntryClick }: UnifiedCalendarProps) => {
   const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'week' | 'day'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -101,6 +106,7 @@ export const UnifiedCalendar = ({ habits, schedules, onCheckIn, onUndoCheckIn, o
           <MonthView
             habits={habits}
             schedules={schedules}
+            diaryEntries={diaryEntries}
             onCheckIn={onCheckIn}
             onUndoCheckIn={onUndoCheckIn}
             onDayClick={onDayClick}
@@ -109,6 +115,7 @@ export const UnifiedCalendar = ({ habits, schedules, onCheckIn, onUndoCheckIn, o
             currentDate={currentDate}
             onHabitDrop={onHabitDrop}
             onHabitUnschedule={onHabitUnschedule}
+            onDiaryEntryClick={onDiaryEntryClick}
           />
         );
       case 'week':
@@ -116,6 +123,7 @@ export const UnifiedCalendar = ({ habits, schedules, onCheckIn, onUndoCheckIn, o
           <WeekView
             habits={habits}
             schedules={schedules}
+            diaryEntries={diaryEntries}
             onCheckIn={onCheckIn}
             onUndoCheckIn={onUndoCheckIn}
             calendarViewMode={calendarViewMode}
@@ -123,6 +131,7 @@ export const UnifiedCalendar = ({ habits, schedules, onCheckIn, onUndoCheckIn, o
             currentDate={currentDate}
             onHabitDrop={onHabitDrop}
             onHabitUnschedule={onHabitUnschedule}
+            onDiaryEntryClick={onDiaryEntryClick}
           />
         );
       case 'day':
@@ -130,6 +139,7 @@ export const UnifiedCalendar = ({ habits, schedules, onCheckIn, onUndoCheckIn, o
           <DayView
             habits={habits}
             schedules={schedules}
+            diaryEntries={diaryEntries}
             onCheckIn={onCheckIn}
             onUndoCheckIn={onUndoCheckIn}
             calendarViewMode={calendarViewMode}
@@ -137,6 +147,7 @@ export const UnifiedCalendar = ({ habits, schedules, onCheckIn, onUndoCheckIn, o
             currentDate={currentDate}
             onHabitDrop={onHabitDrop}
             onHabitUnschedule={onHabitUnschedule}
+            onDiaryEntryClick={onDiaryEntryClick}
           />
         );
       default:

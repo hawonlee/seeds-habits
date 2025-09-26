@@ -6,10 +6,15 @@ import React from "react";
 import { HabitCard } from "@/components/habits/HabitCard";
 import { useHabitCompletions } from "@/hooks/useHabitCompletions";
 import { shouldHabitBeScheduledOnDate } from "./calendarFrequency";
+import { CalendarDiaryItem } from "@/components/calendar/CalendarDiaryItem";
+import type { Database } from "@/integrations/supabase/types";
+
+type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
 interface DayViewProps {
   habits: Habit[];
   schedules: HabitSchedule[];
+  diaryEntries?: DiaryEntry[];
   onCheckIn: (id: string, date: Date) => void;
   onUndoCheckIn: (id: string, date: Date) => void;
   calendarViewMode: 'month' | 'week' | 'day';
@@ -17,9 +22,10 @@ interface DayViewProps {
   currentDate: Date;
   onHabitDrop?: (habitId: string, date: Date) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
+  onDiaryEntryClick?: (entry: DiaryEntry) => void;
 }
 
-export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule }: DayViewProps) => {
+export const DayView = ({ habits, schedules, diaryEntries = [], onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onDiaryEntryClick }: DayViewProps) => {
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletions();
   // Helper functions for scheduled habits
   const formatDateForDB = (date: Date): string => {
@@ -41,6 +47,11 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
     return schedules
       .filter(schedule => schedule.scheduled_date === scheduledDate)
       .map(schedule => schedule.habit_id);
+  };
+
+  const getDiaryEntriesForDate = (date: Date): DiaryEntry[] => {
+    const dateString = date.toISOString().split('T')[0];
+    return diaryEntries.filter(entry => entry.entry_date === dateString);
   };
 
   const getCompletedHabits = () => {
@@ -292,6 +303,33 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Diary Entries */}
+          {getDiaryEntriesForDate(currentDate).length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold text-neutral-700 mb-4 flex items-center gap-2">
+                Diary Entries ({getDiaryEntriesForDate(currentDate).length})
+              </h3>
+              <div className="grid gap-3">
+                {getDiaryEntriesForDate(currentDate).map(entry => (
+                  <div key={entry.id} onClick={() => onDiaryEntryClick?.(entry)} className="cursor-pointer">
+                    <Card className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm mb-1">{entry.title}</h4>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {entry.body}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
               </div>
             </div>
           )}

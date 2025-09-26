@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarHabitItem } from "@/components/calendar/CalendarHabitItem";
+import { CalendarDiaryItem } from "@/components/calendar/CalendarDiaryItem";
 import { Calendar as CalendarIcon, CheckCircle, Circle, RotateCcw } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { HabitCard } from "@/components/habits/HabitCard";
@@ -11,10 +12,14 @@ import { useHabitCompletions } from "@/hooks/useHabitCompletions";
 import { HabitSchedule } from "@/hooks/useHabitSchedules";
 import React from "react";
 import { shouldHabitBeScheduledOnDate } from "./calendarFrequency";
+import type { Database } from "@/integrations/supabase/types";
+
+type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
 interface WeekViewProps {
   habits: Habit[];
   schedules: HabitSchedule[];
+  diaryEntries?: DiaryEntry[];
   onCheckIn: (id: string, date: Date) => void;
   onUndoCheckIn: (id: string, date: Date) => void;
   calendarViewMode: 'month' | 'week' | 'day';
@@ -22,9 +27,10 @@ interface WeekViewProps {
   currentDate: Date;
   onHabitDrop?: (habitId: string, date: Date) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
+  onDiaryEntryClick?: (entry: DiaryEntry) => void;
 }
 
-export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule }: WeekViewProps) => {
+export const WeekView = ({ habits, schedules, diaryEntries = [], onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onDiaryEntryClick }: WeekViewProps) => {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletions();
 
@@ -48,6 +54,11 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
     return schedules
       .filter(schedule => schedule.scheduled_date === scheduledDate)
       .map(schedule => schedule.habit_id);
+  };
+
+  const getDiaryEntriesForDate = (date: Date): DiaryEntry[] => {
+    const dateString = date.toISOString().split('T')[0];
+    return diaryEntries.filter(entry => entry.entry_date === dateString);
   };
 
   const getWeekDates = (date: Date) => {
@@ -296,6 +307,16 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
                         onUnschedule={onHabitUnschedule}
                       />
                     ))}
+
+                  {/* Diary entries for this day */}
+                  {getDiaryEntriesForDate(date).slice(0, 2).map(entry => (
+                    <CalendarDiaryItem
+                      key={entry.id}
+                      entry={entry}
+                      date={date}
+                      onClick={onDiaryEntryClick}
+                    />
+                  ))}
 
                   {/* Overflow indicator */}
                   {habitsForDay.length > 3 && (

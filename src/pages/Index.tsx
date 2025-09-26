@@ -1,21 +1,22 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useHabits, type Habit, type HabitTargetUnit } from "@/hooks/useHabits";
+import { useDiaryEntries } from "@/hooks/useDiaryEntries";
 import { useHabitSchedules } from "@/hooks/useHabitSchedules";
-import { DatabaseTest } from "@/components/habits/DatabaseTest";
 import { CurrentHabitsList } from "@/components/habits/CurrentHabitsList";
 import { SidePanel } from "@/components/ui/side-panel";
 import { ExternalPanelToggle } from "@/components/ui/external-panel-toggle";
-import { CurrentHabitsSidePanel } from "@/components/habits/CurrentHabitsSidePanel";
-import { FutureAdoptedHabitsSidePanel } from "@/components/habits/FutureAdoptedHabitsSidePanel";
+import { CurrentHabitsSidePanel } from "@/components/layout/CurrentHabitsSidePanel";
+import { FutureAdoptedHabitsSidePanel } from "@/components/layout/FutureAdoptedHabitsSidePanel";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { DiaryView } from "@/components/diary/DiaryView";
 import { AddHabitDialog } from "@/components/habits/AddHabitDialog";
 import { AdoptionSettingsDialog } from "@/components/habits/AdoptionSettingsDialog";
 import { EditHabitDialog } from "@/components/habits/EditHabitDialog";
 import { HabitCard } from "@/components/habits/HabitCard";
-import { UserDropdown } from "@/components/habits/UserDropdown";
+import { UserDropdown } from "@/components/layout/UserDropdown";
 import { UnifiedCalendar } from "@/components/calendar/UnifiedCalendar";
 import { DayHabitsDialog } from "@/components/habits/DayHabitsDialog";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,9 @@ const Index = () => {
   const { profile, loading: profileLoading } = useProfile();
   const { habits, loading: habitsLoading, hasLoaded, addHabit, updateHabit, deleteHabit, checkInHabit, undoCheckIn, moveHabitPhase, refreshHabits } = useHabits();
   const { scheduleHabit, unscheduleHabit, schedules, isHabitScheduledOnDate, getScheduledHabitsForDate } = useHabitSchedules();
+  const { diaryEntries } = useDiaryEntries();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -45,6 +48,21 @@ const Index = () => {
   const [showAdoptionSettings, setShowAdoptionSettings] = useState(false);
   const [adoptionThreshold, setAdoptionThreshold] = useState(21);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showDiary, setShowDiary] = useState(false);
+
+  // Update view state based on URL
+  useEffect(() => {
+    if (location.pathname === '/calendar') {
+      setShowCalendar(true);
+      setShowDiary(false);
+    } else if (location.pathname === '/diary') {
+      setShowCalendar(false);
+      setShowDiary(true);
+    } else {
+      setShowCalendar(false);
+      setShowDiary(false);
+    }
+  }, [location.pathname]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [draggedHabit, setDraggedHabit] = useState<Habit | null>(null);
   const [newHabit, setNewHabit] = useState({
@@ -217,6 +235,23 @@ const Index = () => {
     }
   };
 
+  const handleDiaryEntryClick = (entry: any) => {
+    navigate('/diary');
+  };
+
+  const handleViewChange = (view: 'list' | 'calendar' | 'diary') => {
+    if (view === 'diary') {
+      setShowDiary(true);
+      setShowCalendar(false);
+    } else if (view === 'calendar') {
+      setShowDiary(false);
+      setShowCalendar(true);
+    } else {
+      setShowDiary(false);
+      setShowCalendar(false);
+    }
+  };
+
   const displayName = profile?.name || user?.email?.split('@')[0] || 'Guest';
   const userInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase();
 
@@ -260,7 +295,6 @@ const Index = () => {
             onMoveToFuture={(id) => handleMoveHabit(id, 'future')}
           />
         )}
-        
 
         {/* Habit Dashboard */}
         <div className="h-full flex">
@@ -268,19 +302,24 @@ const Index = () => {
           <div className="flex-1 h-full">
             <MainLayout
               showCalendar={showCalendar}
-              onViewChange={(isCalendar) => setShowCalendar(isCalendar)}
+              showDiary={showDiary}
+              onViewChange={handleViewChange}
               isCombinedPanelCollapsed={isCombinedPanelCollapsed}
               onTogglePanel={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
             >
-              {showCalendar ? (
+              {showDiary ? (
+                <DiaryView />
+              ) : showCalendar ? (
                 <UnifiedCalendar
                   habits={habits}
                   schedules={schedules}
+                  diaryEntries={diaryEntries}
                   onCheckIn={handleCheckIn}
                   onUndoCheckIn={handleUndoCheckIn}
                   onDayClick={handleDayClick}
                   onHabitDrop={handleHabitDrop}
                   onHabitUnschedule={handleHabitUnschedule}
+                  onDiaryEntryClick={handleDiaryEntryClick}
                 />
               ) : (
                 <CurrentHabitsList

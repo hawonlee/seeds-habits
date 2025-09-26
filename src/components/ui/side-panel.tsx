@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { PanelLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { UserDropdown } from "@/components/habits/UserDropdown";
+import { UserDropdown } from "@/components/layout/UserDropdown";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";

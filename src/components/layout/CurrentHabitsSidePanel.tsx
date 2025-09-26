@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
 import { Habit } from '@/hooks/useHabits';
-import { HabitCard } from './HabitCard';
+import { HabitCard } from '../habits/HabitCard';
 
 interface CurrentHabitsSidePanelProps {
   habits: Habit[];

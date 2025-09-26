@@ -1,5 +1,6 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarHabitItem } from "@/components/calendar/CalendarHabitItem";
+import { CalendarDiaryItem } from "@/components/calendar/CalendarDiaryItem";
 import { Habit } from "@/hooks/useHabits";
 import { getCategoryCSSClasses } from "@/lib/categories";
 import { useHabitCompletions } from "@/hooks/useHabitCompletions";
@@ -8,10 +9,14 @@ import React from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HabitCard } from "@/components/habits/HabitCard";
 import { shouldHabitBeScheduledOnDate } from "./calendarFrequency";
+import type { Database } from "@/integrations/supabase/types";
+
+type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
 interface MonthViewProps {
   habits: Habit[];
   schedules: HabitSchedule[];
+  diaryEntries?: DiaryEntry[];
   onCheckIn: (id: string, date: Date) => void;
   onUndoCheckIn: (id: string, date: Date) => void;
   onDayClick: (date: Date, habits: Habit[]) => void;
@@ -20,9 +25,10 @@ interface MonthViewProps {
   currentDate: Date;
   onHabitDrop?: (habitId: string, date: Date) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
+  onDiaryEntryClick?: (entry: DiaryEntry) => void;
 }
 
-export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule }: MonthViewProps) => {
+export const MonthView = ({ habits, schedules, diaryEntries = [], onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onDiaryEntryClick }: MonthViewProps) => {
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletions();
   const [openDateKey, setOpenDateKey] = React.useState<string | null>(null);
   
@@ -46,6 +52,11 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
     return schedules
       .filter(schedule => schedule.scheduled_date === scheduledDate)
       .map(schedule => schedule.habit_id);
+  };
+
+  const getDiaryEntriesForDate = (date: Date): DiaryEntry[] => {
+    const dateString = date.toISOString().split('T')[0];
+    return diaryEntries.filter(entry => entry.entry_date === dateString);
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -276,9 +287,19 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                         />
                       ))}
 
-                      {habitsForDay.length > 3 && (
+                      {/* Diary entries for this day */}
+                      {getDiaryEntriesForDate(date).slice(0, 2).map(entry => (
+                        <CalendarDiaryItem
+                          key={entry.id}
+                          entry={entry}
+                          date={date}
+                          onClick={onDiaryEntryClick}
+                        />
+                      ))}
+
+                      {(habitsForDay.length > 3 || getDiaryEntriesForDate(date).length > 2) && (
                         <div className="text-xs text-muted-foreground">
-                          +{habitsForDay.length - 3} more
+                          +{habitsForDay.length - 3 + Math.max(0, getDiaryEntriesForDate(date).length - 2)} more
                         </div>
                       )}
 

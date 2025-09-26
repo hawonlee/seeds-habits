@@ -3,8 +3,8 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Habit } from '@/hooks/useHabits';
-import { FutureHabitsList } from './FutureHabitsList';
-import { AdoptedHabitsList } from './AdoptedHabitsList';
+import { FutureHabitsList } from '../habits/FutureHabitsList';
+import { AdoptedHabitsList } from '../habits/AdoptedHabitsList';
 
 interface FutureAdoptedHabitsSidePanelProps {
   futureHabits: Habit[];
