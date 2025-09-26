@@ -253,12 +253,17 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                           <button
                             key={color.value}
                             onClick={() => setNewCategory({ ...newCategory, color: color.value })}
-                            className={`w-full h-10 rounded-md border-2 transition-all`}
+                            className={`w-full h-10 rounded-md border-2 transition-all ${newCategory.color === color.value ? '' : 'border-transparent'}`}
                             style={{ 
                               backgroundColor: color.cssBg,
-                              '--dark-bg': color.cssPrimary
-                            } as React.CSSProperties & { '--dark-bg': string }}
+                              '--dark-bg': color.cssBg,
+                              '--light-border': color.cssPrimary,
+                              '--dark-border': color.cssPrimary,
+                              borderColor: newCategory.color === color.value ? 'var(--light-border)' : 'transparent'
+                            } as React.CSSProperties & { '--dark-bg': string; '--light-border': string; '--dark-border': string }}
                             data-dark-bg={color.cssPrimary}
+                            data-light-border={newCategory.color === color.value ? color.cssPrimary : undefined}
+                            data-dark-border={newCategory.color === color.value ? color.cssBg : undefined}
                             aria-label={color.name}
                           />
                         ))}
@@ -325,12 +330,17 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                               <button
                                 key={color.value}
                                 onClick={() => setNewCategory({ ...newCategory, color: color.value })}
-                                className={`w-full h-10 rounded-md border-2 transition-all`}
+                                className={`w-full h-10 rounded-md border-2 transition-all ${newCategory.color === color.value ? '' : 'border-transparent'}`}
                                 style={{ 
                                   backgroundColor: color.cssBg,
-                                  '--dark-bg': color.cssPrimary
-                                } as React.CSSProperties & { '--dark-bg': string }}
+                                  '--dark-bg': color.cssBg,
+                                  '--light-border': color.cssPrimary,
+                                  '--dark-border': color.cssPrimary,
+                                  borderColor: newCategory.color === color.value ? 'var(--light-border)' : 'transparent'
+                                } as React.CSSProperties & { '--dark-bg': string; '--light-border': string; '--dark-border': string }}
                                 data-dark-bg={color.cssPrimary}
+                                data-light-border={newCategory.color === color.value ? color.cssPrimary : undefined}
+                                data-dark-border={newCategory.color === color.value ? color.cssBg : undefined}
                                 aria-label={color.name}
                               />
                             ))}

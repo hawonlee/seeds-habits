@@ -226,4 +226,9 @@ All colors MUST be HSL.
   .dark [data-dark-bg] {
     background-color: var(--dark-bg) !important;
   }
+  
+  /* Category color picker border dark mode support */
+  .dark [data-dark-border] {
+    border-color: var(--dark-border) !important;
+  }
 }

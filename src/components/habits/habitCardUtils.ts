@@ -95,6 +95,17 @@ export const createProgressUtils = (
   const getWeekSummary = (start?: Date) => {
     const days = getWeekDaysFromStart(start);
     const completed = sharedCompletedCounts(days);
+    
+    // For daily habits, calculate progress based on daily target
+    if (habit.target_unit === "day") {
+      const dailyCompleted = Math.min(completed, getDailyTarget());
+      return {
+        days,
+        completed: dailyCompleted,
+        progressPct: getWeeklyProgressPct(dailyCompleted)
+      };
+    }
+    
     return {
       days,
       completed,
