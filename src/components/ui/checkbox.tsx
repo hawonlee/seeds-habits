@@ -3,8 +3,7 @@ import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 import { Check } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { getCategoryPrimaryColor } from "@/lib/categories"
-import { findColorOptionByValue } from "@/lib/colorOptions"
+import { getCategoryCSSVariables } from "@/lib/categories"
 
 interface CheckboxProps extends React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> {
   customColor?: string;
@@ -16,22 +15,36 @@ const Checkbox = React.forwardRef<
   CheckboxProps
 >(({ className, customColor, categoryId, style, ...props }, ref) => {
   const customStyle = React.useMemo(() => {
-    const primary = customColor || (categoryId ? getCategoryPrimaryColor(categoryId) : null);
-    if (!primary) return style;
-    const palette = findColorOptionByValue(primary);
-    const textHex = palette?.textHex || primary;
+    if (customColor) {
+      return {
+        ...style,
+        color: 'inherit',
+        borderColor: customColor,
+        '--checkbox-checked-bg': customColor,
+        '--checkbox-checked-border': customColor,
+        ...(props.checked && {
+          backgroundColor: customColor,
+          borderColor: customColor,
+        })
+      } as React.CSSProperties;
+    }
     
-    return {
-      ...style,
-      color: 'inherit',
-      borderColor: textHex,
-      '--checkbox-checked-bg': textHex,
-      '--checkbox-checked-border': textHex,
-      ...(props.checked && {
-        backgroundColor: textHex,
-        borderColor: textHex,
-      })
-    } as React.CSSProperties;
+    if (categoryId) {
+      const cssVars = getCategoryCSSVariables(categoryId);
+      return {
+        ...style,
+        color: 'inherit',
+        borderColor: cssVars.primary,
+        '--checkbox-checked-bg': cssVars.primary,
+        '--checkbox-checked-border': cssVars.primary,
+        ...(props.checked && {
+          backgroundColor: cssVars.primary,
+          borderColor: cssVars.primary,
+        })
+      } as React.CSSProperties;
+    }
+    
+    return style;
   }, [customColor, categoryId, style, props.checked]);
 
   return (

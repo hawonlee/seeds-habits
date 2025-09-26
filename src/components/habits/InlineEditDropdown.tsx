@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { DEFAULT_CATEGORIES, fetchCategories, getCategories, resolveCategoryBgColor, type Category } from "@/lib/categories";
-import { Habit } from "@/hooks/useHabits";
+import { Habit, HabitTargetUnit } from "@/hooks/useHabits";
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { Trash } from "lucide-react";
@@ -41,7 +41,9 @@ export const InlineEditDropdown = ({
     title: habit.title,
     notes: habit.notes || '',
     category: habit.category,
-    target_frequency: habit.target_frequency,
+    target_value: habit.target_value,
+    target_unit: habit.target_unit,
+    custom_days: habit.custom_days || [],
     leniency_threshold: habit.leniency_threshold
   });
 
@@ -52,9 +54,17 @@ export const InlineEditDropdown = ({
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   
   // Frequency editing state
-  const [frequencyType, setFrequencyType] = useState<'daily' | 'weekly' | 'custom'>('daily');
-  const [frequencyValue, setFrequencyValue] = useState(1);
-  const [customDays, setCustomDays] = useState<boolean[]>([false, false, false, false, false, false, false]);
+  const [frequencyPeriod, setFrequencyPeriod] = useState<'daily' | 'weekly' | 'custom'>('daily');
+  const [frequencyValue, setFrequencyValue] = useState(editedHabit.target_value || 1);
+  const [customDays, setCustomDays] = useState<boolean[]>(createCustomDayState(editedHabit.custom_days));
+
+  function createCustomDayState(days?: number[]) {
+    const state = [false, false, false, false, false, false, false];
+    (days || []).forEach((day) => {
+      if (day >= 0 && day < state.length) state[day] = true;
+    });
+    return state;
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -73,18 +83,32 @@ export const InlineEditDropdown = ({
 
   // Initialize frequency state based on existing habit
   useEffect(() => {
-    const freq = habit.target_frequency;
-    if (freq === 7) {
-      setFrequencyType('daily');
-      setFrequencyValue(1);
-    } else if (freq >= 1 && freq <= 6) {
-      setFrequencyType('weekly');
-      setFrequencyValue(freq);
+    if (habit.target_unit === 'day') {
+      setFrequencyPeriod('daily');
+      setFrequencyValue(habit.target_value || 1);
+      setCustomDays(createCustomDayState());
     } else {
-      setFrequencyType('custom');
-      setFrequencyValue(1);
+      const custom = habit.custom_days || [];
+      if (custom.length) {
+        setFrequencyPeriod('custom');
+        setFrequencyValue(custom.length);
+        setCustomDays(createCustomDayState(custom));
+      } else {
+        setFrequencyPeriod('weekly');
+        setFrequencyValue(habit.target_value || 1);
+        setCustomDays(createCustomDayState());
+      }
     }
-  }, [habit.target_frequency]);
+    setEditedHabit({
+      title: habit.title,
+      notes: habit.notes || '',
+      category: habit.category,
+      target_value: habit.target_value,
+      target_unit: habit.target_unit,
+      custom_days: habit.custom_days || [],
+      leniency_threshold: habit.leniency_threshold
+    });
+  }, [habit]);
 
   // Compute optimal placement relative to the anchor
   useLayoutEffect(() => {

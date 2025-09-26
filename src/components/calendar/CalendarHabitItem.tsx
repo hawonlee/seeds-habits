@@ -1,6 +1,6 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Habit } from "@/hooks/useHabits";
-import { getCategoryPalette } from "@/lib/categories";
+import { getCategoryCSSVariables } from "@/lib/categories";
 import React from "react";
 
 interface CalendarHabitItemProps {
@@ -28,7 +28,7 @@ export const CalendarHabitItem: React.FC<CalendarHabitItemProps> = ({
     }
   };
 
-  const { bgHex, textHex } = getCategoryPalette(habit.category);
+  const cssVars = getCategoryCSSVariables(habit.category);
 
   return (
     <div
@@ -36,8 +36,8 @@ export const CalendarHabitItem: React.FC<CalendarHabitItemProps> = ({
       title={`${habit.title}${isScheduled ? ' (Scheduled - Right-click to unschedule)' : ''}`}
       onContextMenu={handleRightClick}
       style={{ 
-        backgroundColor: habit.category === 'none' ? 'transparent' : bgHex, 
-        color: textHex 
+        backgroundColor: habit.category === 'none' ? 'transparent' : cssVars.bg, 
+        color: cssVars.primary 
       }}
     >
       <Checkbox

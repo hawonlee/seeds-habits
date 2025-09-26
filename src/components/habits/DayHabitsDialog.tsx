@@ -103,7 +103,11 @@ export const DayHabitsDialog = ({
                         <div className="flex-1">
                           <h4 className="font-medium text-green-800">{habit.title}</h4>
                           <div className="flex items-center gap-4 mt-1 text-sm text-green-600">
-                            <span>{formatFrequency(habit.target_frequency)}</span>
+                        <span>{formatFrequency({
+                          target_value: habit.target_value,
+                          target_unit: habit.target_unit,
+                          custom_days: habit.custom_days ?? undefined
+                        })}</span>
                             <span>{habit.streak} day streak</span>
                             {habit.phase === 'adopted' && (
                               <span className="flex items-center gap-1">
@@ -146,7 +150,11 @@ export const DayHabitsDialog = ({
                         <div className="flex-1">
                           <h4 className="font-medium">{habit.title}</h4>
                           <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                            <span>{formatFrequency(habit.target_frequency)}</span>
+                        <span>{formatFrequency({
+                          target_value: habit.target_value,
+                          target_unit: habit.target_unit,
+                          custom_days: habit.custom_days ?? undefined
+                        })}</span>
                             <span>{habit.streak} day streak</span>
                             <Badge variant={habit.phase === 'adopted' ? 'default' : 'secondary'}>
                               {habit.phase}

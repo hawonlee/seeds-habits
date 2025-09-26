@@ -3,13 +3,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export type HabitTargetUnit = 'day' | 'week';
+
 export interface Habit {
   id: string;
   user_id: string;
   title: string;
   notes?: string;
   category: string;
-  target_frequency: number;
+  target_value: number;
+  target_unit: HabitTargetUnit;
+  custom_days: number[] | null;
   leniency_threshold: number;
   phase: 'future' | 'current' | 'adopted';
   streak: number;
@@ -59,7 +63,6 @@ export const useHabits = () => {
     // Check cache first
     const cached = habitsCache[user.id];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log('Using cached habits for user:', user.id);
       setHabits(cached.habits);
       setLoading(false);
       setHasLoaded(true);
@@ -68,7 +71,6 @@ export const useHabits = () => {
 
     try {
       setLoading(true);
-      console.log('Fetching habits for user:', user.id);
       
       const { data, error } = await supabase
         .from('habits')
@@ -76,7 +78,6 @@ export const useHabits = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      console.log('Fetch habits response:', { data, error });
 
       if (error) {
         console.error('Error fetching habits:', error);
@@ -86,7 +87,6 @@ export const useHabits = () => {
           variant: "destructive",
         });
       } else {
-        console.log('Habits loaded:', data);
         const habitsData = data || [];
         setHabits(habitsData);
         setHasLoaded(true);
@@ -115,8 +115,6 @@ export const useHabits = () => {
       return { error: 'No user found' };
     }
 
-    console.log('Adding habit with data:', habitData);
-    console.log('User ID:', user.id);
 
     try {
       const insertData = {
@@ -124,7 +122,9 @@ export const useHabits = () => {
         title: habitData.title,
         notes: habitData.notes,
         category: habitData.category,
-        target_frequency: habitData.target_frequency,
+        target_value: habitData.target_value,
+        target_unit: habitData.target_unit,
+        custom_days: habitData.custom_days,
         leniency_threshold: habitData.leniency_threshold,
         phase: habitData.phase,
         streak: habitData.streak,
@@ -133,7 +133,6 @@ export const useHabits = () => {
         points: habitData.points,
       };
 
-      console.log('Inserting data:', insertData);
 
       const { data, error } = await supabase
         .from('habits')
@@ -141,7 +140,6 @@ export const useHabits = () => {
         .select()
         .single();
 
-      console.log('Supabase response:', { data, error });
 
       if (error) {
         console.error('Supabase error:', error);
@@ -152,7 +150,6 @@ export const useHabits = () => {
         });
         return { error };
       } else {
-        console.log('Habit added successfully:', data);
         setHabits(prev => [data, ...prev]);
         
         // Invalidate cache
@@ -239,7 +236,7 @@ export const useHabits = () => {
     }
   };
 
-  const checkInHabit = async (id: string) => {
+  const checkInHabit = async (id: string, dateOverride?: Date) => {
     if (!user) return { error: 'No user found' };
 
     try {
@@ -248,12 +245,12 @@ export const useHabits = () => {
         return { error: 'Invalid habit or phase' };
       }
 
-      // Check if user has already checked in today
-      const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      const checkInDate = dateOverride || new Date();
+      const dateKey = checkInDate.toISOString().split('T')[0];
       const lastCompleted = habit.last_completed ? new Date(habit.last_completed).toISOString().split('T')[0] : null;
-      
-      // If they already checked in today, don't allow another check-in
-      if (lastCompleted === today) {
+
+      // Only enforce single check-in per day when checking in for today
+      if (!dateOverride && lastCompleted === dateKey) {
         toast({
           title: "Already checked in today",
           description: "You can only check in once per day for this habit.",
@@ -262,14 +259,14 @@ export const useHabits = () => {
         return { error: 'Already checked in today' };
       }
 
-      const todayISO = new Date().toISOString();
+      const checkInISO = checkInDate.toISOString();
       const isConsecutive = lastCompleted && 
-        (new Date().getTime() - new Date(habit.last_completed).getTime()) <= (habit.leniency_threshold + 1) * 24 * 60 * 60 * 1000;
+        (checkInDate.getTime() - new Date(habit.last_completed).getTime()) <= (habit.leniency_threshold + 1) * 24 * 60 * 60 * 1000;
 
       const updates = {
         streak: isConsecutive ? habit.streak + 1 : 1,
         total_completions: habit.total_completions + 1,
-        last_completed: todayISO,
+        last_completed: checkInISO,
       };
 
       return await updateHabit(id, updates);
@@ -331,25 +328,19 @@ export const useHabits = () => {
     if (!user) return { error: 'No user found' };
 
     try {
-      console.log('moveHabitPhase called with:', { id, newPhase });
       const habit = habits.find(h => h.id === id);
       if (!habit) {
-        console.log('Habit not found:', id);
         return { error: 'Habit not found' };
       }
 
-      console.log('Found habit:', habit);
       const updates: Partial<Habit> = { phase: newPhase };
       
       // Award points for adoption
       if (newPhase === 'adopted' && habit.points === 0) {
         updates.points = 50;
-        console.log('Awarding 50 points for adoption');
       }
 
-      console.log('Updating habit with:', updates);
       const result = await updateHabit(id, updates);
-      console.log('Update result:', result);
       return result;
     } catch (error) {
       console.error('Error moving habit phase:', error);

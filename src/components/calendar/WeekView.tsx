@@ -6,10 +6,11 @@ import { CalendarHabitItem } from "@/components/calendar/CalendarHabitItem";
 import { Calendar as CalendarIcon, CheckCircle, Circle, RotateCcw } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { HabitCard } from "@/components/habits/HabitCard";
-import { getCategoryClasses, getCategoryById } from "@/lib/categories";
+import { getCategoryCSSClasses } from "@/lib/categories";
 import { useHabitCompletions } from "@/hooks/useHabitCompletions";
 import { HabitSchedule } from "@/hooks/useHabitSchedules";
 import React from "react";
+import { shouldHabitBeScheduledOnDate } from "./calendarFrequency";
 
 interface WeekViewProps {
   habits: Habit[];
@@ -88,9 +89,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
   }, [currentDate, selectedDay]);
 
   const getHabitsForDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const dayOfWeek = date.getDay();
 
     const isAfterCreatedDay = (habit: Habit, d: Date) => {
       const created = new Date(habit.created_at);
@@ -105,52 +104,18 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
 
     // Get habits that should appear based on their frequency (current habits only)
     const frequencyHabits = habits.filter(habit => {
-      if (habit.phase === 'future') return false;
       if (habit.phase !== 'current') return false;
-
-      // Don't include if already scheduled for this date
       if (scheduledHabitIds.includes(habit.id)) return false;
-
-      // Do not appear on or before the creation day
       if (!isAfterCreatedDay(habit, date)) return false;
-
-      // Check if habit should be done on this day based on frequency
-      return shouldHabitBeDoneOnDate(habit, date, dayOfWeek);
+      return shouldHabitBeScheduledOnDate(habit, date);
     });
 
     // Combine scheduled habits and frequency-based habits
     return [...scheduledHabits, ...frequencyHabits];
   };
 
-  const shouldHabitBeDoneOnDate = (habit: Habit, date: Date, dayOfWeek: number) => {
-    // For now, we'll use a simple approach based on target_frequency
-    // This can be enhanced later to support specific day selection
-
-    // If habit defines explicit custom days (0=Sun..6=Sat), honor that. If the field exists
-    // but is empty, do not show this habit in day grid cells.
-    const hasCustomDaysField = Object.prototype.hasOwnProperty.call(habit as any, 'custom_days');
-    const customDays = (habit as any).custom_days as number[] | undefined;
-    if (hasCustomDaysField) {
-      if (!customDays || customDays.length === 0) {
-        return false; // no specific days chosen -> do not appear in day cells
-      }
-      return customDays.includes(dayOfWeek);
-    }
-
-    // If target_frequency is 7, it's daily
-    if (habit.target_frequency === 7) {
-      // Only show daily habits from the day they were created onwards
-      const createdDate = new Date(habit.created_at);
-      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      return currentDateOnly >= createdDateOnly;
-    }
-
-    // For frequencies 1-6, don't show automatically on calendar
-    // These habits should only appear when manually scheduled
-
-    return false;
-  };
+  const shouldHabitBeDoneOnDate = (habit: Habit, date: Date, dayOfWeek: number) =>
+    shouldHabitBeScheduledOnDate(habit, date);
 
   const getCompletedHabitsForDate = (date: Date) => {
     return habits.filter(habit => isHabitCompletedOnDate(habit.id, date));
@@ -181,36 +146,14 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
     const scheduledHabits = activeHabits.filter(habit => 
       scheduledHabitIds.includes(habit.id) && isHabitActiveOnDate(habit, date)
     );
-    
-    // Get daily habits (target_frequency = 7) that should appear on this day
-    const dailyHabits = activeHabits.filter(habit => {
-      if (habit.target_frequency !== 7) return false;
-      if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
-      
-      // Only show daily habits from the day they were created onwards
-      return isHabitActiveOnDate(habit, date);
-    });
-    
-    // Get custom day habits that should appear on this day
-    const customDayHabits = activeHabits.filter(habit => {
-      if (habit.target_frequency < 2 || habit.target_frequency > 6) return false;
-      if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
-      
-      // Only show custom day habits from the day they were created onwards
+
+    const frequencyHabits = activeHabits.filter(habit => {
+      if (scheduledHabitIds.includes(habit.id)) return false;
       if (!isHabitActiveOnDate(habit, date)) return false;
-      
-      // Check if this habit has custom days defined and this day is one of them
-      const hasCustomDaysField = Object.prototype.hasOwnProperty.call(habit as any, 'custom_days');
-      const customDays = (habit as any).custom_days as number[] | undefined;
-      if (hasCustomDaysField && customDays && customDays.length > 0) {
-        const dayOfWeek = date.getDay();
-        return customDays.includes(dayOfWeek);
-      }
-      return false;
+      return shouldHabitBeScheduledOnDate(habit, date);
     });
     
-    // Planned habits are those specifically assigned to this day
-    const plannedHabits = [...scheduledHabits, ...dailyHabits, ...customDayHabits];
+    const plannedHabits = [...scheduledHabits, ...frequencyHabits];
     
     // My habits are all other current habits that aren't specifically assigned to this day
     const myHabits = activeHabits.filter(habit => 
@@ -261,10 +204,10 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
             <div key={date.toISOString()} className="flex items-center justify-center gap-2">
               <div className={`
                 text-xs 
-                ${isToday ? 'text-primary' : ''}
+                ${isToday ? 'text-foreground' : ''}
                 ${isPast ? 'text-neutral-400' : ''}
                 ${isFuture ? 'text-neutral-500' : ''}
-                ${!isToday && !isPast && !isFuture ? 'text-neutral-600' : ''}
+                ${!isToday && !isPast && !isFuture ? 'text-muted-foreground' : ''}
               `}>
                 {dayNames[index].substring(0, 3).toUpperCase()}
               </div>
@@ -294,16 +237,16 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
           const handleDragOver = (e: React.DragEvent) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
-            e.currentTarget.classList.add('bg-blue-50', 'border-blue-300');
+            e.currentTarget.classList.add('bg-future-bg', 'border-blue-300');
           };
 
           const handleDragLeave = (e: React.DragEvent) => {
-            e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
+            e.currentTarget.classList.remove('bg-future-bg', 'border-blue-300');
           };
 
           const handleDrop = (e: React.DragEvent) => {
             e.preventDefault();
-            e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
+            e.currentTarget.classList.remove('bg-future-bg', 'border-blue-300');
             const habitId = e.dataTransfer.getData('text/plain');
             if (habitId && onHabitDrop) {
               onHabitDrop(habitId, date);
@@ -375,7 +318,7 @@ export const WeekView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendar
         })}
       </div>
 
-      <div className="w-full border-t border-neutral-200 mt-8"></div>
+      <div className="w-full border-t border-habitbg mt-8"></div>
 
       {/* Selected Day Details */}
       {selectedDay && (

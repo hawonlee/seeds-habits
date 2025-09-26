@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { useHabits, type Habit } from "@/hooks/useHabits";
+import { useHabits, type Habit, type HabitTargetUnit } from "@/hooks/useHabits";
 import { useHabitSchedules } from "@/hooks/useHabitSchedules";
 import { DatabaseTest } from "@/components/habits/DatabaseTest";
 import { CurrentHabitsList } from "@/components/habits/CurrentHabitsList";
@@ -51,7 +51,9 @@ const Index = () => {
     title: '',
     notes: '',
     category: 'none',
-    target_frequency: 7, // Default to daily (7 times per week)
+    target_value: 1,
+    target_unit: 'day' as HabitTargetUnit,
+    custom_days: [] as number[],
     leniency_threshold: 2
   });
 
@@ -63,11 +65,6 @@ const Index = () => {
   const adoptedHabits = habits.filter(h => h.phase === 'adopted');
   const futureHabits = habits.filter(h => h.phase === 'future');
 
-  // Debug logging
-  console.log('All habits:', habits);
-  console.log('Adopted habits:', adoptedHabits);
-  console.log('Current habits:', currentHabits);
-  console.log('Future habits:', futureHabits);
 
   const handleAddHabit = async () => {
     if (!newHabit.title.trim()) return;
@@ -76,7 +73,9 @@ const Index = () => {
       title: newHabit.title,
       notes: newHabit.notes,
       category: newHabit.category,
-      target_frequency: newHabit.target_frequency,
+      target_value: newHabit.target_value,
+      target_unit: newHabit.target_unit,
+      custom_days: newHabit.custom_days,
       leniency_threshold: newHabit.leniency_threshold,
       phase: addToPhase,
       streak: 0,
@@ -89,7 +88,9 @@ const Index = () => {
       title: '',
       notes: '',
       category: 'none',
-      target_frequency: 7, // Default to daily (7 times per week)
+      target_value: 1,
+      target_unit: 'day',
+      custom_days: [],
       leniency_threshold: 2
     });
     setIsAddDialogOpen(false);
@@ -101,7 +102,9 @@ const Index = () => {
       title: habit.title,
       notes: habit.notes || '',
       category: habit.category,
-      target_frequency: habit.target_frequency,
+      target_value: habit.target_value,
+      target_unit: habit.target_unit,
+      custom_days: habit.custom_days || [],
       leniency_threshold: habit.leniency_threshold
     });
     setIsEditDialogOpen(true);
@@ -114,7 +117,9 @@ const Index = () => {
       title: newHabit.title,
       notes: newHabit.notes,
       category: newHabit.category,
-      target_frequency: newHabit.target_frequency,
+      target_value: newHabit.target_value,
+      target_unit: newHabit.target_unit,
+      custom_days: newHabit.custom_days,
       leniency_threshold: newHabit.leniency_threshold,
     });
 
@@ -124,7 +129,9 @@ const Index = () => {
       title: '',
       notes: '',
       category: 'none',
-      target_frequency: 7, // Default to daily (7 times per week)
+      target_value: 1,
+      target_unit: 'day',
+      custom_days: [],
       leniency_threshold: 2
     });
   };
@@ -136,7 +143,9 @@ const Index = () => {
       title: updatedHabit.title,
       notes: updatedHabit.notes,
       category: updatedHabit.category,
-      target_frequency: updatedHabit.target_frequency,
+      target_value: updatedHabit.target_value,
+      target_unit: updatedHabit.target_unit,
+      custom_days: updatedHabit.custom_days,
       leniency_threshold: updatedHabit.leniency_threshold,
     });
   };
@@ -147,12 +156,10 @@ const Index = () => {
 
   const handleMoveHabit = async (id: string, newPhase: Habit['phase']) => {
     try {
-      console.log('Moving habit:', id, 'to phase:', newPhase);
       const result = await moveHabitPhase(id, newPhase);
       if (result?.error) {
         console.error('Error moving habit:', result.error);
       } else {
-        console.log('Successfully moved habit');
         // Reset dialog state after successful move
         setEditingHabit(null);
         setIsEditDialogOpen(false);
@@ -196,11 +203,7 @@ const Index = () => {
   const handleHabitDrop = async (habitId: string, date: Date) => {
     // When a habit is dropped on a calendar day, schedule it for that specific date
     const success = await scheduleHabit(habitId, date);
-    if (success) {
-      console.log(`Habit ${habitId} scheduled for ${date.toDateString()}`);
-    } else {
-      console.log(`Habit ${habitId} was already scheduled for ${date.toDateString()}`);
-    }
+
     setDraggedHabit(null);
   };
 
@@ -243,17 +246,20 @@ const Index = () => {
           setAdoptionThreshold={setAdoptionThreshold}
         />
 
-        <EditHabitDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          editingHabit={editingHabit}
-          newHabit={newHabit}
-          setNewHabit={setNewHabit}
-          onUpdateHabit={handleUpdateHabit}
-          onDelete={handleDeleteHabit}
-          onAdopt={(id) => handleMoveHabit(id, 'adopted')}
-          onMoveToFuture={(id) => handleMoveHabit(id, 'future')}
-        />
+        {isEditDialogOpen && (
+          <EditHabitDialog
+            key={editingHabit?.id || 'new'}
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            editingHabit={editingHabit}
+            newHabit={newHabit}
+            setNewHabit={setNewHabit}
+            onUpdateHabit={handleUpdateHabit}
+            onDelete={handleDeleteHabit}
+            onAdopt={(id) => handleMoveHabit(id, 'adopted')}
+            onMoveToFuture={(id) => handleMoveHabit(id, 'future')}
+          />
+        )}
         
 
         {/* Habit Dashboard */}
@@ -282,6 +288,15 @@ const Index = () => {
                   loading={habitsLoading || !hasLoaded}
                   onAddHabit={() => {
                     setAddToPhase('current');
+                    setNewHabit({
+                      title: '',
+                      notes: '',
+                      category: 'none',
+                      target_value: 1,
+                      target_unit: 'day',
+                      custom_days: [],
+                      leniency_threshold: 2
+                    });
                     setIsAddDialogOpen(true);
                   }}
                   adoptionThreshold={adoptionThreshold}
@@ -319,6 +334,15 @@ const Index = () => {
                 habits={currentHabits}
                 onAddHabit={() => {
                   setAddToPhase('current');
+                  setNewHabit({
+                    title: '',
+                    notes: '',
+                    category: 'none',
+                    target_value: 1,
+                    target_unit: 'day',
+                    custom_days: [],
+                    leniency_threshold: 2
+                  });
                   setIsAddDialogOpen(true);
                 }}
                 onEditHabit={handleEditHabit}
@@ -335,6 +359,15 @@ const Index = () => {
                 adoptedHabits={adoptedHabits}
                 onAddHabit={(phase) => {
                   setAddToPhase(phase);
+                  setNewHabit({
+                    title: '',
+                    notes: '',
+                    category: 'none',
+                    target_value: 1,
+                    target_unit: 'day',
+                    custom_days: [],
+                    leniency_threshold: 2
+                  });
                   setIsAddDialogOpen(true);
                 }}
                 adoptionThreshold={adoptionThreshold}

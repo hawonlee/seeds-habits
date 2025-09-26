@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { COLOR_OPTIONS, findColorOptionByValue, findColorOptionByName } from '@/lib/colorOptions';
+import type { HabitTargetUnit } from '@/hooks/useHabits';
 
 export interface Category {
   id: string;
@@ -84,7 +85,6 @@ export const fetchCategories = async (userId: string): Promise<Category[]> => {
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, color, bg_color, text_color')
-      .eq('user_id', userId)
       .order('name');
 
     if (error) {
@@ -264,15 +264,96 @@ export const resolveCategoryBgColorFromText = (categoryId: string): string => {
 };
 
 // Helper function to format frequency display
-export const formatFrequency = (targetFrequency: number): string => {
-  if (targetFrequency === 7) {
-    return '1x/day';
-  } else if (targetFrequency >= 1 && targetFrequency <= 6) {
-    return `${targetFrequency}x/week`;
-  } else {
-    return `${targetFrequency}x/week`;
+interface HabitFrequency {
+  target_value: number;
+  target_unit: HabitTargetUnit;
+  custom_days?: number[] | null;
+}
+
+const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+export const formatFrequency = ({ target_value, target_unit, custom_days }: HabitFrequency): string => {
+  if (target_unit === 'day') {
+    return `${target_value}/day`;
+  }
+
+  const base = `${target_value}/week`;
+
+  if (target_unit === 'week' && custom_days && custom_days.length) {
+    const sortedDays = [...custom_days].sort((a, b) => a - b);
+    const dayLabels = sortedDays.map((d) => dayNames[d]);
+    return `${base} (${dayLabels.join(', ')})`;
+  }
+
+  return base;
+};
+
+// Map category colors to CSS variables
+export const getCategoryCSSVariables = (categoryId: string): { primary: string; bg: string } => {
+  const category = getCategoryById(categoryId);
+  if (!category) {
+    return { primary: 'hsl(var(--category-6-primary))', bg: 'hsl(var(--category-6-bg))' };
+  }
+  
+  const primaryColor = category.color;
+  const palette = findColorOptionByValue(primaryColor);
+  
+  if (!palette) {
+    return { primary: 'hsl(var(--category-6-primary))', bg: 'hsl(var(--category-6-bg))' };
+  }
+  
+  // Map palette colors to CSS variables based on order in COLOR_OPTIONS
+  const colorIndex = COLOR_OPTIONS.findIndex(option => option.value === primaryColor);
+  
+  switch (colorIndex) {
+    case 0: // Red
+      return { primary: 'hsl(var(--category-1-primary))', bg: 'hsl(var(--category-1-bg))' };
+    case 1: // Amber
+      return { primary: 'hsl(var(--category-2-primary))', bg: 'hsl(var(--category-2-bg))' };
+    case 2: // Green
+      return { primary: 'hsl(var(--category-3-primary))', bg: 'hsl(var(--category-3-bg))' };
+    case 3: // Blue
+      return { primary: 'hsl(var(--category-4-primary))', bg: 'hsl(var(--category-4-bg))' };
+    case 4: // Purple
+      return { primary: 'hsl(var(--category-5-primary))', bg: 'hsl(var(--category-5-bg))' };
+    case 5: // Neutral
+      return { primary: 'hsl(var(--category-6-primary))', bg: 'hsl(var(--category-6-bg))' };
+    default:
+      return { primary: 'hsl(var(--category-6-primary))', bg: 'hsl(var(--category-6-bg))' };
   }
 };
 
-// For backward compatibility
-export const DEFAULT_CATEGORIES = FALLBACK_CATEGORIES;
+// Get category CSS class names for Tailwind
+export const getCategoryCSSClasses = (categoryId: string): { primary: string; bg: string } => {
+  const category = getCategoryById(categoryId);
+  if (!category) {
+    return { primary: 'category-6-primary', bg: 'category-6-bg' };
+  }
+  
+  const primaryColor = category.color;
+  const palette = findColorOptionByValue(primaryColor);
+  
+  if (!palette) {
+    return { primary: 'category-6-primary', bg: 'category-6-bg' };
+  }
+  
+  // Map palette colors to CSS class names based on order in COLOR_OPTIONS
+  const colorIndex = COLOR_OPTIONS.findIndex(option => option.value === primaryColor);
+  
+  switch (colorIndex) {
+    case 0: // Red
+      return { primary: 'category-1-primary', bg: 'category-1-bg' };
+    case 1: // Amber
+      return { primary: 'category-2-primary', bg: 'category-2-bg' };
+    case 2: // Green
+      return { primary: 'category-3-primary', bg: 'category-3-bg' };
+    case 3: // Blue
+      return { primary: 'category-4-primary', bg: 'category-4-bg' };
+    case 4: // Purple
+      return { primary: 'category-5-primary', bg: 'category-5-bg' };
+    case 5: // Neutral
+      return { primary: 'category-6-primary', bg: 'category-6-bg' };
+    default:
+      return { primary: 'category-6-primary', bg: 'category-6-bg' };
+  }
+};

@@ -53,7 +53,7 @@ export const CalendarHeader = ({
             variant="outline"
             size="sm"
             onClick={onToday}
-            className="h-8 px-3 text-xs font-normal"
+            className="h-8 px-3 text-xs font-normal border-input"
           >
             Today
           </Button>

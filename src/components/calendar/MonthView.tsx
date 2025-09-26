@@ -1,12 +1,13 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarHabitItem } from "@/components/calendar/CalendarHabitItem";
 import { Habit } from "@/hooks/useHabits";
-import { getCategoryClasses, getCategoryById, resolveCategoryBgColor } from "@/lib/categories";
+import { getCategoryCSSClasses } from "@/lib/categories";
 import { useHabitCompletions } from "@/hooks/useHabitCompletions";
 import { HabitSchedule } from "@/hooks/useHabitSchedules";
 import React from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HabitCard } from "@/components/habits/HabitCard";
+import { shouldHabitBeScheduledOnDate } from "./calendarFrequency";
 
 interface MonthViewProps {
   habits: Habit[];
@@ -89,19 +90,8 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
     return days;
   };
 
-  const shouldHabitBeDoneOnDate = (habit: Habit, date: Date, dayOfWeek: number) => {
-    // If target_frequency is 7, it's daily
-    if (habit.target_frequency === 7) {
-      // Only show daily habits from the day they were created onwards
-      const createdDate = new Date(habit.created_at);
-      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      return currentDateOnly >= createdDateOnly;
-    }
-    
-    // For frequencies 1-6, don't show automatically on calendar
-    // These habits should only appear when manually scheduled
-    return false;
+  const shouldHabitBeDoneOnDate = (habit: Habit, date: Date) => {
+    return shouldHabitBeScheduledOnDate(habit, date);
   };
 
   const getCompletedHabitsForDate = (date: Date) => {
@@ -145,35 +135,13 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
       scheduledHabitIds.includes(habit.id) && isHabitActiveOnDate(habit, date)
     );
     
-    // Get daily habits (target_frequency = 7) that should appear on this day
-    const dailyHabits = activeHabits.filter(habit => {
-      if (habit.target_frequency !== 7) return false;
-      if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
-      
-      // Only show daily habits from the day they were created onwards
-      return isHabitActiveOnDate(habit, date);
-    });
-    
-    // Get custom day habits that should appear on this day
-    const customDayHabits = activeHabits.filter(habit => {
-      if (habit.target_frequency < 2 || habit.target_frequency > 6) return false;
-      if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
-      
-      // Only show custom day habits from the day they were created onwards
+    const frequencyHabits = activeHabits.filter(habit => {
+      if (scheduledHabitIds.includes(habit.id)) return false;
       if (!isHabitActiveOnDate(habit, date)) return false;
-      
-      // Check if this habit has custom days defined and this day is one of them
-      const hasCustomDaysField = Object.prototype.hasOwnProperty.call(habit as any, 'custom_days');
-      const customDays = (habit as any).custom_days as number[] | undefined;
-      if (hasCustomDaysField && customDays && customDays.length > 0) {
-        const dayOfWeek = date.getDay();
-        return customDays.includes(dayOfWeek);
-      }
-      return false;
+      return shouldHabitBeScheduledOnDate(habit, date);
     });
     
-    // Planned habits are those specifically assigned to this day
-    const plannedHabits = [...scheduledHabits, ...dailyHabits, ...customDayHabits];
+    const plannedHabits = [...scheduledHabits, ...frequencyHabits];
     
     // My habits are all other current habits that aren't specifically assigned to this day
     const myHabits = activeHabits.filter(habit => 
@@ -238,16 +206,16 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
           const handleDragOver = (e: React.DragEvent) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
-            e.currentTarget.classList.add('bg-blue-50', 'border-blue-300');
+            e.currentTarget.classList.add('bg-future-bg', 'border-blue-300');
           };
 
           const handleDragLeave = (e: React.DragEvent) => {
-            e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
+            e.currentTarget.classList.remove('bg-future-bg', 'border-blue-300');
           };
 
           const handleDrop = (e: React.DragEvent) => {
             e.preventDefault();
-            e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
+            e.currentTarget.classList.remove('bg-future-bg', 'border-blue-300');
             const habitId = e.dataTransfer.getData('text/plain');
             if (habitId && onHabitDrop) {
               onHabitDrop(habitId, date);
@@ -287,8 +255,8 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                       <div className={`
                         text-xs font-medium
                         ${isToday ? 'text-white bg-red-600 rounded-full w-6 h-6 flex items-center justify-center' : ''}
-                        ${!isToday && isCurrentMonth ? 'text-neutral-900' : ''}
-                        ${!isToday && !isCurrentMonth ? 'text-neutral-400' : ''}
+                        ${!isToday && isCurrentMonth ? 'text-foreground' : ''}
+                        ${!isToday && !isCurrentMonth ? 'text-muted-foreground' : ''}
                      `}>
                         {date.getDate()}
                       </div>
@@ -340,7 +308,7 @@ export const MonthView = ({ habits, schedules, onCheckIn, onUndoCheckIn, onDayCl
                   <div className="space-y-3">
                       {plannedHabits.length > 0 && (
                         <div className="space-y-2">
-                          <div className="text-xs font-medium text-neutral-700">Planned Habits</div>
+                          <div className="text-xs font-medium text-foreground">Planned Habits</div>
                           <div className="grid gap-2">
                             {plannedHabits.map(habit => (
                               <HabitCard

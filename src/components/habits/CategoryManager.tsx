@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { COLOR_OPTIONS, findColorOptionByValue } from '@/lib/colorOptions';
-import { getCategoryPalette } from '@/lib/categories';
+import { getCategoryCSSVariables } from '@/lib/categories';
 
 interface CategoryManagerProps {
   onCategoryChange?: (categories: Category[]) => void;
@@ -51,7 +51,11 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
     }
   };
 
-  const colorOptions = COLOR_OPTIONS;
+  const colorOptions = COLOR_OPTIONS.map((color, index) => ({
+    ...color,
+    cssBg: `hsl(var(--category-${index + 1}-bg))`,
+    cssPrimary: `hsl(var(--category-${index + 1}-primary))`
+  }));
 
   const handleAddCategory = async () => {
     if (newCategory.name && newCategory.color) {
@@ -250,7 +254,11 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                             key={color.value}
                             onClick={() => setNewCategory({ ...newCategory, color: color.value })}
                             className={`w-full h-10 rounded-md border-2 transition-all`}
-                            style={{ backgroundColor: color.bgHex, borderColor: newCategory.color === color.value ? '#9CA3AF' : 'transparent' }}
+                            style={{ 
+                              backgroundColor: color.cssBg,
+                              '--dark-bg': color.cssPrimary
+                            } as React.CSSProperties & { '--dark-bg': string }}
+                            data-dark-bg={color.cssPrimary}
                             aria-label={color.name}
                           />
                         ))}
@@ -273,7 +281,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
             </div>
             <div className="grid grid-cols-2 gap-3">
               {categories.filter(category => category.id !== 'none').map(category => (
-                <div key={category.id} className="flex items-center justify-between bg-neutral-50 p-3 rounded-lg">
+                <div key={category.id} className="flex items-center justify-between bg-habitbghover p-3 rounded-lg">
                   <Popover
                     open={openPopoverId === category.id}
                     onOpenChange={(open) => {
@@ -289,10 +297,10 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                     <PopoverTrigger asChild>
                       <button className="flex items-center gap-3 focus:outline-none">
                         {(() => {
-                          const { bgHex, textHex } = getCategoryPalette(category.id);
+                          const cssVars = getCategoryCSSVariables(category.id);
                           return (
                             <>
-                              <div className="w-5 h-5 rounded-sm border" style={{ backgroundColor: bgHex, borderColor: textHex }} />
+                              <div className="w-5 h-5 rounded-sm border" style={{ backgroundColor: cssVars.bg, borderColor: cssVars.primary }} />
                               <Badge categoryId={category.id} className="text-xs p-1 px-2">
                                 {category.name}
                               </Badge>
@@ -317,8 +325,12 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                               <button
                                 key={color.value}
                                 onClick={() => setNewCategory({ ...newCategory, color: color.value })}
-                            className={`w-full h-10 rounded-md border-2  transition-all`}
-                            style={{ backgroundColor: color.bgHex, borderColor: newCategory.color === color.value ? '#9CA3AF' : 'transparent' }}
+                                className={`w-full h-10 rounded-md border-2 transition-all`}
+                                style={{ 
+                                  backgroundColor: color.cssBg,
+                                  '--dark-bg': color.cssPrimary
+                                } as React.CSSProperties & { '--dark-bg': string }}
+                                data-dark-bg={color.cssPrimary}
                                 aria-label={color.name}
                               />
                             ))}

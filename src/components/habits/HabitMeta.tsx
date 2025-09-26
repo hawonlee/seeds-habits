@@ -42,7 +42,11 @@ export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = fals
             </span>
             <span className="flex items-center gap-1">
               <Repeat className={iconSize} />
-              {formatFrequency(habit.target_frequency)}
+              {formatFrequency({
+                target_value: habit.target_value,
+                target_unit: habit.target_unit,
+                custom_days: habit.custom_days ?? undefined
+              })}
             </span>
           </div>
         </div>

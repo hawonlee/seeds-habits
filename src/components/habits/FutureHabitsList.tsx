@@ -36,12 +36,12 @@ export const FutureHabitsList = ({
 }: FutureHabitsListProps) => {
   if (isCollapsed) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-neutral-50 rounded-lg border">
+      <div className="h-full flex flex-col items-center justify-center rounded-lg border">
         <Button
           size="sm"
           variant="ghost"
           onClick={onToggleCollapse}
-          className="h-12 w-12 p-0 hover:bg-neutral-100"
+          className="h-12 w-12 p-0 hover:bg-accent"
         >
           <PanelLeft className="h-6 w-6 text-blue-500" />
         </Button>
@@ -53,7 +53,7 @@ export const FutureHabitsList = ({
   }
 
   return (
-    <div className="h-full bg-white overflow-y-auto">
+    <div className="h-full overflow-y-auto">
       {/* {!hideHeader && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">

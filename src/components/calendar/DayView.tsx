@@ -5,6 +5,7 @@ import { HabitSchedule } from "@/hooks/useHabitSchedules";
 import React from "react";
 import { HabitCard } from "@/components/habits/HabitCard";
 import { useHabitCompletions } from "@/hooks/useHabitCompletions";
+import { shouldHabitBeScheduledOnDate } from "./calendarFrequency";
 
 interface DayViewProps {
   habits: Habit[];
@@ -46,17 +47,14 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
     return habits.filter(habit => isHabitCompletedOnDate(habit.id, currentDate));
   };
 
+  const isAfterCreatedDay = (habit: Habit, d: Date) => {
+    const created = new Date(habit.created_at);
+    const createdEnd = new Date(created);
+    createdEnd.setHours(23, 59, 59, 999);
+    return d > createdEnd;
+  };
+
   const getActiveHabits = () => {
-    const isPast = currentDate < new Date(new Date().setHours(0, 0, 0, 0));
-    const isFuture = currentDate > new Date(new Date().setHours(23, 59, 59, 999));
-    const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
-    const isAfterCreatedDay = (habit: Habit, d: Date) => {
-      const created = new Date(habit.created_at);
-      const createdEnd = new Date(created);
-      createdEnd.setHours(23, 59, 59, 999);
-      return d > createdEnd;
-    };
 
     // Get habits that are scheduled for this specific date
     const scheduledHabitIds = getScheduledHabitsForDate(currentDate);
@@ -64,41 +62,18 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
     
     // Get habits that should appear based on their frequency (current habits only)
     const frequencyHabits = habits.filter(habit => {
-      if (habit.phase === 'future') return false;
       if (habit.phase !== 'current') return false;
-      
-      // Don't include if already scheduled for this date
       if (scheduledHabitIds.includes(habit.id)) return false;
-      
-      // Do not appear on or before the creation day
       if (!isAfterCreatedDay(habit, currentDate)) return false;
-      
-      // Check if habit should be done on this day based on frequency
-      return shouldHabitBeDoneOnDate(habit, currentDate, dayOfWeek);
+      return shouldHabitBeScheduledOnDate(habit, currentDate);
     });
     
     // Combine scheduled habits and frequency-based habits
     return [...scheduledHabits, ...frequencyHabits];
   };
 
-  const shouldHabitBeDoneOnDate = (habit: Habit, date: Date, dayOfWeek: number) => {
-    // For now, we'll use a simple approach based on target_frequency
-    // This can be enhanced later to support specific day selection
-    
-    // If target_frequency is 7, it's daily
-    if (habit.target_frequency === 7) {
-      // Only show daily habits from the day they were created onwards
-      const createdDate = new Date(habit.created_at);
-      const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-      const currentDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      return currentDateOnly >= createdDateOnly;
-    }
-    
-    // For frequencies 1-6, don't show automatically on calendar
-    // These habits should only appear when manually scheduled
-    
-    return false;
-  };
+  const shouldHabitBeDoneOnDate = (habit: Habit, date: Date) =>
+    shouldHabitBeScheduledOnDate(habit, date);
 
   const completedHabits = getCompletedHabits();
   const activeHabits = getActiveHabits();
@@ -107,35 +82,13 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
   const scheduledHabitIds = getScheduledHabitsForDate(currentDate);
   const scheduledHabits = activeHabits.filter(habit => scheduledHabitIds.includes(habit.id));
   
-  // Get daily habits (target_frequency = 7) that should appear on this day
-  const dailyHabits = activeHabits.filter(habit => {
-    if (habit.target_frequency !== 7) return false;
-    if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
-    
-    // Only show daily habits from the day they were created onwards
-    const createdDate = new Date(habit.created_at);
-    const createdDateOnly = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate());
-    const currentDateOnly = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-    return currentDateOnly >= createdDateOnly;
+  const frequencyHabits = activeHabits.filter(habit => {
+    if (scheduledHabitIds.includes(habit.id)) return false;
+    if (!isAfterCreatedDay(habit, currentDate)) return false;
+    return shouldHabitBeScheduledOnDate(habit, currentDate);
   });
-  
-  // Get custom day habits that should appear on this day
-  const customDayHabits = activeHabits.filter(habit => {
-    if (habit.target_frequency < 2 || habit.target_frequency > 6) return false;
-    if (scheduledHabitIds.includes(habit.id)) return false; // Don't double-count scheduled habits
-    
-    // Check if this habit has custom days defined and this day is one of them
-    const hasCustomDaysField = Object.prototype.hasOwnProperty.call(habit as any, 'custom_days');
-    const customDays = (habit as any).custom_days as number[] | undefined;
-    if (hasCustomDaysField && customDays && customDays.length > 0) {
-      const dayOfWeek = currentDate.getDay();
-      return customDays.includes(dayOfWeek);
-    }
-    return false;
-  });
-  
-  // Planned habits are those specifically assigned to this day
-  const plannedHabits = [...scheduledHabits, ...dailyHabits, ...customDayHabits];
+
+  const plannedHabits = [...scheduledHabits, ...frequencyHabits];
   
   // My habits are all other current habits that aren't specifically assigned to this day
   const myHabits = activeHabits.filter(habit => 
@@ -169,9 +122,9 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
   };
 
   const getDateStatus = () => {
-    if (isToday) return { text: "Today", color: "text-green-600", bgColor: "bg-green-50", borderColor: "border-green-200" };
-    if (isPast) return { text: "Past", color: "text-neutral-600", bgColor: "bg-neutral-50", borderColor: "border-neutral-200" };
-    return { text: "Future", color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200" };
+    if (isToday) return { text: "Today", color: "text-today-text", bgColor: "bg-today-bg", borderColor: "border-green-200" };
+    if (isPast) return { text: "Past", color: "text-past-text", bgColor: "bg-past-bg", borderColor: "border-neutral-200" };
+    return { text: "Future", color: "text-future-text", bgColor: "bg-future-bg", borderColor: "border-blue-200" };
   };
 
   const dateStatus = getDateStatus();
@@ -179,16 +132,16 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    e.currentTarget.classList.add('bg-blue-50', 'border-blue-300');
+    e.currentTarget.classList.add('bg-future-bg', 'border-blue-300');
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
+    e.currentTarget.classList.remove('bg-future-bg', 'border-blue-300');
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
+    e.currentTarget.classList.remove('bg-future-bg', 'border-blue-300');
     const habitId = e.dataTransfer.getData('text/plain');
     if (habitId && onHabitDrop) {
       onHabitDrop(habitId, currentDate);
@@ -213,15 +166,15 @@ export const DayView = ({ habits, schedules, onCheckIn, onUndoCheckIn, calendarV
           </div>
           {/* Summary Stats */}
           {/* <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
+            <div className="text-center p-4 bg-today-bg rounded-lg">
               <div className="text-2xl font-bold text-green-600">{completedHabits.length}</div>
               <div className="text-sm text-green-600">Completed</div>
             </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+            <div className="text-center p-4 bg-past-bg rounded-lg">
               <div className="text-2xl font-bold text-yellow-600">{remainingHabits.length}</div>
               <div className="text-sm text-yellow-600">Remaining</div>
             </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
+            <div className="text-center p-4 bg-future-bg rounded-lg">
               <div className="text-2xl font-bold text-blue-600">{activeHabits.length}</div>
               <div className="text-sm text-blue-600">Total</div>
             </div>

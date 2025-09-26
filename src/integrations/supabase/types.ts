@@ -21,7 +21,9 @@ export type Database = {
           title: string
           notes: string | null
           category: string
-          target_frequency: number
+          target_value: number
+          target_unit: Database["public"]["Enums"]["habit_target_unit"]
+          custom_days: number[] | null
           leniency_threshold: number
           phase: 'future' | 'current' | 'adopted'
           streak: number
@@ -37,7 +39,9 @@ export type Database = {
           title: string
           notes?: string | null
           category?: string
-          target_frequency?: number
+          target_value?: number
+          target_unit?: Database["public"]["Enums"]["habit_target_unit"] | null
+          custom_days?: number[] | null
           leniency_threshold?: number
           phase?: 'future' | 'current' | 'adopted'
           streak?: number
@@ -53,7 +57,9 @@ export type Database = {
           title?: string
           notes?: string | null
           category?: string
-          target_frequency?: number
+          target_value?: number
+          target_unit?: Database["public"]["Enums"]["habit_target_unit"] | null
+          custom_days?: number[] | null
           leniency_threshold?: number
           phase?: 'future' | 'current' | 'adopted'
           streak?: number
@@ -225,7 +231,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      habit_target_unit: 'day' | 'week'
     }
     CompositeTypes: {
       [_ in never]: never

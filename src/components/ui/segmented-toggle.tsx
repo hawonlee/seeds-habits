@@ -22,14 +22,14 @@ export const SegmentedToggle = ({
             className={cn(
               "text-xs font-normal uppercase transition-colors duration-200 focus:outline-none",
               value === option.value
-                ? "text-black font-medium"
-                : "text-neutral-400 hover:text-neutral-600"
+                ? "text-foreground font-medium"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             {option.label}
           </button>
           {index < options.length - 1 && (
-            <span className="mx-1 text-black font-medium">/</span>
+            <span className="mx-1 text-foreground font-medium">/</span>
           )}
         </div>
       ))}

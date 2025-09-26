@@ -41,7 +41,7 @@ export const CombinedHabitsPanel: React.FC<CombinedHabitsPanelProps> = ({
   }
 
   return (
-    <div className="h-full bg-white flex flex-col">
+    <div className="h-full bg-background flex flex-col">
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-end mb-3">
@@ -57,13 +57,13 @@ export const CombinedHabitsPanel: React.FC<CombinedHabitsPanelProps> = ({
         </div>
 
         {/* Tab Toggle */}
-        <div className="flex bg-neutral-100 rounded-lg p-1">
+        <div className="flex bg-muted rounded-lg p-1">
           <button
             onClick={() => setActiveTab('future')}
             className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'future'
-                ? 'bg-white text-neutral-900 shadow-sm'
-                : 'text-neutral-600 hover:text-neutral-900'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
@@ -78,8 +78,8 @@ export const CombinedHabitsPanel: React.FC<CombinedHabitsPanelProps> = ({
             onClick={() => setActiveTab('adopted')}
             className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'adopted'
-                ? 'bg-white text-neutral-900 shadow-sm'
-                : 'text-neutral-600 hover:text-neutral-900'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
@@ -95,7 +95,7 @@ export const CombinedHabitsPanel: React.FC<CombinedHabitsPanelProps> = ({
         {/* Points Display for Adopted */}
         {activeTab === 'adopted' && (
           <div className="mt-3 text-center">
-            <div className="text-xxs text-neutral-500">Total Points</div>
+            <div className="text-xxs text-muted-foreground">Total Points</div>
             <div className="text-lg font-semibold text-amber-600">{totalPoints}</div>
           </div>
         )}

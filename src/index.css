@@ -17,7 +17,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 98%;
     --foreground: 20 6% 16%;
 
     --card: 0 0% 98.4%;
@@ -26,14 +26,14 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 20 6% 16%;
 
-    --primary: 20 6% 16%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 0 0% 16%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 20 6% 16%;
+    --secondary: 0 00% 96.1%;
+    --secondary-foreground: 0 0% 16%;
 
-    --muted: 0 0% 92.5%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 98%;
+    --muted-foreground: 0 0% 46.9%;
 
     --accent: 30 8% 84%;
     --accent-foreground: 20 6% 16%;
@@ -41,8 +41,8 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 0 0% 91.4%;
+    --input: 0 0% 91.4%;
     --ring: 20 6% 16%;
 
     --radius: 0.5rem;
@@ -62,26 +62,81 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --checkbox-bg: 0 0% 100%;
+    --checkbox-bghover: 0 0% 80%;
+
+    --habitbg: 0 0% 95%;
+    --habitbghover: 0 0% 93%;
+    --daycell-bg: 0 0% 100%;
+    --daycell-bg-hover: 0 0% 96%;
+    --today-bg: 120 50% 90%;
+    --past-bg: 0 0% 96%;
+    --future-bg: 220 50% 90%;
+    --today-text: 120 60% 30%;
+    --past-text: 0 0% 32%;
+    --future-text: 220 60% 30%;
+    --button-hover: 0 0% 96%;
+
+    --border-today: 0 0% 65%;
+    --border-default: 0 0% 90%;
+    --text-primary: 0 0% 20%;
+    --text-secondary: 0 0% 45%;
+    --text-hover: 0 0% 10%;
+    --plus-button-bg: 120 60% 40%;
+    --plus-button-hover: 120 60% 35%;
+    --plus-button-text: 0 0% 100%;
+    --plus-button-text-dark: 0 0% 20%;
+
+    --category-1-primary: 0 25% 35%;
+    --category-1-bg: 0 25% 90%;
+    --category-2-primary: 50 30% 35%;
+    --category-2-bg: 50 30% 90%;
+    --category-3-primary: 100 25% 35%;
+    --category-3-bg: 100 25% 90%;
+    --category-4-primary: 200 25% 35%;
+    --category-4-bg: 200 25% 90%;
+    --category-5-primary: 280 25% 35%;
+    --category-5-bg: 280 25% 90%;
+    --category-6-primary: 0 0% 30%;
+    --category-6-bg: 0 0% 87%;
+
+    --button-outline-border: 0 0% 80%;
+    --button-outline-hover: 0 0% 90%;
+    --button-outline-filled: 0 0% 95%;
+    --button-outline-filled-border: 0 0% 75%;
+    --button-outline-inactive-border: 0 0% 80%;
+    --button-outline-inactive-hover: 0 0% 95%;
+    --button-outline-inactive-text: 0 0% 60%;
+    --button-secondary-bg: 0 0% 80%;
+    --button-secondary-text: 0 0% 20%;
+    --button-secondary-hover: 0 0% 70%;
+    --button-tertiary-bg: 0 0% 85%;
+    --button-tertiary-text: 0 0% 20%;
+    --button-tertiary-hover: 0 0% 75%;
+    --button-ghost-hover: 0 0% 90%;
+    --progress-track: 0 0% 100%;
+    --side-panel-bg: 0 0% 100%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 9%;
+    --foreground: 0 0% 90%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 4.9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 0 0% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 20 6% 16%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 0 0% 16%;
+    --primary-foreground: 0 0% 90%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 0 0% 92.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 15;
+    --muted-foreground: 0 0% 55%;
 
     --accent: 30 8% 84%;
     --accent-foreground: 210 40% 98%;
@@ -89,17 +144,72 @@ All colors MUST be HSL.
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --border: 0 0% 17.5%;
+    --input: 0 0% 17.5%;
+    --ring: 0 0% 83.9%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 95.9%;
+    --sidebar-primary: 0 0% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 0 0% 15.9%;
+    --sidebar-accent-foreground: 0 0% 95.9%;
+    --sidebar-border: 0 0% 15.9%;
+    --sidebar-ring: 0 0% 59.8%;
+
+    --checkbox-bg: 0 0% 30%;
+    --checkbox-bghover: 0 0% 80%;
+
+    --habitbg: 0 0% 13%;
+    --habitbghover: 0 0% 17%;
+    --daycell-bg: 0 0% 16%;
+    --daycell-bg-hover: 0 0% 22%;
+    --today-bg: 120 50% 15%;
+    --past-bg: 0 0% 16%;
+    --future-bg: 240 50% 15%;
+    --today-text: 120 60% 50%;
+    --past-text: 0 0% 64%;
+    --future-text: 220 60% 50%;
+    --button-hover: 0 0% 25%;
+
+    --border-today: 0 0% 20%;
+    --border-default: 0 0% 40%;
+    --text-primary: 0 0% 90%;
+    --text-secondary: 0 0% 70%;
+    --text-hover: 0 0% 95%;
+    --plus-button-bg: 120 60% 40%;
+    --plus-button-hover: 120 60% 35%;
+    --plus-button-text: 0 0% 100%;
+    --plus-button-text-dark: 0 0% 20%;
+
+    --category-1-primary: 0 25% 60%;
+    --category-1-bg: 0 25% 20%;
+    --category-2-primary: 50 30% 60%;
+    --category-2-bg: 50 30% 20%;
+    --category-3-primary: 100 25% 60%;
+    --category-3-bg: 100 25% 20%;
+    --category-4-primary: 200 25% 60%;
+    --category-4-bg: 200 25% 20%;
+    --category-5-primary: 280 25% 60%;
+    --category-5-bg: 280 25% 20%;
+    --category-6-primary: 0 0% 60%;
+    --category-6-bg: 0 0% 20%;
+
+    --button-outline-border: 0 0% 40%;
+    --button-outline-hover: 0 0% 30%;
+    --button-outline-filled: 0 0% 20%;
+    --button-outline-filled-border: 0 0% 50%;
+    --button-outline-inactive-border: 0 0% 40%;
+    --button-outline-inactive-hover: 0 0% 25%;
+    --button-outline-inactive-text: 0 0% 60%;
+    --button-secondary-bg: 0 0% 30%;
+    --button-secondary-text: 0 0% 90%;
+    --button-secondary-hover: 0 0% 40%;
+    --button-tertiary-bg: 0 0% 25%;
+    --button-tertiary-text: 0 0% 90%;
+    --button-tertiary-hover: 0 0% 35%;
+    --button-ghost-hover: 0 0% 20%;
+    --progress-track: 0 0% 20%;
+    --side-panel-bg: 0 0% 6%;
   }
 }
 
@@ -110,5 +220,10 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Category color picker dark mode support */
+  .dark [data-dark-bg] {
+    background-color: var(--dark-bg) !important;
   }
 }

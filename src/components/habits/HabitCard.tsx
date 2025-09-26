@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Check } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
-import { getCategoryById, getCategoryPrimaryColor } from "@/lib/categories";
+import { getCategoryById, getCategoryCSSVariables } from "@/lib/categories";
 import { HabitMeta } from "./HabitMeta";
 import { useState, useRef } from "react";
 import { ProgressCircle } from "@/components/ui/progress-circle";
@@ -96,11 +96,11 @@ export const HabitCard = ({
 
     return (
       <div className="relative" ref={cardRef}>
-        <div 
+        <div
           className={containerClasses}
           onClick={() => onEditHabit?.(habit)}
         >
-          
+
           {/* Left side - Habit name and details */}
           <HabitMeta habit={habit} size="sm" />
 
@@ -110,28 +110,29 @@ export const HabitCard = ({
               const dayDone = completionHandlers.isDoneOnDate(day);
               const isToday = day.toDateString() === new Date().toDateString();
               const sizeClasses = isToday ? 'w-10 h-10' : 'w-6 h-6';
-              const categoryColor = getCategoryById(habit.category)?.color || '#737373';
+              const categoryColor = getCategoryCSSVariables(habit.category).primary;
 
               return (
-                <div
-                  key={index}
-                  className={`${sizeClasses} rounded flex items-center justify-center text-[10px] ${dayDone ? 'text-white' : ''}`}
-                  title={`${day.toLocaleDateString('en-US', { weekday: 'short' })} ${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-                  style={{
-                    backgroundColor: dayDone ? categoryColor : 'white',
-                    borderColor: dayDone ? categoryColor : (isToday ? '#A8A29E' : '#E5E7EB')
-                  }}
-                >
-                  <button
-                    className={`w-full h-full flex flex-col items-center justify-center rounded duration-200 ${dayDone ? 'text-white' : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100'}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      completionHandlers.setDateCompletion(day, !dayDone);
+                <div key={index} className="flex flex-col items-center w-12">
+                  <div
+                    className={`${sizeClasses} rounded flex items-center justify-center text-[10px] ${dayDone ? 'text-white' : ''}`}
+                    title={`${day.toLocaleDateString('en-US', { weekday: 'short' })} ${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                    style={{
+                      backgroundColor: dayDone ? categoryColor : 'hsl(var(--daycell-bg))',
+                      borderColor: dayDone ? categoryColor : (isToday ? 'hsl(var(--border-today))' : 'hsl(var(--border-default))')
                     }}
                   >
-                    {day.getDate()}
-                    {isToday && <Check className="h-3 w-3" />}
-                  </button>
+                    <button
+                      className={`w-full h-full flex flex-col items-center justify-center rounded duration-200 ${dayDone ? 'text-white' : 'text-text-primary hover:text-text-hover hover:bg-button-hover'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        completionHandlers.setDateCompletion(day, !dayDone);
+                      }}
+                    >
+                      {day.getDate()}
+                      {isToday && <Check className="h-3 w-3" />}
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -139,46 +140,93 @@ export const HabitCard = ({
 
           <div className="relative w-24 h-12">
             <div className={`absolute inset-0 flex items-center justify-end pr-3`}>
-              <ProgressCircle 
-                value={tableWeeklyProgressPct} 
-                strokeWidth={5} 
-                color={getCategoryById(habit.category)?.color || '#737373'} 
-                label={`${tableCompletedThisWeek}/${targetPerWeek}`} 
+              <ProgressCircle
+                value={tableWeeklyProgressPct}
+                strokeWidth={5}
+                color={getCategoryCSSVariables(habit.category).primary}
+                label={`${tableCompletedThisWeek}/${targetPerWeek}`}
               />
             </div>
           </div>
-
-          {/* INLINE DROPDOWN - COMMENTED OUT FOR MODAL SWITCH */}
-          {/* {showInlineEdit && (
-            <InlineEditDropdown
-              habit={habit}
-              isOpen={showInlineEdit}
-              onClose={() => setShowInlineEdit(false)}
-              onUpdate={(updatedHabit) => {
-                onUpdateHabit?.(updatedHabit);
-                setShowInlineEdit(false);
-              }}
-              onDelete={(id) => {
-                onDeleteHabit?.(id);
-                setShowInlineEdit(false);
-              }}
-              onAdopt={(id) => {
-                onMoveHabit(id, 'adopted');
-                setShowInlineEdit(false);
-              }}
-              position={{
-                top: cardRef.current ? cardRef.current.getBoundingClientRect().bottom + 4 : 0,
-                left: cardRef.current ? cardRef.current.getBoundingClientRect().left : 0
-              }}
-              anchorRect={cardRef.current ? cardRef.current.getBoundingClientRect() : null}
-            />
-          )} */}
 
         </div>
       </div>
     );
   }
 
+  // Week variant - single checkbox for the selected day
+  if (variant === 'week') {
+    const targetDate = selectedDate || todayDate;
+    const weekStart = weekStartDate ? new Date(weekStartDate) : targetDate;
+    const { days: weekDays, completed: weekCompletedCount, progressPct: weekProgressPct } = progressUtils.getWeekSummary(weekStart);
+    const done = completionHandlers.isDoneOnDate(targetDate);
+
+    const categoryColor = getCategoryCSSVariables(habit.category).primary;
+    return (
+      <div className="relative" ref={cardRef}>
+        <div className="cursor-pointer w-full rounded-lg bg-habitbg hover:bg-habitbghover transition-colors duration-200" onClick={() => onEditHabit?.(habit)}>
+          <div className="flex items-center justify-between gap-3 p-3">
+
+            <HabitMeta habit={habit} size="sm" />
+
+            <div className="flex items-center gap-4">
+              <div className="flex gap-1 h-[50px] items-center">
+                {weekDays.map((day, i) => {
+                  const dayDone = completionHandlers.isDoneOnDate(day);
+                  const isToday = day.toDateString() === new Date().toDateString();
+                  const isSelectedDay = day.toDateString() === targetDate.toDateString();
+                  const sizeClasses = isSelectedDay ? 'w-10 h-10' : 'w-6 h-6';
+                  return (
+                    <div
+                      key={i}
+                      className={`${sizeClasses} rounded flex items-center justify-center text-[10px] ${dayDone ? 'text-white' : ''}`}
+                      title={`${day.toLocaleDateString('en-US', { weekday: 'short' })} ${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                      style={{
+                        backgroundColor: dayDone ? categoryColor : 'hsl(var(--daycell-bg))',
+                        borderColor: dayDone ? categoryColor : (isToday ? 'hsl(var(--border-today))' : 'hsl(var(--border-default))')
+                      }}
+                    >
+                      {isSelectedDay ? (
+                        <button
+                          className={`w-full h-full flex flex-col items-center justify-center rounded duration-200 ${dayDone ? 'text-white' : 'text-text-primary hover:text-text-hover hover:bg-button-hover'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            completionHandlers.setDateCompletion(day, !dayDone);
+                          }}
+                          title={`${dayDone ? 'Undo check-in for' : 'Check in for'} ${day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}
+                        >
+                          {day.getDate()}
+                          <Check className="h-3 w-3" />
+                        </button>
+                      ) : (
+                        <span className="pointer-events-none select-none">{day.getDate()}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Frequency progress */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-center">
+                  <ProgressCircle
+                    value={weekProgressPct}
+                    strokeWidth={5}
+                    color={categoryColor}
+                    label={`${weekCompletedCount}/${targetPerWeek}`}
+                  />
+                </div>
+              </div>
+
+            </div>
+
+
+
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Calendar variant - optimized for calendar views
   if (variant === 'calendar') {
@@ -199,7 +247,7 @@ export const HabitCard = ({
                 e.stopPropagation();
                 onMoveHabit(habit.id, 'current');
               }}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-green-600 hover:bg-green-700 text-white z-10 h-8 w-8"
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-plus-button-bg hover:bg-plus-button-hover text-plus-button-text z-10 h-8 w-8"
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -223,7 +271,7 @@ export const HabitCard = ({
               </div>
               {(() => {
                 const { completed, progressPct } = progressUtils.getWeekSummary(todayDate);
-                const categoryBg = getCategoryPrimaryColor(habit.category);
+                const categoryBg = getCategoryCSSVariables(habit.category).primary;
 
                 return (
                   <div className="space-y-1">
@@ -242,136 +290,6 @@ export const HabitCard = ({
 
           </CardContent>
         </Card>
-
-        {/* INLINE DROPDOWN - COMMENTED OUT FOR MODAL SWITCH */}
-        {/* {showInlineEdit && (
-          <InlineEditDropdown
-            habit={habit}
-            isOpen={showInlineEdit}
-            onClose={() => setShowInlineEdit(false)}
-            onUpdate={(updatedHabit) => {
-              onUpdateHabit?.(updatedHabit);
-              setShowInlineEdit(false);
-            }}
-            onDelete={(id) => {
-              onDeleteHabit?.(id);
-              setShowInlineEdit(false);
-            }}
-            onAdopt={(id) => {
-              onMoveHabit(id, 'adopted');
-              setShowInlineEdit(false);
-            }}
-            position={{
-              top: cardRef.current ? cardRef.current.getBoundingClientRect().bottom + 4 : 0,
-              left: cardRef.current ? cardRef.current.getBoundingClientRect().left : 0
-            }}
-            anchorRect={cardRef.current ? cardRef.current.getBoundingClientRect() : null}
-          />
-        )} */}
-
-      </div>
-    );
-  }
-
-  // Week variant - single checkbox for the selected day
-  if (variant === 'week') {
-    const targetDate = selectedDate || todayDate;
-    const weekStart = weekStartDate ? new Date(weekStartDate) : targetDate;
-    const { days: weekDays, completed: weekCompletedCount, progressPct: weekProgressPct } = progressUtils.getWeekSummary(weekStart);
-    const done = completionHandlers.isDoneOnDate(targetDate);
-
-    const categoryColor = getCategoryPrimaryColor(habit.category);
-    return (
-      <div className="relative" ref={cardRef}>
-        <Card className="cursor-pointer w-full bg-habitbg hover:bg-habitbghover transition-colors duration-200" onClick={() => onEditHabit?.(habit)}>
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between gap-3">
-
-              <HabitMeta habit={habit} size="sm" />
-
-              <div className="flex items-center gap-4">
-                <div className="flex gap-1 h-[50px] items-center">
-                  {weekDays.map((day, i) => {
-                    const dayDone = completionHandlers.isDoneOnDate(day);
-                    const isToday = day.toDateString() === new Date().toDateString();
-                    const isSelectedDay = day.toDateString() === targetDate.toDateString();
-                    const sizeClasses = isSelectedDay ? 'w-10 h-10' : 'w-6 h-6';
-                    return (
-                      <div
-                        key={i}
-                        className={`${sizeClasses} rounded flex items-center justify-center text-[10px] ${dayDone ? 'text-white' : ''}`}
-                        title={`${day.toLocaleDateString('en-US', { weekday: 'short' })} ${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-                        style={{
-                          backgroundColor: dayDone ? categoryColor : 'white',
-                          borderColor: dayDone ? categoryColor : (isToday ? '#A8A29E' : '#E5E7EB')
-                        }}
-                      >
-                        {isSelectedDay ? (
-                          <button
-                            className={`w-full h-full flex flex-col items-center justify-center rounded duration-200 ${dayDone ? 'text-white' : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100'}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              completionHandlers.setDateCompletion(day, !dayDone);
-                            }}
-                            title={`${dayDone ? 'Undo check-in for' : 'Check in for'} ${day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}
-                          >
-                            {day.getDate()}
-                            <Check className="h-3 w-3" />
-                          </button>
-                        ) : (
-                          <span className="pointer-events-none select-none">{day.getDate()}</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Frequency progress */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-center">
-                    <ProgressCircle
-                      value={weekProgressPct}
-                      strokeWidth={5}
-                      color={categoryColor}
-                      label={`${weekCompletedCount}/${targetPerWeek}`}
-                    />
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-
-
-          </CardContent>
-        </Card>
-
-        {/* INLINE DROPDOWN - COMMENTED OUT FOR MODAL SWITCH */}
-        {/* {showInlineEdit && (
-          <InlineEditDropdown
-            habit={habit}
-            isOpen={showInlineEdit}
-            onClose={() => setShowInlineEdit(false)}
-            onUpdate={(updatedHabit) => {
-              onUpdateHabit?.(updatedHabit);
-              setShowInlineEdit(false);
-            }}
-            onDelete={(id) => {
-              onDeleteHabit?.(id);
-              setShowInlineEdit(false);
-            }}
-            onAdopt={(id) => {
-              onMoveHabit(id, 'adopted');
-              setShowInlineEdit(false);
-            }}
-            position={{
-              top: cardRef.current ? cardRef.current.getBoundingClientRect().bottom + 4 : 0,
-              left: cardRef.current ? cardRef.current.getBoundingClientRect().left : 0
-            }}
-            anchorRect={cardRef.current ? cardRef.current.getBoundingClientRect() : null}
-          />
-        )} */}
-
       </div>
     );
   }
@@ -398,7 +316,7 @@ export const HabitCard = ({
             <div className="flex flex-col gap-1 w-full">
               <div className="flex w-full items-center justify-between h-5">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium">{habit.title}</span>
+                  <span className="text-xs font-medium text-text-primary">{habit.title}</span>
                   {habit.category !== 'none' && (
                     <Badge categoryId={habit.category}>
                       {getCategoryById(habit.category)?.name || habit.category}
@@ -413,15 +331,15 @@ export const HabitCard = ({
                       e.stopPropagation();
                       onMoveHabit(habit.id, 'current');
                     }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-transparent hover:bg-stone-200 text-stone-800 z-10 h-6 w-6 p-0"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-transparent hover:bg-button-hover text-plus-button-text-dark z-10 h-6 w-6 p-0"
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground">{habit.streak} days</span>
+              <span className="text-xs text-text-secondary">{habit.streak} days</span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-text-secondary">
 
             </div>
           </div>

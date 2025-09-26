@@ -3,11 +3,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
-import { DEFAULT_CATEGORIES, fetchCategories, getCategories, getCategoryClasses, resolveCategoryBgColor, type Category } from "@/lib/categories";
-import { calculateWeeklyTarget, createEmptyCustomDays, deriveStandardFrequencyFromWeekly, type FrequencyPeriod } from "@/lib/frequency";
+import { FALLBACK_CATEGORIES, fetchCategories, getCategories, resolveCategoryBgColor, type Category } from "@/lib/categories";
+import { createEmptyCustomDays } from "@/lib/frequency";
+import type { HabitTargetUnit } from "@/hooks/useHabits";
 import { useAuth } from "@/hooks/useAuth";
+
+type FrequencySelection = 'daily' | 'weekly' | 'custom';
 
 interface AddHabitDialogProps {
   open: boolean;
@@ -17,7 +19,9 @@ interface AddHabitDialogProps {
     title: string;
     notes: string;
     category: string;
-    target_frequency: number;
+    target_value: number;
+    target_unit: HabitTargetUnit;
+    custom_days?: number[];
     leniency_threshold: number;
   };
   setNewHabit: (habit: any) => void;
@@ -33,8 +37,9 @@ export const AddHabitDialog = ({
   onAddHabit
 }: AddHabitDialogProps) => {
   const [frequencyValue, setFrequencyValue] = useState(1);
-  const [frequencyPeriod, setFrequencyPeriod] = useState<FrequencyPeriod>('daily');
+  const [frequencyPeriod, setFrequencyPeriod] = useState<FrequencySelection>('daily');
   const [customDays, setCustomDays] = useState<boolean[]>(createEmptyCustomDays());
+  const [userHasChangedSelection, setUserHasChangedSelection] = useState(false);
   const [categories, setCategories] = useState<Category[]>(getCategories());
   const [loadingCategories, setLoadingCategories] = useState(false);
   const { user } = useAuth();
@@ -44,11 +49,11 @@ export const AddHabitDialog = ({
       setLoadingCategories(true);
       try {
         if (!user?.id) {
-          setCategories(DEFAULT_CATEGORIES);
+          setCategories(FALLBACK_CATEGORIES);
           return;
         }
         const cats = await fetchCategories(user.id);
-        setCategories(cats && cats.length ? cats : DEFAULT_CATEGORIES);
+        setCategories(cats && cats.length ? cats : FALLBACK_CATEGORIES);
       } finally {
         setLoadingCategories(false);
       }
@@ -57,12 +62,36 @@ export const AddHabitDialog = ({
   }, [user?.id]);
 
   useEffect(() => {
-    if (frequencyPeriod === 'custom') return;
+    // Don't override user selections
+    if (userHasChangedSelection) return;
 
-    const { value, period } = deriveStandardFrequencyFromWeekly(newHabit.target_frequency);
-    setFrequencyValue(value);
-    setFrequencyPeriod(period);
-  }, [newHabit.target_frequency, frequencyPeriod]);
+    const customState = createEmptyCustomDays();
+    const selectedDays = newHabit.custom_days || [];
+
+    // For daily habits, ignore custom_days and always show as daily
+    if (newHabit.target_unit === 'day') {
+      setFrequencyPeriod('daily');
+      setFrequencyValue(newHabit.target_value || 1);
+      setCustomDays(customState);
+      return;
+    }
+
+    // For weekly habits, check if custom_days is populated
+    if (selectedDays.length) {
+      selectedDays.forEach(day => {
+        if (day >= 0 && day < customState.length) customState[day] = true;
+      });
+      setFrequencyPeriod('custom');
+      setFrequencyValue(selectedDays.length);
+      setCustomDays(customState);
+      return;
+    }
+
+    // Default to weekly
+    setFrequencyPeriod('weekly');
+    setFrequencyValue(newHabit.target_value || 1);
+    setCustomDays(customState);
+  }, [newHabit.target_value, newHabit.target_unit, newHabit.custom_days, userHasChangedSelection]);
   
   const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   return (
@@ -119,7 +148,7 @@ export const AddHabitDialog = ({
             {/* {newHabit.category && (
               <div className="mt-2">
                 <Badge
-                  className={`${getCategoryClasses(newHabit.category).bgColor} ${getCategoryClasses(newHabit.category).textColor} border-0`}
+                  className=""
                 >
                   {DEFAULT_CATEGORIES.find(c => c.id === newHabit.category)?.name}
                 </Badge>
@@ -141,7 +170,15 @@ export const AddHabitDialog = ({
                           updatedCustomDays[index] = !updatedCustomDays[index];
                           setCustomDays(updatedCustomDays);
                           const selectedCount = updatedCustomDays.filter(Boolean).length;
-                          setNewHabit({ ...newHabit, target_frequency: Math.max(1, selectedCount) });
+                          const selectedDays = updatedCustomDays
+                            .map((selected, idx) => (selected ? idx : -1))
+                            .filter((idx) => idx !== -1);
+                          setNewHabit({
+                            ...newHabit,
+                            target_unit: 'week',
+                            target_value: Math.max(1, selectedCount),
+                            custom_days: selectedDays
+                          });
                         }}
                         className={`w-10 h-10 rounded-lg text-xs flex items-center justify-center border transition-colors ${
                           customDays[index]
@@ -157,25 +194,34 @@ export const AddHabitDialog = ({
                   <Input
                     type="number"
                     min="1"
-                    value={frequencyValue}
+                    value={frequencyPeriod === 'daily' ? 1 : frequencyValue}
                     onChange={(e) => {
                       const val = Math.max(1, parseInt(e.target.value, 10) || 1);
                       setFrequencyValue(val);
-                      setNewHabit({ ...newHabit, target_frequency: calculateWeeklyTarget(val, frequencyPeriod) });
+                      const nextUnit: HabitTargetUnit = frequencyPeriod === 'daily' ? 'day' : 'week';
+                      setNewHabit({ ...newHabit, target_unit: nextUnit, target_value: val, custom_days: [] });
                     }}
                     className="w-16"
+                    disabled={frequencyPeriod === 'daily'}
                   />
                 )}
                 <Select
                   value={frequencyPeriod}
-                  onValueChange={(value: FrequencyPeriod) => {
+                  onValueChange={(value: FrequencySelection) => {
+                    setUserHasChangedSelection(true);
                     setFrequencyPeriod(value);
                     if (value === 'custom') {
                       setCustomDays(createEmptyCustomDays());
-                      setNewHabit({ ...newHabit, target_frequency: 1 });
+                      setNewHabit({ ...newHabit, target_unit: 'week', target_value: 1, custom_days: [] });
                     } else {
-                      const val = Math.max(1, frequencyValue);
-                      setNewHabit({ ...newHabit, target_frequency: calculateWeeklyTarget(val, value) });
+                      const val = value === 'daily' ? 1 : Math.max(1, frequencyValue);
+                      const nextUnit: HabitTargetUnit = value === 'daily' ? 'day' : 'week';
+                      setNewHabit({
+                        ...newHabit,
+                        target_unit: nextUnit,
+                        target_value: val,
+                        custom_days: []
+                      });
                     }
                   }}
                 >
@@ -185,7 +231,6 @@ export const AddHabitDialog = ({
                   <SelectContent>
                     <SelectItem value="daily">per day</SelectItem>
                     <SelectItem value="weekly">per week</SelectItem>
-                    <SelectItem value="monthly">per month</SelectItem>
                     <SelectItem value="custom">custom</SelectItem>
                   </SelectContent>
                 </Select>

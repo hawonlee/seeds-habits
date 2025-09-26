@@ -1,6 +1,7 @@
 import React from 'react';
 import { SegmentedToggle } from '@/components/ui/segmented-toggle';
 import { ExternalPanelToggle } from '@/components/ui/external-panel-toggle';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -18,12 +19,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onTogglePanel,
 }) => {
   return (
-    <div className="h-full flex bg-neutral-50 flex-col">
+    <div className="h-full flex bg-background flex-col">
       {/* Header */}
       <div className="h-14 px-4 w-full flex-shrink-0 flex items-center">
-        <div className="flex w-full items-center justify-end gap-2">
-          <div className="flex items-center gap-4">
-            {/* Segmented Toggle */}
+        <div className="flex w-full items-center justify-between gap-2">
+
+          <ThemeToggle />
+
+          <div className="flex items-center gap-2">
             <SegmentedToggle
               options={[
                 { value: 'list', label: 'List' },
@@ -35,13 +38,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 onViewChange(isCalendar);
               }}
             />
-          </div>
-          
-          <div className="flex items-center gap-4">
+  
             <div className={`transition-opacity duration-300 ${isCombinedPanelCollapsed ? 'opacity-100' : 'hidden pointer-events-none'}`}>
               <ExternalPanelToggle onToggle={onTogglePanel} />
             </div>
           </div>
+
+
         </div>
       </div>
 

@@ -42,8 +42,7 @@ export const createWeekUtils = ({ habit, customIsCompleted, isHabitCompletedOnDa
     if (customIsCompleted) {
       return customIsCompleted(habit.id, date);
     }
-    const dateKey = toDateKey(date);
-    return isHabitCompletedOnDate(habit.id, date) || lastCompletedKey === dateKey;
+    return isHabitCompletedOnDate(habit.id, date);
   };
 
   const getWeekStart = (date: Date) => {
@@ -78,10 +77,20 @@ export const createProgressUtils = (
   getWeekDaysFromStart: (start?: Date) => Date[],
   sharedCompletedCounts: (days: Date[]) => number
 ) => {
-  const targetPerWeek = Math.max(1, Math.min(7, habit.target_frequency || 1));
+  const getDailyTarget = () => Math.max(1, habit.target_value || 1);
+  const getWeeklyTarget = () => Math.max(1, habit.target_value || 1);
+  const getCustomTarget = () => Math.max(1, habit.custom_days?.length || 1);
 
-  const getWeeklyProgressPct = (completed: number) =>
-    Math.min(100, (completed / targetPerWeek) * 100);
+  const getTargetForMode = () => {
+    if (habit.target_unit === "day") return getDailyTarget();
+    if (habit.custom_days && habit.custom_days.length) return getCustomTarget();
+    return getWeeklyTarget();
+  };
+
+  const getWeeklyProgressPct = (completed: number) => {
+    const denominator = getTargetForMode();
+    return Math.min(100, denominator ? (completed / denominator) * 100 : 0);
+  };
 
   const getWeekSummary = (start?: Date) => {
     const days = getWeekDaysFromStart(start);
@@ -94,7 +103,7 @@ export const createProgressUtils = (
   };
 
   return {
-    targetPerWeek,
+    targetPerWeek: getTargetForMode(),
     getWeeklyProgressPct,
     getWeekSummary
   };
@@ -123,16 +132,18 @@ export const createCompletionHandlers = ({
       await toggleCompletion(habit.id, date);
     }
 
+    const isToday = toDateKey(date) === toDateKey(new Date());
+
     if (next) {
       if (onCheckInForDate) {
         onCheckInForDate(habit.id, date);
-      } else if (onCheckIn) {
+      } else if (isToday && onCheckIn) {
         onCheckIn(habit.id);
       }
     } else {
       if (onUndoCheckInForDate) {
         onUndoCheckInForDate(habit.id, date);
-      } else if (onUndoCheckIn) {
+      } else if (isToday && onUndoCheckIn) {
         onUndoCheckIn(habit.id);
       }
     }

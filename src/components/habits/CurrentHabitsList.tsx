@@ -112,7 +112,7 @@ export const CurrentHabitsList = ({
           {/* Week Navigation */}
           <div className="flex justify-between pb-4">
             <div className="flex items-center justify-center gap-10">
-              <div className="text-xs font-medium text-neutral-700">
+              <div className="text-xs font-medium text-muted-foreground">
                 {formatWeekRange()}
               </div>
 
@@ -130,7 +130,7 @@ export const CurrentHabitsList = ({
                         key={index}
                         className={`flex items-center justify-center gap-1 min-w-[32px] w-12 text-center`}
                       >
-                        <div className={`text-xs font-medium p-2  ${isToday ? 'text-black' : 'text-neutral-400'} `}>{dayNames[day.getDay()]}</div>
+                        <div className={`text-xs font-medium p-2  ${isToday ? 'text-foreground' : 'text-muted-foreground'} `}>{dayNames[day.getDay()]}</div>
                         {/* <div className={`text-xs text-neutral-400  ${isToday ? 'text-white bg-red-300 rounded-sm' : ''}`}>{day.getDate()}</div> */}
                       </div>
                     );
@@ -138,13 +138,13 @@ export const CurrentHabitsList = ({
                 </div>
               </div>
   
-              <div className="flex items-end justify-end w-24 px-2">
+              <div className="flex items-end justify-end w-24">
                 <div className="flex items-center justify-end">
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={goToPreviousWeek}
-                    className="h-4 w-4 p-0"
+                    className="h-6 w-6 p-0"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -152,7 +152,7 @@ export const CurrentHabitsList = ({
                     size="sm"
                     variant="ghost"
                     onClick={goToCurrentWeek}
-                    className="h-8 px-3 text-xs font-medium"
+                    className="h-6 px-3 text-xs font-medium"
                   >
                     Today
                   </Button>
@@ -160,7 +160,7 @@ export const CurrentHabitsList = ({
                     size="sm"
                     variant="ghost"
                     onClick={goToNextWeek}
-                    className="h-4 w-4 p-0"
+                    className="h-6 w-6 p-0"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>

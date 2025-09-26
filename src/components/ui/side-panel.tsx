@@ -78,7 +78,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`${isCollapsed ? 'w-0' : ''} fixed md:relative ${position === 'right' ? 'right-0' : 'left-0'} top-0 bottom-0 z-40 md:z-auto h-full bg-white overflow-hidden ${pointerClass} ${className} ${isResizing ? 'transition-none' : 'transition-all duration-300 ease-in-out'} ${position === 'right' ? 'border-l border-neutral-200' : 'border-r border-neutral-200'} shadow-lg md:shadow-none`}
+      className={`${isCollapsed ? 'w-0' : ''} fixed bg-side-panel-bg md:relative ${position === 'right' ? 'right-0' : 'left-0'} top-0 bottom-0 z-40 md:z-auto h-full bg-background overflow-hidden ${pointerClass} ${className} ${isResizing ? 'transition-none' : 'transition-all duration-300 ease-in-out'} ${position === 'right' ? 'border-l border-border' : 'border-r border-border'} shadow-lg md:shadow-none`}
       style={{ width: isCollapsed ? 0 : panelWidth }}
       aria-hidden={isCollapsed}
     >
@@ -89,14 +89,14 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         {/* Header */}
         <div className="p-4 pb-0 flex-shrink-0">
           <div className="flex items-center justify-between">
-          <h2 className="text-xs font-medium text-neutral-900">Habits</h2>
+          <h2 className="text-xs font-medium text-foreground">Habits</h2>
             <Button
               onClick={onToggleCollapse}
               variant="ghost"
               className="h-8 w-8 p-0"
               title="Hide panel"
             >
-              <PanelLeft className="h-4 w-4 text-neutral-600" />
+              <PanelLeft className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </div>
@@ -130,7 +130,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         <div
           role="separator"
           aria-orientation="vertical"
-          className={`absolute top-0 h-full w-1 cursor-col-resize select-none ${position === 'right' ? 'left-0' : 'right-0'} ${isResizing ? 'bg-neutral-300' : 'bg-transparent hover:bg-neutral-200'}`}
+          className={`absolute top-0 h-full w-1 cursor-col-resize select-none transition-colors duration-200 hover:bg-muted ${position === 'right' ? 'left-0' : 'right-0'} ${isResizing ? 'bg-muted' : 'hover:bg-muted'}`}
           onMouseDown={(e) => {
             e.preventDefault();
             setIsResizing(true);

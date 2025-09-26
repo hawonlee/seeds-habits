@@ -2,11 +2,10 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
-import { getCategoryPrimaryColor, getCategoryById } from "@/lib/categories"
-import { findColorOptionByValue } from "@/lib/colorOptions"
+import { getCategoryCSSVariables } from "@/lib/categories"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border font-normal px-2.5 py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full font-normal px-2.5 py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
@@ -28,7 +27,7 @@ const badgeVariants = cva(
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
-  categoryId?: string;
+categoryId?: string;
 }
 
 function Badge({ className, variant, categoryId, ...props }: BadgeProps) {
@@ -37,21 +36,19 @@ function Badge({ className, variant, categoryId, ...props }: BadgeProps) {
     return null;
   }
   
-  const primaryColor = categoryId ? getCategoryPrimaryColor(categoryId) : null;
-  const palette = primaryColor ? findColorOptionByValue(primaryColor) : undefined;
-  const bgHex = palette?.bgHex || '#FAFAFA';
-  const textHex = palette?.textHex || primaryColor || '#262626';
+  const cssVars = categoryId ? getCategoryCSSVariables(categoryId) : null;
 
   return (
     <div
       className={cn(
         badgeVariants({ variant }),
-        categoryId && "border px-1.5 py-0.5 text-[10px]",
+        categoryId && "px-1.5 py-0.5 text-[10px]",
         className
       )}
-      style={categoryId ? {
-        backgroundColor: bgHex,
-        color: textHex,
+      style={cssVars ? {
+        backgroundColor: cssVars.bg,
+        color: cssVars.primary,
+        borderColor: cssVars.primary
       } : undefined}
       {...props}
     />

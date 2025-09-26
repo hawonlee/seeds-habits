@@ -20,7 +20,7 @@ export const ProgressCircle: React.FC<ProgressCircleProps> = ({
  size = 40,
  strokeWidth = 8,
  color = "#111827",
- trackColor = "#FFFFFF",
+ trackColor = "hsl(var(--progress-track))",
  label,
  className,
  labelClassName,

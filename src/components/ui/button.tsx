@@ -9,20 +9,20 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary/60",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-neutral-300 rounded-full hover:bg-neutral-100 hover:text-accent-foreground",
-        outlinefilled: "bg-neutral-50 border border-neutral-400 rounded-full",
-        outlineinactive: "border border-neutral-300 rounded-full hover:bg-neutral-50 hover:text-neutral-700 text-neutral-400 font-normal",
+          "border border-button-outline-border rounded-full hover:bg-button-outline-hover hover:text-accent-foreground",
+        outlinefilled: "bg-button-outline-filled border border-button-outline-filled-border rounded-full",
+        outlineinactive: "border border-button-outline-inactive-border rounded-full hover:bg-button-outline-inactive-hover hover:text-button-outline-inactive-text text-button-outline-inactive-text font-normal",
         nooutline:
           "bg-muted hover:text-accent-foreground",
         secondary:
-          "bg-neutral-300 rounded-full border-none text-neutral-800 hover:bg-neutral-400/50",
+          "bg-button-secondary-bg rounded-full border-none text-button-secondary-text hover:bg-button-secondary-hover",
         tertiary:
-          "bg-neutral-200 rounded-full border-none text-neutral-800 hover:bg-neutral-300/80",
-        ghost: "hover:bg-neutral-200/50 hover:text-accent-foreground",
+          "bg-button-tertiary-bg rounded-full border-none text-button-tertiary-text hover:bg-button-tertiary-hover",
+        ghost: "hover:bg-button-ghost-hover",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
