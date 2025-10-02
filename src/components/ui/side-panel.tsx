@@ -5,6 +5,7 @@ import { UserDropdown } from "@/components/layout/UserDropdown";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import logo from "/logo.png";
 
 interface SidePanelProps {
   isCollapsed: boolean;
@@ -87,22 +88,25 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         style={{ width: panelWidth }}
       >
         {/* Header */}
-        <div className="p-4 pb-0 flex-shrink-0">
+        <div className="p-5 flex-shrink-0">
           <div className="flex items-center justify-between">
-          <h2 className="text-xs font-medium text-foreground">Habits</h2>
+          {/* <h2 className="text-xs font-medium text-foreground">Habits</h2> */}
             <Button
               onClick={onToggleCollapse}
-              variant="ghost"
-              className="h-8 w-8 p-0"
+              variant="text"
+              size="text"
               title="Hide panel"
             >
-              <PanelLeft className="h-4 w-4 text-muted-foreground" />
+              <PanelLeft className="h-4 w-4" />
             </Button>
+
+            <img src={logo} alt="logo" className="h-5 w-5" />
+
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto min-h-0 p-4">
+        <div className="flex-1 overflow-y-auto min-h-0 px-5">
           {children}
         </div>
 

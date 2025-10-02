@@ -6,11 +6,15 @@ import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useEffect, useState, useRef } from "react";
-import { FALLBACK_CATEGORIES, fetchCategories, getCategories, getCategoryClasses, resolveCategoryBgColor, type Category } from "@/lib/categories";
+import { FALLBACK_CATEGORIES, fetchCategories, getCategories, getCategoryClasses, resolveCategoryBgColor, type Category, addCacheChangeListener, refreshCategories } from "@/lib/categories";
 import { createEmptyCustomDays } from "@/lib/frequency";
 import type { HabitTargetUnit } from "@/hooks/useHabits";
 import { useAuth } from "@/hooks/useAuth";
-import { Trash, MoreHorizontal, Settings, CheckCircle, Clock } from "lucide-react";
+import { Trash, MoreHorizontal, Settings, CheckCircle, Clock, Check, X } from "lucide-react";
+import { COLOR_OPTIONS, findColorOptionByValue } from "@/lib/colorOptions";
+import { setCategoriesCache } from "@/lib/categories";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type FrequencySelection = 'daily' | 'weekly' | 'custom';
 
@@ -48,7 +52,11 @@ export const EditHabitDialog = ({
   const [categories, setCategories] = useState<Category[]>(getCategories());
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState('#3B82F6');
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Frequency editing state
   const [frequencyValue, setFrequencyValue] = useState(1);
@@ -73,6 +81,13 @@ export const EditHabitDialog = ({
     };
     load();
   }, [user?.id]);
+
+  useEffect(() => {
+    const unsubscribe = addCacheChangeListener(() => {
+      setCategories(getCategories());
+    });
+    return unsubscribe;
+  }, []);
 
   // Initialize frequency state based on existing habit
   useEffect(() => {
@@ -106,6 +121,73 @@ export const EditHabitDialog = ({
     setFrequencyValue(newHabit.target_value || 1);
     setCustomDays(customState);
   }, [newHabit.target_value, newHabit.target_unit, newHabit.custom_days, userHasChangedSelection]);
+
+  const handleCreateCategoryInline = async () => {
+    if (!newCategoryName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a category name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingCategory(true);
+    try {
+      const palette = findColorOptionByValue(newCategoryColor);
+      const category: Category = {
+        id: newCategoryName.toLowerCase().replace(/\s+/g, '-'),
+        name: newCategoryName,
+        color: newCategoryColor,
+        bgColor: palette ? palette.bgHex : '#FAFAFA',
+        textColor: palette ? palette.textHex : '#262626'
+      };
+      
+      const result: any = await supabase
+        .from('categories')
+        .insert({
+          id: category.id,
+          name: category.name,
+          color: category.color,
+          bg_color: category.bgColor,
+          text_color: category.textColor,
+          user_id: user?.id || null
+        });
+      const { error } = result;
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: `Failed to create category: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Force refresh all components using categories
+      await refreshCategories(user?.id);
+
+      setNewHabit({ ...newHabit, category: category.id });
+      setNewCategoryName('');
+      setNewCategoryColor('#3B82F6');
+      
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create category",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
+  const colorOptions = COLOR_OPTIONS.map((color, index) => ({
+    ...color,
+    cssBg: `hsl(var(--category-${index + 1}-bg))`,
+    cssPrimary: `hsl(var(--category-${index + 1}-primary))`
+  }));
 
   useEffect(() => {
     if (!open) {
@@ -192,23 +274,81 @@ export const EditHabitDialog = ({
               </SelectTrigger>
               <SelectContent>
                 {categories.length === 0 ? (
-                  <div className="px-2 py-1 text-xs text-muted-foreground">No categories. Create one in Category Manager.</div>
+                  <div className="px-2 py-1 text-xs text-muted-foreground"></div>
                 ) : (
-                  categories.map(category => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        {category.id === 'none' ? (
-                          <div className="w-3 h-3 rounded-full border border-neutral-300 bg-transparent" />
-                        ) : (
-                          <div
-                            className="w-3 h-3 rounded-full border"
-                            style={{ backgroundColor: resolveCategoryBgColor(category.id), borderColor: resolveCategoryBgColor(category.id) }}
-                          />
-                        )}
-                        <span>{category.name}</span>
+                  <>
+                    {categories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          {category.id === 'none' ? (
+                            <div className="w-3 h-3 rounded-full border border-neutral-300 bg-transparent" />
+                          ) : (
+                            <div
+                              className="w-3 h-3 rounded-full border"
+                              style={{ backgroundColor: resolveCategoryBgColor(category.id), borderColor: resolveCategoryBgColor(category.id) }}
+                            />
+                          )}
+                          <span>{category.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    <div className="border-t border-neutral-200 my-1" />
+                    <div className="p-2 space-y-3 bg-gray-50">
+                      <div>
+                        <label className="text-xs font-medium text-gray-700">New Category</label>
+                        <Input
+                          placeholder="Enter category name"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="mt-1"
+                          autoFocus
+                        />
                       </div>
-                    </SelectItem>
-                  ))
+                      <div>
+                        <label className="text-xs font-medium text-gray-700 mb-2 block">Color</label>
+                        <div className="grid grid-cols-3 gap-1">
+                          {colorOptions.map(color => (
+                            <button
+                              key={color.value}
+                              onClick={() => setNewCategoryColor(color.value)}
+                              className={`w-full h-8 rounded border-2 transition-all ${newCategoryColor === color.value ? 'border-gray-400' : 'border-transparent'}`}
+                              style={{ 
+                                backgroundColor: color.cssBg,
+                                borderColor: newCategoryColor === color.value ? 'var(--light-border)' : 'transparent'
+                              } as React.CSSProperties & { '--light-border': string }}
+                              aria-label={color.name}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setNewCategoryName('');
+                            setNewCategoryColor('#3B82F6');
+                          }}
+                          className="h-7 px-2"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleCreateCategoryInline}
+                          disabled={!newCategoryName.trim() || isCreatingCategory}
+                          className="h-7 px-2"
+                        >
+                          {isCreatingCategory ? (
+                            <div className="w-3 h-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          ) : (
+                            <Check className="w-3 h-3" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </>
                 )}
               </SelectContent>
             </Select>

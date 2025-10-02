@@ -33,7 +33,7 @@ export const DiarySidebar: React.FC<DiarySidebarProps> = ({
 }) => {
     return (
         <Sidebar collapsible="offcanvas" className="transition-all duration-100 ease-in-out">
-            <SidebarContent>
+            <SidebarContent className="bg-side-panel-bg">
                 {/* Home Button */}
                 {onNavigateHome && (
                     <SidebarGroup>
@@ -41,9 +41,8 @@ export const DiarySidebar: React.FC<DiarySidebarProps> = ({
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                      <SidebarMenuButton
-                                         size="sm"
                                          onClick={onNavigateHome}
-                                         className="bg-background hover:bg-muted p-1 mt-2 hover:text-muted-foreground transition-all duration-200 ease-in-out"
+                                         className="hover:bg-button-ghost-hover p-1 mt-2  transition-all duration-200 ease-in-out"
                                      >
                                         <div className="flex items-center gap-2 w-full">
                                             <ChevronLeft className="h-4 w-4" />

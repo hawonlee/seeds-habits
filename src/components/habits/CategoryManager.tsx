@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Palette, LayoutGrid } from 'lucide-react';
-import { Category, fetchCategories, getCategories, setCategoriesCache } from '@/lib/categories';
+import { Category, fetchCategories, getCategories, setCategoriesCache, addCacheChangeListener, refreshCategories } from '@/lib/categories';
+import { invalidateHabitsCacheForUser } from '@/hooks/useHabits';
 import { useAuth } from '@/hooks/useAuth';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +39,14 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
       setCategories([]);
     }
   }, [user]);
+
+  // Listen for cache changes from other components
+  useEffect(() => {
+    const unsubscribe = addCacheChangeListener(() => {
+      setCategories(getCategories());
+    });
+    return unsubscribe;
+  }, []);
 
   const loadCategories = async (userId: string) => {
     setLoading(true);
@@ -90,11 +99,10 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
           return;
         }
 
-        const updatedCategories = [...categories, category];
-        setCategories(updatedCategories);
-        setCategoriesCache(updatedCategories);
+        // Force refresh all components using categories
+        await refreshCategories(user?.id);
         setNewCategory({ name: '', color: '#3B82F6' });
-        onCategoryChange?.(updatedCategories);
+        onCategoryChange?.(getCategories());
         
         // Removed success toast per request
       } catch (error) {
@@ -148,14 +156,11 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
           return;
         }
 
-        const updatedCategories = categories.map(c => 
-          c.id === editingCategory.id ? updatedCategory : c
-        );
-        setCategories(updatedCategories);
-        setCategoriesCache(updatedCategories);
+        // Force refresh all components using categories
+        await refreshCategories(user?.id);
         setEditingCategory(null);
         setNewCategory({ name: '', color: '#3B82F6' });
-        onCategoryChange?.(updatedCategories);
+        onCategoryChange?.(getCategories());
         
         // Removed success toast per request
       } catch (error) {
@@ -171,27 +176,47 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
   const handleDeleteCategory = async (categoryId: string) => {
     try {
-      // @ts-ignore - Type instantiation is excessively deep
-      const result: any = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', categoryId)
+      // First, update all habits that use this category to "none"
+      const habitsUpdateResult = await supabase
+        .from('habits')
+        .update({ category: 'none' })
+        .eq('category', categoryId)
         .eq('user_id', user?.id || '');
-      const { error } = result;
-
-      if (error) {
+      
+      if (habitsUpdateResult.error) {
         toast({
           title: "Error",
-          description: `Failed to delete category: ${error.message}`,
+          description: `Failed to update habits: ${habitsUpdateResult.error.message}`,
           variant: "destructive",
         });
         return;
       }
 
-      const updatedCategories = categories.filter(c => c.id !== categoryId);
-      setCategories(updatedCategories);
-      setCategoriesCache(updatedCategories);
-      onCategoryChange?.(updatedCategories);
+      // Then delete the category
+      const categoryDeleteResult = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId)
+        .eq('user_id', user?.id || '');
+      
+      if (categoryDeleteResult.error) {
+        toast({
+          title: "Error",
+          description: `Failed to delete category: ${categoryDeleteResult.error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Force refresh all components using categories
+      await refreshCategories(user?.id);
+      
+      // Invalidate habits cache so affected habits refresh
+      if (user?.id) {
+        invalidateHabitsCacheForUser(user.id);
+      }
+      
+      onCategoryChange?.(getCategories());
       
       // Removed success toast per request
     } catch (error) {

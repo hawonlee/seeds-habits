@@ -8,6 +8,7 @@ export interface HabitCompletion {
   habit_id: string;
   user_id: string;
   completion_date: string;
+  completion_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -63,6 +64,17 @@ export const useHabitCompletions = (onHabitUpdate?: () => void) => {
     );
   };
 
+  // Get the completion count for a habit on a specific date
+  const getCompletionCountForDate = (habitId: string, date: Date): number => {
+    const dateString = formatDateForDB(date);
+    const completion = completions.find(
+      completion => 
+        completion.habit_id === habitId && 
+        completion.completion_date === dateString
+    );
+    return completion ? completion.completion_count : 0;
+  };
+
   // Add a completion for a habit on a specific date
   const addCompletion = async (habitId: string, date: Date): Promise<boolean> => {
     if (!user) return false;
@@ -70,26 +82,66 @@ export const useHabitCompletions = (onHabitUpdate?: () => void) => {
     const dateString = formatDateForDB(date);
 
     try {
-      const { data, error } = await supabase
-        .from('habit_completions')
-        .insert({
-          habit_id: habitId,
-          user_id: user.id,
-          completion_date: dateString,
-        })
-        .select()
-        .single();
+      // Check if there's already a completion for this habit on this date
+      const existingCompletion = completions.find(
+        completion => 
+          completion.habit_id === habitId && 
+          completion.completion_date === dateString
+      );
 
-      if (error) {
-        console.error('Error adding habit completion:', error);
-        return false;
+      let data;
+      if (existingCompletion) {
+        // Update existing completion by incrementing the count
+        const { data: updateData, error: updateError } = await supabase
+          .from('habit_completions')
+          .update({
+            completion_count: existingCompletion.completion_count + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingCompletion.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Error updating habit completion:', updateError);
+          return false;
+        }
+        data = updateData;
+
+        // Update local state
+        setCompletions(prev => 
+          prev.map(completion => 
+            completion.id === existingCompletion.id 
+              ? { ...completion, completion_count: completion.completion_count + 1 }
+              : completion
+          )
+        );
+      } else {
+        // Insert new completion
+        const { data: insertData, error: insertError } = await supabase
+          .from('habit_completions')
+          .insert({
+            habit_id: habitId,
+            user_id: user.id,
+            completion_date: dateString,
+            completion_count: 1,
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error adding habit completion:', insertError);
+          return false;
+        }
+        data = insertData;
+
+        // Update local state
+        setCompletions(prev => [data, ...prev]);
       }
 
-    // Update local state
-    setCompletions(prev => [data, ...prev]);
-    // Invalidate habits cache and request refresh immediately
-    invalidateHabitsCacheForUser(user.id);
-    onHabitUpdate?.();
+      // Invalidate habits cache and request refresh immediately
+      invalidateHabitsCacheForUser(user.id);
+      onHabitUpdate?.();
 
       // Also update the main habit's total_completions and last_completed
       try {
@@ -138,24 +190,61 @@ export const useHabitCompletions = (onHabitUpdate?: () => void) => {
     const dateString = formatDateForDB(date);
 
     try {
-      const { error } = await supabase
-        .from('habit_completions')
-        .delete()
-        .eq('habit_id', habitId)
-        .eq('user_id', user.id)
-        .eq('completion_date', dateString);
+      // Find the existing completion
+      const existingCompletion = completions.find(
+        completion => 
+          completion.habit_id === habitId && 
+          completion.completion_date === dateString
+      );
 
-      if (error) {
-        console.error('Error removing habit completion:', error);
+      if (!existingCompletion) {
+        console.error('No completion found to remove');
         return false;
       }
 
-      // Update local state
-      setCompletions(prev => 
-        prev.filter(completion => 
-          !(completion.habit_id === habitId && completion.completion_date === dateString)
-        )
-      );
+      if (existingCompletion.completion_count > 1) {
+        // Decrement the completion count
+        const { data, error } = await supabase
+          .from('habit_completions')
+          .update({
+            completion_count: existingCompletion.completion_count - 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingCompletion.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error decrementing habit completion:', error);
+          return false;
+        }
+
+        // Update local state
+        setCompletions(prev => 
+          prev.map(completion => 
+            completion.id === existingCompletion.id 
+              ? { ...completion, completion_count: completion.completion_count - 1 }
+              : completion
+          )
+        );
+      } else {
+        // Remove the completion entirely
+        const { error } = await supabase
+          .from('habit_completions')
+          .delete()
+          .eq('id', existingCompletion.id);
+
+        if (error) {
+          console.error('Error removing habit completion:', error);
+          return false;
+        }
+
+        // Update local state
+        setCompletions(prev => 
+          prev.filter(completion => completion.id !== existingCompletion.id)
+        );
+      }
+
       // Invalidate habits cache and request refresh immediately
       invalidateHabitsCacheForUser(user.id);
       onHabitUpdate?.();
@@ -230,6 +319,7 @@ export const useHabitCompletions = (onHabitUpdate?: () => void) => {
     completions,
     loading,
     isHabitCompletedOnDate,
+    getCompletionCountForDate,
     addCompletion,
     removeCompletion,
     toggleCompletion,

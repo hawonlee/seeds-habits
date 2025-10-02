@@ -2,6 +2,7 @@ export interface ColorOption {
   name: string;
   // value is the primary/text hex used for accents (checkbox/progress/border/text)
   value: string;
+
   // bgHex is the background hex used for badges and calendar item backgrounds
   bgHex: string;
   // textHex mirrors value for clarity

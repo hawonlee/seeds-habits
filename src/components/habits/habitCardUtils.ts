@@ -10,6 +10,7 @@ interface WeekUtilsOptions {
   habit: Habit;
   customIsCompleted?: (habitId: string, date: Date) => boolean;
   isHabitCompletedOnDate: (habitId: string, date: Date) => boolean;
+  getCompletionCountForDate?: (habitId: string, date: Date) => number;
   lastCompletedKey: string | null;
 }
 
@@ -21,6 +22,7 @@ interface CompletionHandlerOptions {
   onUndoCheckInForDate?: (id: string, date: Date) => void;
   toggleCompletion: (habitId: string, date: Date) => Promise<boolean> | void;
   isHabitCompletedOnDate: (habitId: string, date: Date) => boolean;
+  getCompletionCountForDate?: (habitId: string, date: Date) => number;
   customIsCompleted?: (habitId: string, date: Date) => boolean;
   lastCompletedKey: string | null;
 }
@@ -37,12 +39,19 @@ export const getHabitDates = (habit: Habit): HabitCardDates => {
   };
 };
 
-export const createWeekUtils = ({ habit, customIsCompleted, isHabitCompletedOnDate, lastCompletedKey }: WeekUtilsOptions) => {
+export const createWeekUtils = ({ habit, customIsCompleted, isHabitCompletedOnDate, getCompletionCountForDate, lastCompletedKey }: WeekUtilsOptions) => {
   const isDoneOnDate = (date: Date) => {
     if (customIsCompleted) {
       return customIsCompleted(habit.id, date);
     }
     return isHabitCompletedOnDate(habit.id, date);
+  };
+
+  const getCompletionCountOnDate = (date: Date) => {
+    if (getCompletionCountForDate) {
+      return getCompletionCountForDate(habit.id, date);
+    }
+    return isDoneOnDate(date) ? 1 : 0;
   };
 
   const getWeekStart = (date: Date) => {
@@ -63,10 +72,11 @@ export const createWeekUtils = ({ habit, customIsCompleted, isHabitCompletedOnDa
   };
 
   const sharedCompletedCounts = (days: Date[]) =>
-    days.reduce((count, d) => count + (isDoneOnDate(d) ? 1 : 0), 0);
+    days.reduce((count, d) => count + getCompletionCountOnDate(d), 0);
 
   return {
     isDoneOnDate,
+    getCompletionCountOnDate,
     getWeekDaysFromStart,
     sharedCompletedCounts
   };
@@ -92,23 +102,39 @@ export const createProgressUtils = (
     return Math.min(100, denominator ? (completed / denominator) * 100 : 0);
   };
 
+  const getDaySummary = (date: Date) => {
+    const dayCompleted = sharedCompletedCounts([date]);
+    const dailyTarget = getDailyTarget();
+    
+    return {
+      completed: dayCompleted,
+      target: dailyTarget,
+      progressPct: dailyTarget > 0 ? (dayCompleted / dailyTarget) * 100 : 0
+    };
+  };
+
   const getWeekSummary = (start?: Date) => {
     const days = getWeekDaysFromStart(start);
     const completed = sharedCompletedCounts(days);
     
-    // For daily habits, calculate progress based on daily target
+    // For daily habits, weekly summary should still reflect the weekly goal (for calendar/table views)
     if (habit.target_unit === "day") {
-      const dailyCompleted = Math.min(completed, getDailyTarget());
+      const dailyTarget = getDailyTarget();
+      const weeklyTarget = dailyTarget * 7;
+      const actualCompleted = Math.min(completed, weeklyTarget);
       return {
         days,
-        completed: dailyCompleted,
-        progressPct: getWeeklyProgressPct(dailyCompleted)
+        completed: actualCompleted,
+        target: weeklyTarget,
+        progressPct: weeklyTarget > 0 ? (actualCompleted / weeklyTarget) * 100 : 0
       };
     }
     
+    const target = getTargetForMode();
     return {
       days,
       completed,
+      target,
       progressPct: getWeeklyProgressPct(completed)
     };
   };
@@ -116,7 +142,8 @@ export const createProgressUtils = (
   return {
     targetPerWeek: getTargetForMode(),
     getWeeklyProgressPct,
-    getWeekSummary
+    getWeekSummary,
+    getDaySummary
   };
 };
 
@@ -128,10 +155,11 @@ export const createCompletionHandlers = ({
   onUndoCheckInForDate,
   toggleCompletion,
   isHabitCompletedOnDate,
+  getCompletionCountForDate,
   customIsCompleted,
   lastCompletedKey
 }: CompletionHandlerOptions) => {
-  const weekUtils = createWeekUtils({ habit, customIsCompleted, isHabitCompletedOnDate, lastCompletedKey });
+  const weekUtils = createWeekUtils({ habit, customIsCompleted, isHabitCompletedOnDate, getCompletionCountForDate, lastCompletedKey });
 
   const setDateCompletion = async (date: Date, next: boolean) => {
     const currentlyDone = weekUtils.isDoneOnDate(date);

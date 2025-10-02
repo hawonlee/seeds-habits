@@ -35,8 +35,8 @@ All colors MUST be HSL.
     --muted: 0 0% 98%;
     --muted-foreground: 0 0% 46.9%;
 
-    --accent: 30 8% 84%;
-    --accent-foreground: 20 6% 16%;
+    --accent: 0 0% 92%;
+    --accent-foreground: 0 0% 16%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -89,16 +89,22 @@ All colors MUST be HSL.
     --plus-button-text-dark: 0 0% 20%;
 
     --category-1-primary: 0 25% 35%;
+    --category-1-intermediary: 0 25% 62.5%;
     --category-1-bg: 0 25% 90%;
     --category-2-primary: 50 30% 35%;
+    --category-2-intermediary: 50 30% 62.5%;
     --category-2-bg: 50 30% 90%;
     --category-3-primary: 100 25% 35%;
+    --category-3-intermediary: 100 25% 62.5%;
     --category-3-bg: 100 25% 90%;
     --category-4-primary: 200 25% 35%;
+    --category-4-intermediary: 200 25% 62.5%;
     --category-4-bg: 200 25% 90%;
     --category-5-primary: 280 25% 35%;
+    --category-5-intermediary: 280 25% 62.5%;
     --category-5-bg: 280 25% 90%;
     --category-6-primary: 0 0% 30%;
+    --category-6-intermediary: 0 0% 58.5%;
     --category-6-bg: 0 0% 87%;
 
     --button-outline-border: 0 0% 80%;
@@ -117,6 +123,7 @@ All colors MUST be HSL.
     --button-ghost-hover: 0 0% 90%;
     --progress-track: 0 0% 100%;
     --side-panel-bg: 0 0% 100%;
+    --diary-card-bg: 0 0% 100%;
   }
 
   .dark {
@@ -138,7 +145,7 @@ All colors MUST be HSL.
     --muted: 0 0% 15;
     --muted-foreground: 0 0% 55%;
 
-    --accent: 0 0% 20%;
+    --accent: 0 0% 15%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -182,16 +189,22 @@ All colors MUST be HSL.
     --plus-button-text-dark: 0 0% 20%;
 
     --category-1-primary: 0 25% 60%;
+    --category-1-intermediary: 0 25% 40%;
     --category-1-bg: 0 25% 20%;
     --category-2-primary: 50 30% 60%;
+    --category-2-intermediary: 50 30% 40%;
     --category-2-bg: 50 30% 20%;
     --category-3-primary: 100 25% 60%;
+    --category-3-intermediary: 100 25% 40%;
     --category-3-bg: 100 25% 20%;
     --category-4-primary: 200 25% 60%;
+    --category-4-intermediary: 200 25% 40%;
     --category-4-bg: 200 25% 20%;
     --category-5-primary: 280 25% 60%;
+    --category-5-intermediary: 280 25% 40%;
     --category-5-bg: 280 25% 20%;
     --category-6-primary: 0 0% 60%;
+    --category-6-intermediary: 0 0% 40%;
     --category-6-bg: 0 0% 20%;
 
     --button-outline-border: 0 0% 40%;
@@ -210,6 +223,7 @@ All colors MUST be HSL.
     --button-ghost-hover: 0 0% 20%;
     --progress-track: 0 0% 20%;
     --side-panel-bg: 0 0% 6%;
+    --diary-card-bg: 0 0% 3%;
   }
 }
 
@@ -230,5 +244,130 @@ All colors MUST be HSL.
   /* Category color picker border dark mode support */
   .dark [data-dark-border] {
     border-color: var(--dark-border) !important;
+  }
+
+  /* Pixel Sprout Animation Styles */
+  .pixel-sprout-container {
+    transform: scale(4);
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+
+  .pixel-sprout {
+    position: relative;
+    width: 16px;
+    height: 32px;
+  }
+
+  /* Stem - 2px wide vertical line */
+  .pixel-stem {
+    width: 1px;
+    background: black;
+    position: absolute;
+    bottom: 0;
+    left: 8px;
+    height: 0;
+    animation: pixelGrowStem 1.5s steps(16) forwards;
+  }
+
+  /* Pixel leaves */
+  .pixel-leaf-left {
+    position: absolute;
+    bottom: 16px;
+    left: 0;
+    opacity: 0;
+    animation: pixelShowLeaf 0.1s step-end 1.2s forwards;
+  }
+
+  .pixel-leaf-left::before {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    background: black;
+    box-shadow: 
+        0 0 0 1px black,
+        1px 0 0 1px black,
+        2px 0 0 1px black,
+        0 1px 0 1px black,
+        1px 1px 0 1px black,
+        0 2px 0 1px black;
+  }
+
+  .pixel-leaf-right {
+    position: absolute;
+    bottom: 16px;
+    right: 0;
+    opacity: 0;
+    animation: pixelShowLeaf 0.1s step-end 1.4s forwards;
+  }
+
+  .pixel-leaf-right::before {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    background: black;
+    box-shadow: 
+        0 0 0 1px black,
+        -1px 0 0 1px black,
+        -2px 0 0 1px black,
+        0 1px 0 1px black,
+        -1px 1px 0 1px black,
+        0 2px 0 1px black;
+  }
+
+  /* Top leaves */
+  .pixel-leaf-top-left {
+    position: absolute;
+    top: 0;
+    left: 2px;
+    opacity: 0;
+    animation: pixelShowLeaf 0.1s step-end 1.6s forwards;
+  }
+
+  .pixel-leaf-top-left::before {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: black;
+    box-shadow: 
+        0 0 0 2px black,
+        2px 0 0 2px black,
+        4px 0 0 2px black,
+        2px 2px 0 2px black;
+  }
+
+  .pixel-leaf-top-right {
+    position: absolute;
+    top: 0;
+    right: 2px;
+    opacity: 0;
+    animation: pixelShowLeaf 0.1s step-end 1.7s forwards;
+  }
+
+  .pixel-leaf-top-right::before {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: black;
+    box-shadow: 
+        0 0 0 2px black,
+        -2px 0 0 2px black,
+        -4px 0 0 2px black,
+        -2px 2px 0 2px black;
+  }
+
+  @keyframes pixelGrowStem {
+    0% { height: 0px; }
+    100% { height: 32px; }
+  }
+
+  @keyframes pixelShowLeaf {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
   }
 }

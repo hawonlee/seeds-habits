@@ -17,10 +17,24 @@ interface DiaryEntryCardProps {
 export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, onDelete }) => {
     const entryDate = new Date(entry.entry_date);
     const updatedDate = new Date(entry.updated_at);
+    
+    // Determine card height based on content length
+    const bodyLength = entry.body.length;
+    const getRowSpan = () => {
+        if (bodyLength < 150) return 'row-span-1';
+        if (bodyLength <= 300) return 'row-span-2';
+        return 'row-span-3';
+    };
+    
+    const getLineClamp = () => {
+        if (bodyLength < 150) return 'line-clamp-4';
+        if (bodyLength <= 300) return 'line-clamp-8';
+        return 'line-clamp-12';
+    };
 
     return (
          <div
-             className="group border bg-background transition-all duration-200 ease-in-out rounded-lg p-3"
+             className={`group border bg-diary-card-bg transition-all duration-200 ease-in-out rounded-lg p-3 ${getRowSpan()}`}
              onClick={() => onEdit(entry)}
          >
             <div className="pb-3">
@@ -33,8 +47,7 @@ export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, o
                                     {getCategoryById(entry.category)?.name || entry.category}
                                 </Badge>
                             )}
-                            <div className="flex items-center gap-2 mt-1 text-xs">
-                                <Calendar className="h-3 w-3" />
+                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                                 {entryDate.toLocaleDateString()}
                             </div>
                         </div>
@@ -43,12 +56,12 @@ export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, o
 
                         <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onDelete(entry.id);
                             }}
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+                            className="p-0 text-muted-foreground"
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
@@ -64,12 +77,10 @@ export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, o
                 </div>
             </div>
              {/* Body Overview */}
-             <div className="flex flex-col h-full max-h-16 overflow-hidden relative">
-                 <p className="text-xs text-muted-foreground whitespace-pre-wrap flex-1">
+             <div className="flex flex-col h-full overflow-hidden relative">
+                 <p className={`text-xs text-muted-foreground whitespace-pre-wrap flex-1 ${getLineClamp()}`}>
                      {entry.body}
                  </p>
-                 {/* Fade gradient overlay - always at bottom */}
-                 {/* <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-habitbg to-transparent group-hover:from-habitbghover pointer-events-none transition-all duration-200 ease-in-out" /> */}
              </div>
         </div>
     );

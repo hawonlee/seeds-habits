@@ -57,7 +57,7 @@ export const DiaryEditPage: React.FC = () => {
   };
 
   const handleNavigateHome = () => {
-    navigate('/');
+    navigate('/diary');
   };
 
   if (loading) {
@@ -93,6 +93,7 @@ export const DiaryEditPage: React.FC = () => {
   return (
     <DiaryEditForm
       entry={currentEntry}
+      diaryEntries={diaryEntries}
       onSave={handleSave}
       onCancel={handleCancel}
       onNavigateToEntry={handleNavigateToEntry}

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Sprout Animation</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+        }
+
+        .sprout-container {
+            transform: scale(4);
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .sprout {
+            position: relative;
+            width: 16px;
+            height: 20;
+        }
+
+        /* Stem - 2px wide vertical line */
+        .stem {
+            width: 2px;
+            background: black;
+            position: absolute;
+            bottom: 0;
+            left: 7px;
+            height: 0;
+            animation: growStem 1.5s steps(10) forwards;
+        }
+
+        /* Pixel leaves */
+        .leaf-left {
+            position: absolute;
+            bottom: 16px;
+            left: 0;
+            opacity: 0;
+            animation: showLeaf 0.1s step-end 1.2s forwards;
+        }
+
+        .leaf-left::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: black;
+            box-shadow: 
+                0 0 0 2px black,
+                2px 0 0 2px black,
+                4px 0 0 2px black,
+                0 2px 0 2px black,
+                2px 2px 0 2px black,
+                0 4px 0 2px black;
+        }
+
+        .leaf-right {
+            position: absolute;
+            bottom: 16px;
+            right: 0;
+            opacity: 0;
+            animation: showLeaf 0.1s step-end 1.4s forwards;
+        }
+
+        .leaf-right::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: black;
+            box-shadow: 
+                0 0 0 2px black,
+                -2px 0 0 2px black,
+                -4px 0 0 2px black,
+                0 2px 0 2px black,
+                -2px 2px 0 2px black,
+                0 4px 0 2px black;
+        }
+
+        /* Top leaves */
+        .leaf-top-left {
+            position: absolute;
+            top: 0;
+            left: 2px;
+            opacity: 0;
+            animation: showLeaf 0.1s step-end 1.6s forwards;
+        }
+
+        .leaf-top-left::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: black;
+            box-shadow: 
+                0 0 0 2px black,
+                2px 0 0 2px black,
+                4px 0 0 2px black,
+                2px 2px 0 2px black;
+        }
+
+        .leaf-top-right {
+            position: absolute;
+            top: 0;
+            right: 2px;
+            opacity: 0;
+            animation: showLeaf 0.1s step-end 1.7s forwards;
+        }
+
+        .leaf-top-right::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: black;
+            box-shadow: 
+                0 0 0 2px black,
+                -2px 0 0 2px black,
+                -4px 0 0 2px black,
+                -2px 2px 0 2px black;
+        }
+
+        @keyframes growStem {
+            0% { height: 0px; }
+            100% { height: 32px; }
+        }
+
+        @keyframes showLeaf {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sprout-container">
+        <div class="sprout">
+            <div class="stem"></div>
+            <div class="leaf-left"></div>
+            <div class="leaf-right"></div>
+            <div class="leaf-top-left"></div>
+            <div class="leaf-top-right"></div>
+        </div>
+    </div>
+</body>
+</html>

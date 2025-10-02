@@ -8,7 +8,7 @@ import { getCategoryById, getCategoryCSSVariables } from "@/lib/categories";
 import { HabitMeta } from "./HabitMeta";
 import { useState, useRef } from "react";
 import { ProgressCircle } from "@/components/ui/progress-circle";
-import { useHabitCompletions } from "@/hooks/useHabitCompletions";
+import { useHabitCompletionsContext } from "@/components/HabitCompletionsProvider";
 import {
   getHabitDates,
   createWeekUtils,
@@ -63,11 +63,12 @@ export const HabitCard = ({
   const cardRef = useRef<HTMLDivElement>(null);
 
   const { todayDate, lastCompletedKey, isCheckedInToday } = getHabitDates(habit);
-  const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletions();
+  const { isHabitCompletedOnDate, getCompletionCountForDate, toggleCompletion } = useHabitCompletionsContext();
   const weekUtils = createWeekUtils({
     habit,
     customIsCompleted: isCompletedOnDate,
     isHabitCompletedOnDate,
+    getCompletionCountForDate,
     lastCompletedKey
   });
   const progressUtils = createProgressUtils(
@@ -83,12 +84,40 @@ export const HabitCard = ({
     onUndoCheckInForDate,
     toggleCompletion,
     isHabitCompletedOnDate,
+    getCompletionCountForDate,
     customIsCompleted: isCompletedOnDate,
     lastCompletedKey
   });
 
-  const { targetPerWeek, getWeekSummary } = progressUtils;
-  const { days: tableWeekDays, completed: tableCompletedThisWeek, progressPct: tableWeeklyProgressPct } = getWeekSummary(currentWeek);
+
+  const { targetPerWeek, getWeekSummary, getDaySummary } = progressUtils;
+  const isDailyHabit = habit.target_unit === "day";
+  const dailyTargetValue = Math.max(1, habit.target_value || 1);
+  const today = new Date();
+
+  const getDailyProgress = (date: Date) => {
+    const { completed, target, progressPct } = getDaySummary(date);
+    return {
+      completed,
+      target,
+      progressPct
+    };
+  };
+
+  const getWeeklyProgress = (startDate?: Date) => {
+    const { completed, progressPct, target } = getWeekSummary(startDate);
+    return {
+      completed,
+      target,
+      progressPct
+    };
+  };
+
+  const tableWeekSummary = getWeekSummary(currentWeek);
+  const tableWeekDays = tableWeekSummary.days;
+  const tableProgress = isDailyHabit
+    ? getDailyProgress(today)
+    : getWeeklyProgress(currentWeek);
 
   // Table variant - horizontal layout with weekly checkboxes
   if (variant === 'table') {
@@ -141,10 +170,10 @@ export const HabitCard = ({
           <div className="relative w-24 h-12">
             <div className={`absolute inset-0 flex items-center justify-end pr-3`}>
               <ProgressCircle
-                value={tableWeeklyProgressPct}
+                value={tableProgress.progressPct}
                 strokeWidth={5}
                 color={getCategoryCSSVariables(habit.category).primary}
-                label={`${tableCompletedThisWeek}/${targetPerWeek}`}
+                label={`${tableProgress.completed}/${tableProgress.target}`}
               />
             </div>
           </div>
@@ -158,10 +187,15 @@ export const HabitCard = ({
   if (variant === 'week') {
     const targetDate = selectedDate || todayDate;
     const weekStart = weekStartDate ? new Date(weekStartDate) : targetDate;
-    const { days: weekDays, completed: weekCompletedCount, progressPct: weekProgressPct } = progressUtils.getWeekSummary(weekStart);
+    const { days: weekDays } = progressUtils.getWeekSummary(weekStart);
     const done = completionHandlers.isDoneOnDate(targetDate);
 
     const categoryColor = getCategoryCSSVariables(habit.category).primary;
+    const dailyProgress = getDailyProgress(targetDate);
+    const weeklyProgress = getWeeklyProgress(weekStart);
+    const weekVariantProgress = isDailyHabit ? dailyProgress : weeklyProgress;
+    const weekVariantTarget = isDailyHabit ? dailyTargetValue : targetPerWeek;
+
     return (
       <div className="relative" ref={cardRef}>
         <div className="cursor-pointer w-full rounded-lg bg-habitbg hover:bg-habitbghover transition-colors duration-200" onClick={() => onEditHabit?.(habit)}>
@@ -210,10 +244,10 @@ export const HabitCard = ({
               <div className="space-y-1">
                 <div className="flex items-center justify-center">
                   <ProgressCircle
-                    value={weekProgressPct}
+                    value={weekVariantProgress.progressPct}
                     strokeWidth={5}
                     color={categoryColor}
-                    label={`${weekCompletedCount}/${targetPerWeek}`}
+                    label={`${weekVariantProgress.completed}/${weekVariantTarget}`}
                   />
                 </div>
               </div>
@@ -270,17 +304,17 @@ export const HabitCard = ({
                 </div>
               </div>
               {(() => {
-                const { completed, progressPct } = progressUtils.getWeekSummary(todayDate);
                 const categoryBg = getCategoryCSSVariables(habit.category).primary;
+                const summary = isDailyHabit ? getDailyProgress(today) : getWeeklyProgress(todayDate);
 
                 return (
                   <div className="space-y-1">
                     <div className="flex items-center justify-center">
                       <ProgressCircle
-                        value={progressPct}
+                        value={summary.progressPct}
                         strokeWidth={5}
                         color={categoryBg}
-                        label={`${completed}/${targetPerWeek}`}
+                        label={`${summary.completed}/${summary.target}`}
                       />
                     </div>
                   </div>
@@ -297,7 +331,7 @@ export const HabitCard = ({
   // Default variant - compact card
   const handleDragStart = (e: React.DragEvent) => {
     if (draggable && onDragStart) {
-      e.dataTransfer.setData('text/plain', habit.id);
+      e.dataTransfer.setData('text/plain', `habit:${habit.id}`);
       e.dataTransfer.effectAllowed = 'move';
       onDragStart(habit);
     }

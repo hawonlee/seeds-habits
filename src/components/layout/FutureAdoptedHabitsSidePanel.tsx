@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SegmentedToggle } from '@/components/ui/segmented-toggle';
 import { Habit } from '@/hooks/useHabits';
 import { FutureHabitsList } from '../habits/FutureHabitsList';
 import { AdoptedHabitsList } from '../habits/AdoptedHabitsList';
@@ -38,47 +39,23 @@ export const FutureAdoptedHabitsSidePanel: React.FC<FutureAdoptedHabitsSidePanel
     <div className="">
       {/* Tab Toggle */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex bg-habitbg rounded-full p-1">
-          <button
-            onClick={() => setActiveTab('future')}
-            className={`flex-1 py-2 px-3 rounded-full text-sm  transition-colors ${
-              activeTab === 'future'
-                ? 'bg-side-panel-bg text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <div className="flex text-xs items-center justify-center gap-2">
-              Future
-              {/* <Badge variant="secondary" className="text-xxs">
-                {futureHabits.length}
-              </Badge> */}
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('adopted')}
-            className={`flex-1 py-2 px-3 rounded-full text-sm transition-colors ${
-              activeTab === 'adopted'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <div className="flex text-xs items-center justify-center gap-2">
-              Adopted
-              {/* <Badge variant="secondary" className="text-xxs">
-                {adoptedHabits.length}
-              </Badge> */}
-            </div>
-          </button>
-        </div>
-  
+        <SegmentedToggle
+          options={[
+            { value: 'future', label: 'Future' },
+            { value: 'adopted', label: 'Adopted' },
+          ]}
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'future' | 'adopted')}
+        />
+
         <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onAddHabit(activeTab)}
-            className="h-8 w-8"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          size="sm"
+          variant="ghost"
+          onClick={() => onAddHabit(activeTab)}
+          className="h-8 w-8"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Points Display for Adopted */}

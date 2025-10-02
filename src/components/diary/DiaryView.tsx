@@ -16,6 +16,7 @@ import { fetchCategories, getCategories, FALLBACK_CATEGORIES, resolveCategoryBgC
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DiaryEntryCard } from './DiaryEntryCard';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import type { Database } from '@/integrations/supabase/types';
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
@@ -163,6 +164,8 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
 export const DiaryView: React.FC = () => {
   const navigate = useNavigate();
   const { diaryEntries, loading, deleteDiaryEntry } = useDiaryEntries();
+  const [deletingEntry, setDeletingEntry] = useState<DiaryEntry | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleCreateNewEntry = () => {
     navigate('/diary/edit/new');
@@ -172,19 +175,31 @@ export const DiaryView: React.FC = () => {
     navigate(`/diary/edit/${entry.id}`);
   };
 
-  const handleDeleteEntry = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this diary entry?')) {
-      try {
-        await deleteDiaryEntry(id);
-      } catch (error) {
-        console.error('Error deleting diary entry:', error);
-      }
+  const handleDeleteClick = (entry: DiaryEntry) => {
+    setDeletingEntry(entry);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingEntry) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteDiaryEntry(deletingEntry.id);
+      setDeletingEntry(null);
+    } catch (error) {
+      console.error('Error deleting diary entry:', error);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeletingEntry(null);
   };
 
   return (
     <div className="">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 h-10">
         <div>
           <h1 className="text-sm font-medium">Diary</h1>
         </div>
@@ -200,27 +215,37 @@ export const DiaryView: React.FC = () => {
       ) : diaryEntries.length === 0 ? (
         <Card className="p-8 text-center">
           <CardContent>
-            <Calendar className="h-6 w-6 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold mb-10">No diary entries yet</h3>
-            <Button variant="outline" onClick={handleCreateNewEntry}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button variant="default" onClick={handleCreateNewEntry}>
               Create First Entry
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 auto-rows-min">
           {diaryEntries.map((entry) => (
             <DiaryEntryCard
               key={entry.id}
               entry={entry}
               onEdit={handleEditEntry}
-              onDelete={handleDeleteEntry}
+              onDelete={(id) => {
+                const entryToDelete = diaryEntries.find(e => e.id === id);
+                if (entryToDelete) {
+                  handleDeleteClick(entryToDelete);
+                }
+              }}
             />
           ))}
         </div>
       )}
 
+      <DeleteConfirmationModal
+        isOpen={deletingEntry !== null}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title={deletingEntry?.title || ''}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

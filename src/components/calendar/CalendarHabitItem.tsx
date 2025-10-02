@@ -2,6 +2,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Habit } from "@/hooks/useHabits";
 import { getCategoryCSSVariables } from "@/lib/categories";
 import React from "react";
+import { CalendarItem } from "./CalendarItem";
 
 interface CalendarHabitItemProps {
   habit: Habit;
@@ -30,15 +31,24 @@ export const CalendarHabitItem: React.FC<CalendarHabitItemProps> = ({
 
   const cssVars = getCategoryCSSVariables(habit.category);
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onUnschedule) {
+      onUnschedule(habit.id, date);
+    }
+  };
+
   return (
-    <div
-      className={`group text-xs p-1 rounded flex items-center gap-1.5 truncate`}
+    <CalendarItem
+      className="group"
       title={`${habit.title}${isScheduled ? ' (Scheduled - Right-click to unschedule)' : ''}`}
       onContextMenu={handleRightClick}
       style={{ 
         backgroundColor: habit.category === 'none' ? 'transparent' : cssVars.bg, 
         color: cssVars.primary 
       }}
+      showDeleteButton={isScheduled}
+      onDelete={handleDelete}
     >
       <Checkbox
         checked={isCompleted}
@@ -48,20 +58,7 @@ export const CalendarHabitItem: React.FC<CalendarHabitItemProps> = ({
         customColor={"currentColor"}
       />
       <span className="truncate flex-1">{habit.title}</span>
-      {isScheduled && onUnschedule && (
-        <button
-          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-0.5 rounded hover:bg-black/10"
-          onClick={(e) => {
-            e.stopPropagation();
-            onUnschedule(habit.id, date);
-          }}
-          aria-label="Remove"
-          title="Remove from this day"
-        >
-          ×
-        </button>
-      )}
-    </div>
+    </CalendarItem>
   );
 };
 

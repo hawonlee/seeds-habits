@@ -24,15 +24,17 @@ const buttonVariants = cva(
           "bg-button-tertiary-bg rounded-full border-none text-button-tertiary-text hover:bg-button-tertiary-hover",
         ghost: "hover:bg-button-ghost-hover",
         link: "text-primary underline-offset-4 hover:underline",
+        text: "text-muted-foreground hover:text-foreground",
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 px-3",
         lg: "h-11 px-8",
         skinny: "px-5 py-2",
-        icon: "h-10 w-10",
+        icon: "h-8 w-8",
         smallicon: "h-8 w-8",
         frequency: "p-2",
+        text: ""
       },
     },
     defaultVariants: {

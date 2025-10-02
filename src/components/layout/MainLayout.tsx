@@ -8,7 +8,8 @@ interface MainLayoutProps {
   children: React.ReactNode;
   showCalendar: boolean;
   showDiary: boolean;
-  onViewChange: (view: 'list' | 'calendar' | 'diary') => void;
+  showTasks: boolean;
+  onViewChange: (view: 'list' | 'calendar' | 'diary' | 'tasks') => void;
   isCombinedPanelCollapsed: boolean;
   onTogglePanel: () => void;
 }
@@ -17,6 +18,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   children,
   showCalendar,
   showDiary,
+  showTasks,
   onViewChange,
   isCombinedPanelCollapsed,
   onTogglePanel,
@@ -24,11 +26,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleViewChange = (view: 'list' | 'calendar' | 'diary') => {
+  const handleViewChange = (view: 'list' | 'calendar' | 'diary' | 'tasks') => {
     const routeMap = {
       list: '/list',
+      diary: '/diary',
       calendar: '/calendar',
-      diary: '/diary'
+      tasks: '/tasks',
     };
     
     navigate(routeMap[view]);
@@ -39,6 +42,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const getCurrentView = () => {
     if (location.pathname === '/calendar') return 'calendar';
     if (location.pathname === '/diary') return 'diary';
+    if (location.pathname === '/tasks') return 'tasks';
     return 'list';
   };
   return (
@@ -55,8 +59,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <SegmentedToggle
               options={[
                 { value: 'list', label: 'List' },
+                { value: 'tasks', label: 'Tasks' },
+                { value: 'diary', label: 'Diary' },
                 { value: 'calendar', label: 'Cal' },
-                { value: 'diary', label: 'Diary' }
               ]}
               value={getCurrentView()}
               onValueChange={handleViewChange}

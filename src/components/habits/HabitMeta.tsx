@@ -3,6 +3,7 @@ import { CardTitle } from "@/components/ui/card";
 import { MoveUpRight, Repeat } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { getCategoryById, formatFrequency } from "@/lib/categories";
+import { useHabitCompletionsContext } from "@/components/HabitCompletionsProvider";
 
 interface HabitMetaProps {
   habit: Habit;
@@ -15,6 +16,11 @@ export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = fals
   const iconSize = size === "md" ? "h-4 w-4" : "h-3 w-3";
   const titleTextSize = size === "md" ? "text-xs" : "text-xs";
   const statsTextSize = size === "md" ? "text-sm" : "text-xs";
+
+  // Derive total completions from live completions state for real-time updates
+  const { getCompletionsForHabit } = useHabitCompletionsContext();
+  const computedTotalCompletions = getCompletionsForHabit(habit.id)
+    .reduce((sum, c) => sum + (c.completion_count || 0), 0);
 
   const TitleWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     useCardTitle ? (
@@ -38,7 +44,7 @@ export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = fals
           <div className={`flex items-center gap-4 ${statsTextSize} text-muted-foreground ${useCardTitle ? 'mt-2' : ''}`}>
             <span className="flex items-center gap-1">
               <MoveUpRight className={iconSize} />
-              {habit.total_completions} total
+              {computedTotalCompletions} total
             </span>
             <span className="flex items-center gap-1">
               <Repeat className={iconSize} />

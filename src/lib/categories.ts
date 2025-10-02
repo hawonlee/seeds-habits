@@ -80,6 +80,32 @@ export const FALLBACK_CATEGORIES: Category[] = [
 // Cache for categories
 let categoriesCache: Category[] | null = null;
 
+// Cache change listeners
+let cacheChangeListeners: (() => void)[] = [];
+
+export const addCacheChangeListener = (listener: () => void) => {
+  cacheChangeListeners.push(listener);
+  return () => {
+    cacheChangeListeners = cacheChangeListeners.filter(l => l !== listener);
+  };
+};
+
+const notifyCacheChange = () => {
+  cacheChangeListeners.forEach(listener => listener());
+};
+
+// Force refresh all components using categories
+export const refreshCategories = async (userId?: string): Promise<Category[]> => {
+  if (userId) {
+    const categories = await fetchCategories(userId);
+    setCategoriesCache(categories);
+    return categories;
+  }
+  // If no userId provided, just notify listeners of current cache
+  notifyCacheChange();
+  return getCategories();
+};
+
 export const fetchCategories = async (userId: string): Promise<Category[]> => {
   try {
     const { data, error } = await supabase
@@ -119,6 +145,7 @@ export const getCategories = (): Category[] => {
 // Allow components to update the in-memory cache so UI reflects changes immediately
 export const setCategoriesCache = (categories: Category[]): void => {
   categoriesCache = categories;
+  notifyCacheChange();
 };
 
 export const getCategoryById = (id: string): Category | undefined => {
@@ -289,17 +316,17 @@ export const formatFrequency = ({ target_value, target_unit, custom_days }: Habi
 };
 
 // Map category colors to CSS variables
-export const getCategoryCSSVariables = (categoryId: string): { primary: string; bg: string } => {
+export const getCategoryCSSVariables = (categoryId: string): { primary: string; intermediary: string; bg: string } => {
   const category = getCategoryById(categoryId);
   if (!category) {
-    return { primary: 'hsl(var(--category-6-primary))', bg: 'hsl(var(--category-6-bg))' };
+    return { primary: 'hsl(var(--category-6-primary))', intermediary: 'hsl(var(--category-6-intermediary))', bg: 'hsl(var(--category-6-bg))' };
   }
   
   const primaryColor = category.color;
   const palette = findColorOptionByValue(primaryColor);
   
   if (!palette) {
-    return { primary: 'hsl(var(--category-6-primary))', bg: 'hsl(var(--category-6-bg))' };
+    return { primary: 'hsl(var(--category-6-primary))', intermediary: 'hsl(var(--category-6-intermediary))', bg: 'hsl(var(--category-6-bg))' };
   }
   
   // Map palette colors to CSS variables based on order in COLOR_OPTIONS
@@ -307,34 +334,62 @@ export const getCategoryCSSVariables = (categoryId: string): { primary: string; 
   
   switch (colorIndex) {
     case 0: // Red
-      return { primary: 'hsl(var(--category-1-primary))', bg: 'hsl(var(--category-1-bg))' };
+      return { primary: 'hsl(var(--category-1-primary))', intermediary: 'hsl(var(--category-1-intermediary))', bg: 'hsl(var(--category-1-bg))' };
     case 1: // Amber
-      return { primary: 'hsl(var(--category-2-primary))', bg: 'hsl(var(--category-2-bg))' };
+      return { primary: 'hsl(var(--category-2-primary))', intermediary: 'hsl(var(--category-2-intermediary))', bg: 'hsl(var(--category-2-bg))' };
     case 2: // Green
-      return { primary: 'hsl(var(--category-3-primary))', bg: 'hsl(var(--category-3-bg))' };
+      return { primary: 'hsl(var(--category-3-primary))', intermediary: 'hsl(var(--category-3-intermediary))', bg: 'hsl(var(--category-3-bg))' };
     case 3: // Blue
-      return { primary: 'hsl(var(--category-4-primary))', bg: 'hsl(var(--category-4-bg))' };
+      return { primary: 'hsl(var(--category-4-primary))', intermediary: 'hsl(var(--category-4-intermediary))', bg: 'hsl(var(--category-4-bg))' };
     case 4: // Purple
-      return { primary: 'hsl(var(--category-5-primary))', bg: 'hsl(var(--category-5-bg))' };
+      return { primary: 'hsl(var(--category-5-primary))', intermediary: 'hsl(var(--category-5-intermediary))', bg: 'hsl(var(--category-5-bg))' };
     case 5: // Neutral
-      return { primary: 'hsl(var(--category-6-primary))', bg: 'hsl(var(--category-6-bg))' };
+      return { primary: 'hsl(var(--category-6-primary))', intermediary: 'hsl(var(--category-6-intermediary))', bg: 'hsl(var(--category-6-bg))' };
     default:
-      return { primary: 'hsl(var(--category-6-primary))', bg: 'hsl(var(--category-6-bg))' };
+      return { primary: 'hsl(var(--category-6-primary))', intermediary: 'hsl(var(--category-6-intermediary))', bg: 'hsl(var(--category-6-bg))' };
+  }
+};
+
+// Helper function to get intermediary color CSS variable from a hex color value
+export const getIntermediaryColorFromHex = (hexColor: string): string => {
+  const palette = findColorOptionByValue(hexColor);
+  if (!palette) {
+    return 'hsl(var(--category-6-intermediary))'; // Default to neutral
+  }
+  
+  // Map palette colors to CSS variables based on order in COLOR_OPTIONS
+  const colorIndex = COLOR_OPTIONS.findIndex(option => option.value === hexColor);
+  
+  switch (colorIndex) {
+    case 0: // Red
+      return 'hsl(var(--category-1-intermediary))';
+    case 1: // Amber
+      return 'hsl(var(--category-2-intermediary))';
+    case 2: // Green
+      return 'hsl(var(--category-3-intermediary))';
+    case 3: // Blue
+      return 'hsl(var(--category-4-intermediary))';
+    case 4: // Purple
+      return 'hsl(var(--category-5-intermediary))';
+    case 5: // Neutral
+      return 'hsl(var(--category-6-intermediary))';
+    default:
+      return 'hsl(var(--category-6-intermediary))';
   }
 };
 
 // Get category CSS class names for Tailwind
-export const getCategoryCSSClasses = (categoryId: string): { primary: string; bg: string } => {
+export const getCategoryCSSClasses = (categoryId: string): { primary: string; intermediary: string; bg: string } => {
   const category = getCategoryById(categoryId);
   if (!category) {
-    return { primary: 'category-6-primary', bg: 'category-6-bg' };
+    return { primary: 'category-6-primary', intermediary: 'category-6-intermediary', bg: 'category-6-bg' };
   }
   
   const primaryColor = category.color;
   const palette = findColorOptionByValue(primaryColor);
   
   if (!palette) {
-    return { primary: 'category-6-primary', bg: 'category-6-bg' };
+    return { primary: 'category-6-primary', intermediary: 'category-6-intermediary', bg: 'category-6-bg' };
   }
   
   // Map palette colors to CSS class names based on order in COLOR_OPTIONS
@@ -342,18 +397,18 @@ export const getCategoryCSSClasses = (categoryId: string): { primary: string; bg
   
   switch (colorIndex) {
     case 0: // Red
-      return { primary: 'category-1-primary', bg: 'category-1-bg' };
+      return { primary: 'category-1-primary', intermediary: 'category-1-intermediary', bg: 'category-1-bg' };
     case 1: // Amber
-      return { primary: 'category-2-primary', bg: 'category-2-bg' };
+      return { primary: 'category-2-primary', intermediary: 'category-2-intermediary', bg: 'category-2-bg' };
     case 2: // Green
-      return { primary: 'category-3-primary', bg: 'category-3-bg' };
+      return { primary: 'category-3-primary', intermediary: 'category-3-intermediary', bg: 'category-3-bg' };
     case 3: // Blue
-      return { primary: 'category-4-primary', bg: 'category-4-bg' };
+      return { primary: 'category-4-primary', intermediary: 'category-4-intermediary', bg: 'category-4-bg' };
     case 4: // Purple
-      return { primary: 'category-5-primary', bg: 'category-5-bg' };
+      return { primary: 'category-5-primary', intermediary: 'category-5-intermediary', bg: 'category-5-bg' };
     case 5: // Neutral
-      return { primary: 'category-6-primary', bg: 'category-6-bg' };
+      return { primary: 'category-6-primary', intermediary: 'category-6-intermediary', bg: 'category-6-bg' };
     default:
-      return { primary: 'category-6-primary', bg: 'category-6-bg' };
+      return { primary: 'category-6-primary', intermediary: 'category-6-intermediary', bg: 'category-6-bg' };
   }
 };

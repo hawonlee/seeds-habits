@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import type { Database } from '@/integrations/supabase/types';
+
+type CalendarItem = Database['public']['Tables']['calendar_items']['Row'];
 
 export interface HabitSchedule {
   id: string;
@@ -30,13 +33,25 @@ export const useHabitSchedules = () => {
 
     try {
       const { data, error } = await supabase
-        .from('habit_schedules')
+        .from('calendar_items')
         .select('*')
         .eq('user_id', user.id)
+        .eq('item_type', 'habit')
         .order('scheduled_date', { ascending: true });
 
       if (error) throw error;
-      setSchedules(data || []);
+      
+      // Transform calendar_items to HabitSchedule format for backward compatibility
+      const habitSchedules: HabitSchedule[] = (data || []).map(item => ({
+        id: item.id,
+        habit_id: item.item_id,
+        user_id: item.user_id,
+        scheduled_date: item.scheduled_date,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      }));
+      
+      setSchedules(habitSchedules);
     } catch (error) {
       console.error('Error fetching habit schedules:', error);
     } finally {
@@ -52,10 +67,11 @@ export const useHabitSchedules = () => {
       const scheduledDate = formatDateForDB(date);
       
       const { data, error } = await supabase
-        .from('habit_schedules')
+        .from('calendar_items')
         .insert({
-          habit_id: habitId,
           user_id: user.id,
+          item_type: 'habit',
+          item_id: habitId,
           scheduled_date: scheduledDate,
         })
         .select();
@@ -71,7 +87,15 @@ export const useHabitSchedules = () => {
 
       // Optimistically update the local state immediately
       if (data && data.length > 0) {
-        setSchedules(prev => [...prev, data[0]]);
+        const habitSchedule: HabitSchedule = {
+          id: data[0].id,
+          habit_id: data[0].item_id,
+          user_id: data[0].user_id,
+          scheduled_date: data[0].scheduled_date,
+          created_at: data[0].created_at,
+          updated_at: data[0].updated_at,
+        };
+        setSchedules(prev => [...prev, habitSchedule]);
       }
       
       return true;
@@ -94,10 +118,11 @@ export const useHabitSchedules = () => {
       ));
       
       const { error } = await supabase
-        .from('habit_schedules')
+        .from('calendar_items')
         .delete()
-        .eq('habit_id', habitId)
         .eq('user_id', user.id)
+        .eq('item_type', 'habit')
+        .eq('item_id', habitId)
         .eq('scheduled_date', scheduledDate);
 
       if (error) throw error;

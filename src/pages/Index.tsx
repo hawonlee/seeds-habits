@@ -5,6 +5,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useHabits, type Habit, type HabitTargetUnit } from "@/hooks/useHabits";
 import { useDiaryEntries } from "@/hooks/useDiaryEntries";
 import { useHabitSchedules } from "@/hooks/useHabitSchedules";
+import { useCalendarItems } from "@/hooks/useCalendarItems";
+import { useTasks } from "@/hooks/useTasks";
 import { CurrentHabitsList } from "@/components/habits/CurrentHabitsList";
 import { SidePanel } from "@/components/ui/side-panel";
 import { ExternalPanelToggle } from "@/components/ui/external-panel-toggle";
@@ -23,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { SegmentedToggle } from "@/components/ui/segmented-toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LandingPage } from "@/pages/LandingPage";
+import { TasksView } from "@/components/tasks/TasksView";
+import { CalendarSidePanel } from "@/components/layout/CalendarSidePanel";
 import {
   Loader2,
   Calendar,
@@ -37,7 +41,9 @@ const Index = () => {
   const { profile, loading: profileLoading } = useProfile();
   const { habits, loading: habitsLoading, hasLoaded, addHabit, updateHabit, deleteHabit, checkInHabit, undoCheckIn, moveHabitPhase, refreshHabits } = useHabits();
   const { scheduleHabit, unscheduleHabit, schedules, isHabitScheduledOnDate, getScheduledHabitsForDate } = useHabitSchedules();
+  const { calendarItems, scheduleHabit: scheduleHabitToCalendar, scheduleTask: scheduleTaskToCalendar, unscheduleItem, moveItem } = useCalendarItems();
   const { diaryEntries } = useDiaryEntries();
+  const { tasks, taskLists, updateTask, deleteTask, loading: tasksLoading } = useTasks();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -49,18 +55,26 @@ const Index = () => {
   const [adoptionThreshold, setAdoptionThreshold] = useState(21);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showDiary, setShowDiary] = useState(false);
+  const [showTasks, setShowTasks] = useState(false);
 
   // Update view state based on URL
   useEffect(() => {
     if (location.pathname === '/calendar') {
       setShowCalendar(true);
       setShowDiary(false);
+      setShowTasks(false);
     } else if (location.pathname === '/diary') {
       setShowCalendar(false);
       setShowDiary(true);
+      setShowTasks(false);
+    } else if (location.pathname === '/tasks') {
+      setShowCalendar(false);
+      setShowDiary(false);
+      setShowTasks(true);
     } else {
       setShowCalendar(false);
       setShowDiary(false);
+      setShowTasks(false);
     }
   }, [location.pathname]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -220,7 +234,7 @@ const Index = () => {
 
   const handleHabitDrop = async (habitId: string, date: Date) => {
     // When a habit is dropped on a calendar day, schedule it for that specific date
-    const success = await scheduleHabit(habitId, date);
+    const success = await scheduleHabitToCalendar(habitId, date);
 
     setDraggedHabit(null);
   };
@@ -239,16 +253,54 @@ const Index = () => {
     navigate('/diary');
   };
 
-  const handleViewChange = (view: 'list' | 'calendar' | 'diary') => {
+  const handleTaskToggleComplete = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      await updateTask(taskId, { completed: !task.completed });
+    }
+  };
+
+  const handleTaskDrop = async (taskId: string, date: Date) => {
+    // When a task is dropped on a calendar day, schedule it for that specific date
+    const success = await scheduleTaskToCalendar(taskId, date);
+    if (success) {
+      console.log(`Task ${taskId} scheduled for ${date.toDateString()}`);
+    } else {
+      console.log(`Failed to schedule task ${taskId} for ${date.toDateString()}`);
+    }
+  };
+
+  const handleTaskDelete = async (taskId: string, date?: Date) => {
+    try {
+      if (date) {
+        // Unschedule the task from the calendar
+        await unscheduleItem('task', taskId, date);
+        console.log(`Task ${taskId} unscheduled from ${date.toDateString()}`);
+      } else {
+        console.log(`Task ${taskId} delete requested but no date provided`);
+      }
+    } catch (error) {
+      console.error(`Failed to unschedule task ${taskId}:`, error);
+    }
+  };
+
+  const handleViewChange = (view: 'list' | 'calendar' | 'diary' | 'tasks') => {
     if (view === 'diary') {
       setShowDiary(true);
       setShowCalendar(false);
+      setShowTasks(false);
     } else if (view === 'calendar') {
       setShowDiary(false);
       setShowCalendar(true);
+      setShowTasks(false);
+    } else if (view === 'tasks') {
+      setShowDiary(false);
+      setShowCalendar(false);
+      setShowTasks(true);
     } else {
       setShowDiary(false);
       setShowCalendar(false);
+      setShowTasks(false);
     }
   };
 
@@ -303,6 +355,7 @@ const Index = () => {
             <MainLayout
               showCalendar={showCalendar}
               showDiary={showDiary}
+              showTasks={showTasks}
               onViewChange={handleViewChange}
               isCombinedPanelCollapsed={isCombinedPanelCollapsed}
               onTogglePanel={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
@@ -313,14 +366,22 @@ const Index = () => {
                 <UnifiedCalendar
                   habits={habits}
                   schedules={schedules}
+                  calendarItems={calendarItems}
                   diaryEntries={diaryEntries}
+                  tasks={tasks}
+                  taskLists={taskLists}
                   onCheckIn={handleCheckIn}
                   onUndoCheckIn={handleUndoCheckIn}
                   onDayClick={handleDayClick}
                   onHabitDrop={handleHabitDrop}
                   onHabitUnschedule={handleHabitUnschedule}
+                  onTaskToggleComplete={handleTaskToggleComplete}
+                  onTaskDrop={handleTaskDrop}
+                  onTaskDelete={handleTaskDelete}
                   onDiaryEntryClick={handleDiaryEntryClick}
                 />
+              ) : showTasks ? (
+                <TasksView />
               ) : (
                 <CurrentHabitsList
                   habits={currentHabits}
@@ -356,7 +417,7 @@ const Index = () => {
           <SidePanel
             isCollapsed={isCombinedPanelCollapsed}
             onToggleCollapse={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
-            title={showCalendar ? "Current Habits" : "Future & Adopted"}
+            title={showCalendar ? "Calendar Items" : "Future & Adopted"}
             onOpenSettings={() => setShowAdoptionSettings(true)}
             onSignOut={signOut}
             position="right"
@@ -369,7 +430,10 @@ const Index = () => {
                 </div>
               </div>
             ) : showCalendar ? (
-              <CurrentHabitsSidePanel
+              <CalendarSidePanel
+                tasks={tasks}
+                taskLists={taskLists}
+                onToggleComplete={handleTaskToggleComplete}
                 habits={currentHabits}
                 onAddHabit={() => {
                   setAddToPhase('current');
@@ -384,12 +448,12 @@ const Index = () => {
                   });
                   setIsAddDialogOpen(true);
                 }}
-                onEditHabit={handleEditHabit}
-                onDeleteHabit={handleDeleteHabit}
+                adoptionThreshold={adoptionThreshold}
                 onCheckIn={handleCheckIn}
                 onUndoCheckIn={handleUndoCheckIn}
                 onMoveHabit={handleMoveHabit}
-                adoptionThreshold={adoptionThreshold}
+                onEditHabit={handleEditHabit}
+                onDeleteHabit={handleDeleteHabit}
                 onDragStart={handleDragStart}
               />
             ) : (

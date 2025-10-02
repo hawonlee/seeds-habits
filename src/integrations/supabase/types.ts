@@ -85,6 +85,7 @@ export type Database = {
           habit_id: string
           user_id: string
           completion_date: string
+          completion_count: number
           created_at: string
           updated_at: string
         }
@@ -93,6 +94,7 @@ export type Database = {
           habit_id: string
           user_id: string
           completion_date: string
+          completion_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -101,6 +103,7 @@ export type Database = {
           habit_id?: string
           user_id?: string
           completion_date?: string
+          completion_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -260,6 +263,95 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      calendar_items: {
+        Row: {
+          id: string
+          user_id: string
+          item_type: 'habit' | 'task'
+          item_id: string
+          scheduled_date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          item_type: 'habit' | 'task'
+          item_id: string
+          scheduled_date: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          item_type?: 'habit' | 'task'
+          item_id?: string
+          scheduled_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      tasks: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          completed: boolean
+          due_date: string | null
+          notes: string | null
+          task_list_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          completed?: boolean
+          due_date?: string | null
+          notes?: string | null
+          task_list_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          completed?: boolean
+          due_date?: string | null
+          notes?: string | null
+          task_list_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_task_list_id_fkey"
+            columns: ["task_list_id"]
+            isOneToOne: false
+            referencedRelation: "task_lists"
             referencedColumns: ["id"]
           }
         ]

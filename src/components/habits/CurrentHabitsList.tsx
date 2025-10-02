@@ -83,7 +83,7 @@ export const CurrentHabitsList = ({
   return (
     <div className="h-full overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-medium">Current Habits</h2>
+        <h2 className="text-sm font-medium h-10 flex items-center">Current Habits</h2>
         <div>
           <CategoryManager adoptionThreshold={adoptionThreshold} onChangeAdoptionThreshold={onChangeAdoptionThreshold} />
           <Button

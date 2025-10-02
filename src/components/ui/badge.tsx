@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { getCategoryCSSVariables } from "@/lib/categories"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full font-normal px-2.5 py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded font-normal px-2.5 py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {

@@ -22,7 +22,7 @@ export default {
 				sans: ['IBM Plex Mono', 'monospace'],
 			},
 			fontSize: {
-				'xxs': ['0.6rem', { lineHeight: '0.75rem' }], // 10px
+				'xxs': ['0.7rem', { lineHeight: '1rem' }], // 10px
 			},
 			colors: {
 				habitbg: 'hsl(var(--habitbg))',
@@ -48,16 +48,22 @@ export default {
 				'plus-button-text-dark': 'hsl(var(--plus-button-text-dark))',
 
 				'category-1-primary': 'hsl(var(--category-1-primary))',
+				'category-1-intermediary': 'hsl(var(--category-1-intermediary))',
 				'category-1-bg': 'hsl(var(--category-1-bg))',
 				'category-2-primary': 'hsl(var(--category-2-primary))',
+				'category-2-intermediary': 'hsl(var(--category-2-intermediary))',
 				'category-2-bg': 'hsl(var(--category-2-bg))',
 				'category-3-primary': 'hsl(var(--category-3-primary))',
+				'category-3-intermediary': 'hsl(var(--category-3-intermediary))',
 				'category-3-bg': 'hsl(var(--category-3-bg))',
 				'category-4-primary': 'hsl(var(--category-4-primary))',
+				'category-4-intermediary': 'hsl(var(--category-4-intermediary))',
 				'category-4-bg': 'hsl(var(--category-4-bg))',
 				'category-5-primary': 'hsl(var(--category-5-primary))',
+				'category-5-intermediary': 'hsl(var(--category-5-intermediary))',
 				'category-5-bg': 'hsl(var(--category-5-bg))',
 				'category-6-primary': 'hsl(var(--category-6-primary))',
+				'category-6-intermediary': 'hsl(var(--category-6-intermediary))',
 				'category-6-bg': 'hsl(var(--category-6-bg))',
 
 				'button-outline-border': 'hsl(var(--button-outline-border))',
@@ -77,6 +83,7 @@ export default {
 				'checkbox-bg': 'hsl(var(--checkbox-bg))',
 				'checkbox-bghover': 'hsl(var(--checkbox-bghover))',
 				'side-panel-bg': 'hsl(var(--side-panel-bg))',
+				'diary-card-bg': 'hsl(var(--diary-card-bg))',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -181,5 +188,5 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [require("tailwindcss-animate"), require("@tailwindcss/line-clamp")],
 } satisfies Config;

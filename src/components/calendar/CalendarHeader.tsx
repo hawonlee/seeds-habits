@@ -20,7 +20,7 @@ export const CalendarHeader = ({
   onToday
 }: CalendarHeaderProps) => {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between w-full h-10">
       {/* Left side - Title */}
       <h2 className="text-sm font-medium text-neutral-900">
         {title}

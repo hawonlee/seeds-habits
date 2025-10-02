@@ -24,6 +24,7 @@ type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
 interface DiaryEditFormProps {
   entry: DiaryEntry;
+  diaryEntries: DiaryEntry[];
   onSave: (data: { title: string; body: string; category: string; entry_date: string }) => Promise<void> | void;
   onCancel: () => void;
   onNavigateToEntry?: (entryId: string) => void;
@@ -33,6 +34,7 @@ interface DiaryEditFormProps {
 
 export const DiaryEditForm: React.FC<DiaryEditFormProps> = ({
   entry,
+  diaryEntries,
   onSave,
   onCancel,
   onNavigateToEntry,
@@ -40,7 +42,6 @@ export const DiaryEditForm: React.FC<DiaryEditFormProps> = ({
   onNavigateHome
 }) => {
   const { user } = useAuth();
-  const { diaryEntries } = useDiaryEntries();
   const [title, setTitle] = useState(entry.title);
   const [body, setBody] = useState(entry.body);
   const [category, setCategory] = useState(entry.category);
@@ -49,6 +50,7 @@ export const DiaryEditForm: React.FC<DiaryEditFormProps> = ({
   const [categories, setCategories] = useState<Category[]>(getCategories());
   const [loadingCategories, setLoadingCategories] = useState(false);
   const contentEditableRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -107,6 +109,19 @@ export const DiaryEditForm: React.FC<DiaryEditFormProps> = ({
   useEffect(() => {
     populateEntry();
   }, [entry.id, populateEntry]);
+
+  // Focus title input when component mounts or entry changes
+  useEffect(() => {
+    // Use setTimeout to ensure the focus happens after any other focus events
+    const focusTitle = () => {
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+      }
+    };
+    
+    const timeoutId = setTimeout(focusTitle, 0);
+    return () => clearTimeout(timeoutId);
+  }, [entry.id]);
 
   const performSave = useCallback(async () => {
     if (!entryDate || !title.trim()) {
@@ -206,6 +221,7 @@ export const DiaryEditForm: React.FC<DiaryEditFormProps> = ({
 
             <div className="flex items-center justify-between">
               <Input
+                ref={titleInputRef}
                 id="title"
                 value={title}
                 onChange={(e) => {
@@ -214,6 +230,7 @@ export const DiaryEditForm: React.FC<DiaryEditFormProps> = ({
                 }}
                 placeholder="Enter diary entry title"
                 className="text-2xl font-semibold border-none shadow-none p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                tabIndex={1}
                 required
               />
 
@@ -345,6 +362,7 @@ export const DiaryEditForm: React.FC<DiaryEditFormProps> = ({
                 suppressContentEditableWarning
                 onInput={handleInput}
                 onBlur={handleBlurSave}
+                tabIndex={2}
                 style={{ whiteSpace: 'pre-wrap' }}
               />
               {!body && (

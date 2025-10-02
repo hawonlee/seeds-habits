@@ -1,30 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CalendarHeader } from "./CalendarHeader";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
 import { DayView } from "./DayView";
 import { Habit } from "@/hooks/useHabits";
 import { HabitSchedule } from "@/hooks/useHabitSchedules";
+import { CalendarItemWithDetails } from "@/hooks/useCalendarItems";
+import { Task, TaskList } from "@/hooks/useTasks";
+import { Filter, ListFilter, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import type { Database } from "@/integrations/supabase/types";
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
+interface CalendarFilter {
+  habits: boolean;
+  tasks: boolean;
+  diaries: boolean;
+}
+
 interface UnifiedCalendarProps {
   habits: Habit[];
   schedules: HabitSchedule[];
+  calendarItems: CalendarItemWithDetails[];
   diaryEntries?: DiaryEntry[];
+  tasks?: Task[];
+  taskLists?: TaskList[];
   onCheckIn: (id: string, date: Date) => void;
   onUndoCheckIn: (id: string, date: Date) => void;
   onDayClick: (date: Date, habits: Habit[]) => void;
   onHabitDrop?: (habitId: string, date: Date) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
+  onTaskToggleComplete?: (taskId: string) => void;
+  onTaskDrop?: (taskId: string, date: Date) => void;
+  onTaskDelete?: (taskId: string, date?: Date) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
 }
 
-export const UnifiedCalendar = ({ habits, schedules, diaryEntries = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onDiaryEntryClick }: UnifiedCalendarProps) => {
-  const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'week' | 'day'>('week');
+export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onDiaryEntryClick }: UnifiedCalendarProps) => {
+  // Get saved view mode from localStorage, default to 'month'
+  const getInitialViewMode = (): 'month' | 'week' | 'day' => {
+    const saved = localStorage.getItem('calendar-view-mode');
+    if (saved && ['month', 'week', 'day'].includes(saved)) {
+      return saved as 'month' | 'week' | 'day';
+    }
+    return 'month'; // Default to month view
+  };
+
+  const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'week' | 'day'>(getInitialViewMode);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [filter, setFilter] = useState<CalendarFilter>({
+    habits: true,
+    tasks: true,
+    diaries: true
+  });
+
+  // Save view mode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('calendar-view-mode', calendarViewMode);
+  }, [calendarViewMode]);
 
   const getTitle = () => {
     const monthNames = [
@@ -99,14 +135,37 @@ export const UnifiedCalendar = ({ habits, schedules, diaryEntries = [], onCheckI
     setCurrentDate(new Date());
   };
 
+  const handleFilterChange = (key: keyof CalendarFilter) => {
+    setFilter(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const getFilteredData = () => {
+    return {
+      habits: filter.habits ? habits : [],
+      schedules: filter.habits ? schedules : [],
+      calendarItems: filter.habits || filter.tasks ? calendarItems : [],
+      diaryEntries: filter.diaries ? diaryEntries : [],
+      tasks: filter.tasks ? tasks : [],
+      taskLists: filter.tasks ? taskLists : []
+    };
+  };
+
   const renderContent = () => {
+    const filteredData = getFilteredData();
+    
     switch (calendarViewMode) {
       case 'month':
         return (
           <MonthView
-            habits={habits}
-            schedules={schedules}
-            diaryEntries={diaryEntries}
+            habits={filteredData.habits}
+            schedules={filteredData.schedules}
+            calendarItems={filteredData.calendarItems}
+            diaryEntries={filteredData.diaryEntries}
+            tasks={filteredData.tasks}
+            taskLists={filteredData.taskLists}
             onCheckIn={onCheckIn}
             onUndoCheckIn={onUndoCheckIn}
             onDayClick={onDayClick}
@@ -115,38 +174,55 @@ export const UnifiedCalendar = ({ habits, schedules, diaryEntries = [], onCheckI
             currentDate={currentDate}
             onHabitDrop={onHabitDrop}
             onHabitUnschedule={onHabitUnschedule}
+            onTaskToggleComplete={onTaskToggleComplete}
+            onTaskDrop={onTaskDrop}
+            onTaskDelete={onTaskDelete}
             onDiaryEntryClick={onDiaryEntryClick}
           />
         );
       case 'week':
         return (
           <WeekView
-            habits={habits}
-            schedules={schedules}
-            diaryEntries={diaryEntries}
+            habits={filteredData.habits}
+            schedules={filteredData.schedules}
+            calendarItems={filteredData.calendarItems}
+            diaryEntries={filteredData.diaryEntries}
+            tasks={filteredData.tasks}
+            taskLists={filteredData.taskLists}
             onCheckIn={onCheckIn}
             onUndoCheckIn={onUndoCheckIn}
+            // onDayClick={onDayClick}
             calendarViewMode={calendarViewMode}
             onViewModeChange={handleViewModeChange}
             currentDate={currentDate}
             onHabitDrop={onHabitDrop}
             onHabitUnschedule={onHabitUnschedule}
+            onTaskToggleComplete={onTaskToggleComplete}
+            onTaskDrop={onTaskDrop}
+            onTaskDelete={onTaskDelete}
             onDiaryEntryClick={onDiaryEntryClick}
           />
         );
       case 'day':
         return (
           <DayView
-            habits={habits}
-            schedules={schedules}
-            diaryEntries={diaryEntries}
+            habits={filteredData.habits}
+            schedules={filteredData.schedules}
+            calendarItems={filteredData.calendarItems}
+            diaryEntries={filteredData.diaryEntries}
+            tasks={filteredData.tasks}
+            taskLists={filteredData.taskLists}
             onCheckIn={onCheckIn}
             onUndoCheckIn={onUndoCheckIn}
+            // onDayClick={onDayClick}
             calendarViewMode={calendarViewMode}
             onViewModeChange={handleViewModeChange}
             currentDate={currentDate}
             onHabitDrop={onHabitDrop}
             onHabitUnschedule={onHabitUnschedule}
+            onTaskToggleComplete={onTaskToggleComplete}
+            onTaskDrop={onTaskDrop}
+            onTaskDelete={onTaskDelete}
             onDiaryEntryClick={onDiaryEntryClick}
           />
         );
@@ -157,7 +233,7 @@ export const UnifiedCalendar = ({ habits, schedules, diaryEntries = [], onCheckI
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-4 flex-shrink-0">
+      <div className="flex items-center mb-4 flex-shrink-0">
         <CalendarHeader
           title={getTitle()}
           calendarViewMode={calendarViewMode}
@@ -166,6 +242,35 @@ export const UnifiedCalendar = ({ habits, schedules, diaryEntries = [], onCheckI
           onNext={handleNext}
           onToday={handleToday}
         />
+        
+        {/* Filter Controls */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="flex items-center gap-2">
+              <ListFilter className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuCheckboxItem
+              checked={filter.habits}
+              onCheckedChange={() => handleFilterChange('habits')}
+            >
+              Habits
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={filter.tasks}
+              onCheckedChange={() => handleFilterChange('tasks')}
+            >
+              Tasks
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={filter.diaries}
+              onCheckedChange={() => handleFilterChange('diaries')}
+            >
+              Diaries
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
         <div className="h-full">
