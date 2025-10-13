@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import DiaryEditPage from "./pages/DiaryEdit";
 import TasksPage from "./pages/Tasks";
+import KnowledgeGraph from "./pages/KnowledgeGraph";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const AppContent = () => {
         <Route path="/calendar" element={<Index />} />
         <Route path="/diary" element={<Index />} />
         <Route path="/tasks" element={<Index />} />
+        <Route path="/knowledge" element={<KnowledgeGraph />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/diary/edit/:id" element={<DiaryEditPage />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

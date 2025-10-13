@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { SegmentedToggle } from '@/components/ui/segmented-toggle';
 import { ExternalPanelToggle } from '@/components/ui/external-panel-toggle';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
+import { Button } from '@/components/ui/button';
+import { Brain } from 'lucide-react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -53,6 +55,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/knowledge')}
+              className="gap-2"
+            >
+              <Brain className="h-4 w-4" />
+              <span className="hidden sm:inline">Knowledge</span>
+            </Button>
           </div>
 
           <div className="flex items-center gap-2">
