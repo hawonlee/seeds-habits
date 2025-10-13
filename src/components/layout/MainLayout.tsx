@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SegmentedToggle } from '@/components/ui/segmented-toggle';
 import { ExternalPanelToggle } from '@/components/ui/external-panel-toggle';
-import { ThemeToggle } from '@/components/layout/theme-toggle';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -49,12 +48,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     <div className="h-full flex bg-background flex-col">
       {/* Header */}
       <div className="h-14 px-4 w-full flex-shrink-0 flex items-center">
-        <div className="flex w-full items-center justify-between gap-2">
-
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-          </div>
-
+        <div className="flex w-full items-center justify-end gap-2">
           <div className="flex items-center gap-2">
             <SegmentedToggle
               options={[

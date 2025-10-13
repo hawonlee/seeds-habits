@@ -33,7 +33,7 @@ export const DiaryEditModal: React.FC<DiaryEditModalProps> = ({
   const [title, setTitle] = useState(entry.title);
   const [body, setBody] = useState(entry.body);
   const [category, setCategory] = useState(entry.category);
-  const [entryDate, setEntryDate] = useState<Date | undefined>(new Date(entry.entry_date));
+  const [entryDate, setEntryDate] = useState<Date | undefined>(new Date(entry.entry_date + 'T00:00:00'));
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>(getCategories());
   const [loadingCategories, setLoadingCategories] = useState(false);
@@ -77,7 +77,7 @@ export const DiaryEditModal: React.FC<DiaryEditModalProps> = ({
     setTitle(entry.title);
     setBody(safeBody);
     setCategory(entry.category);
-    setEntryDate(new Date(entry.entry_date));
+    setEntryDate(new Date(entry.entry_date + 'T00:00:00'));
     setSaveError(null);
     setLastSavedAt(null);
     setHasUserTyped(false);
@@ -114,7 +114,7 @@ export const DiaryEditModal: React.FC<DiaryEditModalProps> = ({
     setIsSaving(true);
     setSaveError(null);
 
-    const dateString = entryDate.toISOString().split('T')[0];
+    const dateString = `${entryDate.getFullYear()}-${String(entryDate.getMonth() + 1).padStart(2, '0')}-${String(entryDate.getDate()).padStart(2, '0')}`;
     try {
       await onSave({
         title: title.trim(),
@@ -143,6 +143,36 @@ export const DiaryEditModal: React.FC<DiaryEditModalProps> = ({
     leading: true,
     trailing: true,
   });
+
+  // Immediate save helper to guarantee the picked date is persisted
+  const saveWithSpecificDate = useCallback(async (pickedDate: Date) => {
+    if (!pickedDate || !title.trim()) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    const dateString = `${pickedDate.getFullYear()}-${String(pickedDate.getMonth() + 1).padStart(2, '0')}-${String(pickedDate.getDate()).padStart(2, '0')}`;
+    try {
+      await onSave({
+        title: title.trim(),
+        body: body.trim(),
+        category,
+        entry_date: dateString,
+      });
+      if (isMountedRef.current) {
+        setLastSavedAt(new Date());
+      }
+    } catch (error) {
+      console.error('Error saving diary entry (date pick):', error);
+      if (isMountedRef.current) {
+        setSaveError('Failed to save changes. We will keep retrying.');
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsSaving(false);
+      }
+    }
+  }, [title, body, category, onSave]);
 
   const triggerAutosave = useCallback(
     (options: { immediate?: boolean } = {}) => {
@@ -298,6 +328,7 @@ export const DiaryEditModal: React.FC<DiaryEditModalProps> = ({
 
               <div className="space-y-2">
                 <Popover
+                  modal
                   open={isCalendarOpen}
                   onOpenChange={(open) => {
                     setIsCalendarOpen(open);
@@ -323,9 +354,13 @@ export const DiaryEditModal: React.FC<DiaryEditModalProps> = ({
                       mode="single"
                       selected={entryDate}
                       onSelect={(date) => {
-                        setEntryDate(date ?? undefined);
-                        setHasUserTyped(true);
-                        triggerAutosave();
+                        if (date) {
+                          setEntryDate(date);
+                          setHasUserTyped(true);
+                          cancelDebounce();
+                          void saveWithSpecificDate(date);
+                        }
+                        setIsCalendarOpen(false);
                       }}
                       initialFocus
                     />

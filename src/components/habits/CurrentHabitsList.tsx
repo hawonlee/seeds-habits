@@ -6,6 +6,7 @@ import { Habit } from "@/hooks/useHabits";
 import { HabitCard } from "./HabitCard";
 import { CategoryManager } from "./CategoryManager";
 import { useState } from "react";
+import ReorderIndicator from "@/components/ui/ReorderIndicator";
 
 interface CurrentHabitsListProps {
   habits: Habit[];
@@ -20,6 +21,7 @@ interface CurrentHabitsListProps {
   onUndoCheckIn: (id: string, date?: Date) => void;
   onMoveHabit: (id: string, phase: Habit['phase']) => void;
   onRefreshHabits?: () => void;
+  onReorderHabits?: (habitIds: string[]) => void;
 }
 
 export const CurrentHabitsList = ({
@@ -34,7 +36,8 @@ export const CurrentHabitsList = ({
   onCheckIn,
   onUndoCheckIn,
   onMoveHabit,
-  onRefreshHabits
+  onRefreshHabits,
+  onReorderHabits
 }: CurrentHabitsListProps) => {
   const [currentWeek, setCurrentWeek] = useState(() => {
     const today = new Date();
@@ -79,6 +82,67 @@ export const CurrentHabitsList = ({
     const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     return `${startStr} - ${endStr}`;
+  };
+
+  // Drag and drop handlers
+  const [draggedHabitId, setDraggedHabitId] = useState<string | null>(null);
+  const [dragOverHabitId, setDragOverHabitId] = useState<string | null>(null);
+  const [dragOverPlacement, setDragOverPlacement] = useState<'before' | 'after' | null>(null);
+
+  const handleDragStart = (habit: Habit) => {
+    setDraggedHabitId(habit.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, habit: Habit) => {
+    e.preventDefault();
+    // Explicitly indicate move operation
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
+    if (draggedHabitId && draggedHabitId !== habit.id) {
+      setDragOverHabitId(habit.id);
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      setDragOverPlacement(e.clientY < midpoint ? 'before' : 'after');
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverHabitId(null);
+    setDragOverPlacement(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetHabit: Habit) => {
+    e.preventDefault();
+    
+    if (!draggedHabitId || !onReorderHabits) return;
+
+    const draggedIndex = habits.findIndex(h => h.id === draggedHabitId);
+    const targetIndex = habits.findIndex(h => h.id === targetHabit.id);
+
+    if (draggedIndex === -1 || targetIndex === -1 || draggedIndex === targetIndex) {
+      setDraggedHabitId(null);
+      setDragOverHabitId(null);
+      return;
+    }
+
+    // Create new order
+    const newHabits = [...habits];
+    const [draggedHabit] = newHabits.splice(draggedIndex, 1);
+    newHabits.splice(targetIndex, 0, draggedHabit);
+
+    // Update positions
+    const newOrder = newHabits.map(h => h.id);
+    onReorderHabits(newOrder);
+
+    setDraggedHabitId(null);
+    setDragOverHabitId(null);
+    setDragOverPlacement(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedHabitId(null);
+    setDragOverHabitId(null);
   };
   return (
     <div className="h-full overflow-y-auto">
@@ -173,19 +237,47 @@ export const CurrentHabitsList = ({
           {/* Card Rows */}
           <div className="space-y-2">
             {habits.map(habit => (
-              <HabitCard
+              <div
                 key={habit.id}
-                habit={habit}
-                adoptionThreshold={adoptionThreshold}
-                currentWeek={currentWeek}
-                onEditHabit={onEditHabit}
-                onDeleteHabit={onDeleteHabit}
-                onUpdateHabit={onUpdateHabit}
-                onCheckIn={onCheckIn}
-                onUndoCheckIn={onUndoCheckIn}
-                onMoveHabit={onMoveHabit}
-                variant="table"
-              />
+                draggable
+                onDragStart={(e) => {
+                  // Start drag from the row wrapper to avoid inner interactive elements blocking drag
+                  if (e.dataTransfer) {
+                    e.dataTransfer.setData('text/plain', habit.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }
+                  setDraggedHabitId(habit.id);
+                }}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => handleDragOver(e, habit)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, habit)}
+                className={`relative transition-all duration-200 select-none ${
+                  dragOverHabitId === habit.id ? 'opacity-50' : ''
+                } ${
+                  draggedHabitId === habit.id ? 'opacity-30' : ''
+                }`}
+              >
+                {dragOverHabitId === habit.id && draggedHabitId && draggedHabitId !== habit.id && dragOverPlacement === 'before' && (
+                  <ReorderIndicator className="-top-0.5" />
+                )}
+                <HabitCard
+                  habit={habit}
+                  adoptionThreshold={adoptionThreshold}
+                  currentWeek={currentWeek}
+                  onEditHabit={onEditHabit}
+                  onDeleteHabit={onDeleteHabit}
+                  onUpdateHabit={onUpdateHabit}
+                  onCheckIn={onCheckIn}
+                  onUndoCheckIn={onUndoCheckIn}
+                  onMoveHabit={onMoveHabit}
+                  variant="table"
+                  draggable={false}
+                />
+                {dragOverHabitId === habit.id && draggedHabitId && draggedHabitId !== habit.id && dragOverPlacement === 'after' && (
+                  <ReorderIndicator className="-bottom-0.5" />
+                )}
+              </div>
             ))}
           </div>
         </div>

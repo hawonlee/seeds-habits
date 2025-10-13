@@ -14,8 +14,30 @@ import {
   Ellipsis
 } from 'lucide-react';
 import { TaskItem } from './TaskItem';
+import ReorderIndicator from '@/components/ui/ReorderIndicator';
 import type { TaskList as TaskListType, Task } from '@/hooks/useTasks';
 import { COLOR_OPTIONS, findColorOptionByValue } from '@/lib/colorOptions';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface TaskListProps {
   taskList: TaskListType;
@@ -28,7 +50,59 @@ interface TaskListProps {
   onEditList: (list: TaskListType) => void;
   onDeleteList: (listId: string) => void;
   onUpdateList: (listId: string, updates: Partial<TaskListType>) => void;
+  onReorderTasks: (listId: string, taskIds: string[]) => void;
 }
+
+// Sortable Task Item Wrapper
+const SortableTaskItem: React.FC<{
+  task: Task;
+  listColor: string;
+  onToggleComplete: (taskId: string) => void;
+  onEdit: (task: Task) => void;
+  onUpdate: (taskId: string, updates: Partial<Task>) => void;
+  onDelete: (taskId: string) => void;
+  index: number;
+  activeId?: string | null;
+  overId?: string | null;
+  overPlacement?: 'before' | 'after' | null;
+}> = ({ task, listColor, onToggleComplete, onEdit, onUpdate, onDelete, index, activeId, overId, overPlacement }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    // Keep items static during drag: do not apply transforms/transitions
+    transform: undefined as unknown as string,
+    transition: undefined as unknown as string,
+    opacity: 1,
+  };
+
+  const isActive = activeId === task.id;
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-task-id={task.id} className={`relative ${isActive ? 'opacity-30' : ''}`}>
+      {activeId && overId === task.id && activeId !== overId && overPlacement === 'before' && (
+        <ReorderIndicator className="-top-0.5" />
+      )}
+      <TaskItem
+        task={task}
+        listColor={listColor}
+        onToggleComplete={onToggleComplete}
+        onEdit={onEdit}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+      />
+      {activeId && overId === task.id && activeId !== overId && overPlacement === 'after' && (
+        <ReorderIndicator className="-bottom-0.5" />
+      )}
+    </div>
+  );
+};
 
 export const TaskListCard: React.FC<TaskListProps> = ({
   taskList,
@@ -40,6 +114,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
   onToggleTaskComplete,
   onDeleteList,
   onUpdateList,
+  onReorderTasks,
 }) => {
   const [editName, setEditName] = useState(taskList.name);
   const [newTaskText, setNewTaskText] = useState('');
@@ -48,6 +123,61 @@ export const TaskListCard: React.FC<TaskListProps> = ({
   const totalTasks = tasks.length;
   const completionPercentage =
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // Set up drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      // Require a small movement before starting a drag so clicks still work
+      activationConstraint: { distance: 8 }
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const [overPlacement, setOverPlacement] = useState<'before' | 'after' | null>(null);
+
+  // Handle drag end
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    setActiveId(null);
+    setOverId(null);
+    setOverPlacement(null);
+    if (over && active.id !== over.id) {
+      const oldIndex = tasks.findIndex((task) => task.id === active.id);
+      const newIndex = tasks.findIndex((task) => task.id === over.id);
+
+      const reorderedTasks = arrayMove(tasks, oldIndex, newIndex);
+      const taskIds = reorderedTasks.map((task) => task.id);
+      
+      onReorderTasks(taskList.id, taskIds);
+    }
+  };
+
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active?.id ?? null);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      setOverId(null);
+      setOverPlacement(null);
+      return;
+    }
+    const targetEl = document.querySelector(`[data-task-id="${over.id}"]`) as HTMLElement | null;
+    if (!targetEl) return;
+    const rect = targetEl.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const pointerY = (event as any).delta ? rect.top + rect.height / 2 : (event as any).over?.rect?.top || (event as any).activatorEvent?.clientY || 0; // fallback
+    const clientY = (event as any).activatorEvent?.clientY ?? (event as any).sensor?.coords?.y ?? 0;
+    const y = clientY || pointerY;
+    setOverId(String(over.id));
+    setOverPlacement(y < midpoint ? 'before' : 'after');
+  };
 
   const colorOptions = COLOR_OPTIONS.map(color => ({
     value: color.value,
@@ -164,7 +294,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
         </DropdownMenu>
       </div>
 
-      <div className="flex-1 flex flex-col border border-border-default rounded-md p-1">
+      <div className="flex-1 flex bg-habitbg flex-col  rounded-md p-1">
         {/* <div className="pb-3">
           {totalTasks > 0 && (
             <div className="mt-3">
@@ -189,20 +319,55 @@ export const TaskListCard: React.FC<TaskListProps> = ({
 
         <div className="flex-1 flex flex-col">
           {/* Tasks */}
-          <div className="space-y-0 overflow-y-auto">
-            {tasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                listColor={taskList.color}
-                onToggleComplete={onToggleTaskComplete}
-                onEdit={onEditTask}
-                onUpdate={onUpdateTask}
-                onDelete={onDeleteTask}
-              />
-            ))
-            }
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={tasks.map(task => task.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-0 overflow-y-auto">
+                {tasks.map((task, index) => (
+                  <SortableTaskItem
+                    key={task.id}
+                    task={task}
+                    listColor={taskList.color}
+                    onToggleComplete={onToggleTaskComplete}
+                    onEdit={onEditTask}
+                    onUpdate={onUpdateTask}
+                    onDelete={onDeleteTask}
+                    index={index}
+                    activeId={activeId}
+                    overId={overId}
+                    overPlacement={overPlacement}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+
+            {/* Drag preview overlay to show a copy of the task under cursor */}
+            <DragOverlay dropAnimation={null}>
+              {activeId ? (() => {
+                const activeTask = tasks.find(t => t.id === activeId);
+                return activeTask ? (
+                  <div className="pointer-events-none rounded-sm px-1 bg-button-ghost-hover/50">
+                    <TaskItem
+                      task={activeTask}
+                      listColor={taskList.color}
+                      onToggleComplete={onToggleTaskComplete}
+                      onEdit={onEditTask}
+                      onUpdate={onUpdateTask}
+                      onDelete={onDeleteTask}
+                    />
+                  </div>
+                ) : null;
+              })() : null}
+            </DragOverlay>
+          </DndContext>
 
           {/* Add Task Input */}
           <div className="">

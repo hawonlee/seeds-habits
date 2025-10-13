@@ -127,7 +127,7 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
   return (
     <div
       ref={popupRef}
-      className="fixed z-50 bg-background border border-border rounded-md shadow-lg"
+      className="fixed z-50 bg-habitbg border border-border rounded-md shadow-lg"
       style={{
         top: position.top,
         left: position.left,

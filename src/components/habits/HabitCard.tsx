@@ -28,6 +28,7 @@ interface HabitCardProps {
   variant?: 'default' | 'compact' | 'summary' | 'calendar' | 'week' | 'table';
   draggable?: boolean;
   onDragStart?: (habit: Habit) => void;
+  onDragEnd?: () => void;
   // Week variant helpers
   weekStartDate?: Date; // start of the week (Sunday-based) to render squares for
   isCompletedOnDate?: (habitId: string, date: Date) => boolean; // completion lookup per date
@@ -52,6 +53,7 @@ export const HabitCard = ({
   variant = 'default',
   draggable = false,
   onDragStart,
+  onDragEnd,
   weekStartDate,
   isCompletedOnDate,
   onCheckInForDate,
@@ -121,12 +123,23 @@ export const HabitCard = ({
 
   // Table variant - horizontal layout with weekly checkboxes
   if (variant === 'table') {
-    const containerClasses = 'flex items-center rounded-lg px-4 py-2 bg-habitbg hover:bg-habitbghover transition-colors duration-200 cursor-pointer group relative';
+    const containerClasses = `flex items-center rounded-lg px-4 py-2 bg-habitbg hover:bg-habitbghover transition-colors duration-200 group relative ${draggable ? 'cursor-move' : 'cursor-pointer'}`;
+
+    const handleTableDragStart = (e: React.DragEvent) => {
+      if (draggable && onDragStart) {
+        e.dataTransfer.setData('text/plain', habit.id);
+        e.dataTransfer.effectAllowed = 'move';
+        onDragStart(habit);
+      }
+    };
 
     return (
       <div className="relative" ref={cardRef}>
         <div
           className={containerClasses}
+          draggable={draggable}
+          onDragStart={handleTableDragStart}
+          onDragEnd={onDragEnd}
           onClick={() => onEditHabit?.(habit)}
         >
 
@@ -343,6 +356,7 @@ export const HabitCard = ({
         className={`group relative bg-habitbg hover:bg-habitbghover transition-colors duration-200 ${draggable ? 'cursor-pointer' : ''}`}
         draggable={draggable}
         onDragStart={handleDragStart}
+        onDragEnd={onDragEnd}
         onClick={() => onEditHabit?.(habit)}
       >
         <CardContent className="">

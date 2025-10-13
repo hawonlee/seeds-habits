@@ -43,11 +43,11 @@ export const UserDropdown = ({
           <p className="text-xs text-muted-foreground">{profile?.email || user.email}</p>
         </div>
         <DropdownMenuSeparator />
-        {/* <DropdownMenuItem onClick={onOpenSettings}>
+        <DropdownMenuItem onClick={onOpenSettings}>
           <Settings className="mr-2 h-4 w-4" />
           <p className="text-xs">Settings</p>
-        </DropdownMenuItem> */}
-        {/* <DropdownMenuSeparator /> */}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
           <p className="text-xs">Log Out</p>

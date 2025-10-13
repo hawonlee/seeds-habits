@@ -24,7 +24,8 @@ export const TasksView: React.FC = () => {
     createTask,
     updateTask,
     deleteTask,
-    getTasksByList
+    getTasksByList,
+    reorderTasks
   } = useTasks();
 
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
@@ -117,6 +118,14 @@ export const TasksView: React.FC = () => {
       await updateTask(taskId, updates);
     } catch (error) {
       console.error('Error updating task:', error);
+    }
+  };
+
+  const handleReorderTasks = async (listId: string, taskIds: string[]) => {
+    try {
+      await reorderTasks(listId, taskIds);
+    } catch (error) {
+      console.error('Error reordering tasks:', error);
     }
   };
 
@@ -278,6 +287,7 @@ export const TasksView: React.FC = () => {
               onEditList={handleEditTaskList}
               onDeleteList={handleDeleteTaskList}
               onUpdateList={handleUpdateTaskList}
+              onReorderTasks={handleReorderTasks}
             />
           ))}
         </div>

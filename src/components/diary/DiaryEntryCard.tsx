@@ -15,7 +15,7 @@ interface DiaryEntryCardProps {
 }
 
 export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, onDelete }) => {
-    const entryDate = new Date(entry.entry_date);
+    const entryDate = new Date(`${entry.entry_date}T00:00:00`);
     const updatedDate = new Date(entry.updated_at);
     
     // Determine card height based on content length
@@ -34,7 +34,7 @@ export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, o
 
     return (
          <div
-             className={`group border bg-diary-card-bg transition-all duration-200 ease-in-out rounded-lg p-3 ${getRowSpan()}`}
+             className={`group bg-habitbg transition-all duration-200 ease-in-out rounded-lg p-3 ${getRowSpan()}`}
              onClick={() => onEdit(entry)}
          >
             <div className="pb-3">

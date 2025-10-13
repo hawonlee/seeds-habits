@@ -20,6 +20,7 @@ export interface Habit {
   total_completions: number;
   last_completed?: string;
   points: number;
+  position: number;
   created_at: string;
   updated_at: string;
 }
@@ -76,7 +77,7 @@ export const useHabits = () => {
         .from('habits')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('position', { ascending: true });
 
 
       if (error) {
@@ -115,8 +116,17 @@ export const useHabits = () => {
       return { error: 'No user found' };
     }
 
-
     try {
+      // Get the next position for the new habit
+      const { data: maxPositionData } = await supabase
+        .from('habits')
+        .select('position')
+        .eq('user_id', user.id)
+        .order('position', { ascending: false })
+        .limit(1);
+
+      const nextPosition = (maxPositionData?.[0]?.position || 0) + 1;
+
       const insertData = {
         user_id: user.id,
         title: habitData.title,
@@ -131,6 +141,7 @@ export const useHabits = () => {
         total_completions: habitData.total_completions,
         last_completed: habitData.last_completed,
         points: habitData.points,
+        position: nextPosition,
       };
 
 
@@ -348,6 +359,50 @@ export const useHabits = () => {
     }
   };
 
+  // Reorder habits by updating their positions
+  const reorderHabits = async (habitIds: string[]): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      // Update positions for all habits in the new order
+      const updates = habitIds.map((habitId, index) => ({
+        id: habitId,
+        position: index + 1
+      }));
+
+      // Update all habits in a single transaction
+      const { error } = await supabase.rpc('update_habit_positions', {
+        habit_updates: updates
+      });
+
+      if (error) {
+        // Fallback: update each habit individually
+        for (const update of updates) {
+          await updateHabit(update.id, { position: update.position });
+        }
+      }
+
+      // Update local state
+      setHabits(prev => {
+        const habitsMap = new Map(prev.map(h => [h.id, h]));
+        return habitIds.map(id => habitsMap.get(id)).filter(Boolean) as Habit[];
+      });
+
+      // Invalidate cache
+      invalidateHabitsCacheForUser(user.id);
+
+      return true;
+    } catch (error) {
+      console.error('Error reordering habits:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reorder habits",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   return {
     habits,
     loading,
@@ -359,6 +414,7 @@ export const useHabits = () => {
     checkInHabit,
     undoCheckIn,
     moveHabitPhase,
+    reorderHabits,
     refreshHabits: fetchHabits,
   };
 };

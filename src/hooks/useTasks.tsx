@@ -20,6 +20,7 @@ export interface Task {
   due_date?: string;
   priority: 'low' | 'medium' | 'high';
   task_list_id: string;
+  position: number;
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -74,7 +75,7 @@ export const useTasks = () => {
           .from('tasks')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
+          .order('position', { ascending: true })
       ]);
 
       if (taskListsRes.error) {
@@ -268,25 +269,29 @@ export const useTasks = () => {
     }
   };
 
-  const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+  const createTask = async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'position'>) => {
     if (!user) throw new Error('User not authenticated');
 
     try {
+      // Get the next position for this task list
+      const tasksInList = tasks.filter(t => t.task_list_id === task.task_list_id);
+      const nextPosition = tasksInList.length > 0 ? Math.max(...tasksInList.map(t => t.position)) + 1 : 1;
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{ ...task, user_id: user.id }])
+        .insert([{ ...task, user_id: user.id, position: nextPosition }])
         .select()
         .single();
 
       if (error) throw error;
       
-      setTasks(prev => [data, ...prev]);
+      setTasks(prev => [...prev, data].sort((a, b) => a.position - b.position));
       
       // Update cache
       if (user && tasksCache[user.id]) {
         tasksCache[user.id] = {
           ...tasksCache[user.id],
-          tasks: [data, ...tasksCache[user.id].tasks],
+          tasks: [...tasksCache[user.id].tasks, data].sort((a, b) => a.position - b.position),
           timestamp: Date.now()
         };
       }
@@ -355,7 +360,73 @@ export const useTasks = () => {
   };
 
   const getTasksByList = (listId: string): Task[] => {
-    return tasks.filter(task => task.task_list_id === listId);
+    return tasks
+      .filter(task => task.task_list_id === listId)
+      .sort((a, b) => a.position - b.position);
+  };
+
+  // Reorder tasks within a list (optimistic UI + parallel updates)
+  const reorderTasks = async (listId: string, taskIds: string[]): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      // 1) Optimistically update local state immediately
+      const newPositionById: Record<string, number> = {};
+      taskIds.forEach((taskId, index) => {
+        newPositionById[taskId] = index + 1;
+      });
+
+      setTasks(prev =>
+        prev.map(task => {
+          if (task.task_list_id === listId) {
+            const newPosition = newPositionById[task.id];
+            if (newPosition) {
+              return { ...task, position: newPosition };
+            }
+          }
+          return task;
+        })
+      );
+
+      // Update cache optimistically
+      if (user && tasksCache[user.id]) {
+        tasksCache[user.id] = {
+          ...tasksCache[user.id],
+          tasks: tasksCache[user.id].tasks.map(task => {
+            if (task.task_list_id === listId) {
+              const newPosition = newPositionById[task.id];
+              if (newPosition) {
+                return { ...task, position: newPosition };
+              }
+            }
+            return task;
+          }),
+          timestamp: Date.now()
+        };
+      }
+
+      // 2) Persist to DB in parallel
+      const updatePromises = taskIds.map((taskId, index) =>
+        supabase
+          .from('tasks')
+          .update({ position: index + 1 })
+          .eq('id', taskId)
+          .eq('user_id', user.id)
+      );
+      const results = await Promise.all(updatePromises);
+      const firstError = results.find(r => 'error' in r && r.error);
+      if (firstError && firstError.error) {
+        throw firstError.error;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error reordering tasks:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred');
+      // Re-sync from server to avoid inconsistent state
+      refresh();
+      return false;
+    }
   };
 
   // Format date for database (YYYY-MM-DD in local timezone)
@@ -463,6 +534,7 @@ export const useTasks = () => {
     updateTask,
     deleteTask,
     getTasksByList,
+    reorderTasks,
     scheduleTask,
     unscheduleTask,
     moveTask,

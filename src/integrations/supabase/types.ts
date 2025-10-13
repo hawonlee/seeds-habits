@@ -30,6 +30,7 @@ export type Database = {
           total_completions: number
           last_completed: string | null
           points: number
+          position: number
           created_at: string
           updated_at: string
         }
@@ -48,6 +49,7 @@ export type Database = {
           total_completions?: number
           last_completed?: string | null
           points?: number
+          position?: number
           created_at?: string
           updated_at?: string
         }
@@ -66,6 +68,7 @@ export type Database = {
           total_completions?: number
           last_completed?: string | null
           points?: number
+          position?: number
           created_at?: string
           updated_at?: string
         }

@@ -19,6 +19,7 @@ import { AdoptionSettingsDialog } from "@/components/habits/AdoptionSettingsDial
 import { EditHabitDialog } from "@/components/habits/EditHabitDialog";
 import { HabitCard } from "@/components/habits/HabitCard";
 import { UserDropdown } from "@/components/layout/UserDropdown";
+import { UserSettingsModal } from "@/components/layout/UserSettingsModal";
 import { UnifiedCalendar } from "@/components/calendar/UnifiedCalendar";
 import { DayHabitsDialog } from "@/components/habits/DayHabitsDialog";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ import {
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  const { habits, loading: habitsLoading, hasLoaded, addHabit, updateHabit, deleteHabit, checkInHabit, undoCheckIn, moveHabitPhase, refreshHabits } = useHabits();
+  const { habits, loading: habitsLoading, hasLoaded, addHabit, updateHabit, deleteHabit, checkInHabit, undoCheckIn, moveHabitPhase, reorderHabits, refreshHabits } = useHabits();
   const { scheduleHabit, unscheduleHabit, schedules, isHabitScheduledOnDate, getScheduledHabitsForDate } = useHabitSchedules();
   const { calendarItems, scheduleHabit: scheduleHabitToCalendar, scheduleTask: scheduleTaskToCalendar, unscheduleItem, moveItem } = useCalendarItems();
   const { diaryEntries } = useDiaryEntries();
@@ -56,6 +57,7 @@ const Index = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showDiary, setShowDiary] = useState(false);
   const [showTasks, setShowTasks] = useState(false);
+  const [showUserSettings, setShowUserSettings] = useState(false);
 
   // Update view state based on URL
   useEffect(() => {
@@ -333,6 +335,11 @@ const Index = () => {
           setAdoptionThreshold={setAdoptionThreshold}
         />
 
+        <UserSettingsModal
+          open={showUserSettings}
+          onOpenChange={setShowUserSettings}
+        />
+
         {isEditDialogOpen && (
           <EditHabitDialog
             key={editingHabit?.id || 'new'}
@@ -408,6 +415,7 @@ const Index = () => {
                   onUndoCheckIn={handleUndoCheckIn}
                   onMoveHabit={handleMoveHabit}
                   onRefreshHabits={refreshHabits}
+                  onReorderHabits={reorderHabits}
                 />
               )}
             </MainLayout>
@@ -418,7 +426,7 @@ const Index = () => {
             isCollapsed={isCombinedPanelCollapsed}
             onToggleCollapse={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
             title={showCalendar ? "Calendar Items" : "Future & Adopted"}
-            onOpenSettings={() => setShowAdoptionSettings(true)}
+            onOpenSettings={() => setShowUserSettings(true)}
             onSignOut={signOut}
             position="right"
           >
