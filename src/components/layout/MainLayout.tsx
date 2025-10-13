@@ -55,7 +55,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate('/knowledge')}
@@ -63,7 +63,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             >
               <Brain className="h-4 w-4" />
               <span className="hidden sm:inline">Knowledge</span>
-            </Button>
+            </Button> */}
           </div>
 
           <div className="flex items-center gap-2">
