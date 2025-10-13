@@ -2,6 +2,9 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SegmentedToggle } from '@/components/ui/segmented-toggle';
 import { ExternalPanelToggle } from '@/components/ui/external-panel-toggle';
+import { ThemeToggle } from '@/components/layout/theme-toggle';
+import { Button } from '@/components/ui/button';
+import { Brain } from 'lucide-react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -48,7 +51,21 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     <div className="h-full flex bg-background flex-col">
       {/* Header */}
       <div className="h-14 px-4 w-full flex-shrink-0 flex items-center">
-        <div className="flex w-full items-center justify-end gap-2">
+        <div className="flex w-full items-center justify-between gap-2">
+
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/knowledge')}
+              className="gap-2"
+            >
+              <Brain className="h-4 w-4" />
+              <span className="hidden sm:inline">Knowledge</span>
+            </Button>
+          </div>
+
           <div className="flex items-center gap-2">
             <SegmentedToggle
               options={[
