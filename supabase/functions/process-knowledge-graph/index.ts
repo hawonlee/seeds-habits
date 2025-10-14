@@ -245,12 +245,13 @@ serve(async (req) => {
 
     // Limit to prevent timeout (Edge Functions have 150 second limit on free tier)
     // Process most recent conversations first
-    const MAX_CONVERSATIONS = 50
+    const MAX_CONVERSATIONS = 15  // Reduced from 50 - being very conservative
     const conversations = allConversations
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, MAX_CONVERSATIONS)
     
     console.log(`Processing ${conversations.length} of ${allConversations.length} total conversations (most recent)`)
+    console.log('Start time:', new Date().toISOString())
 
     // Initialize OpenAI with secret key
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
@@ -263,18 +264,24 @@ serve(async (req) => {
     }
 
     console.log(`Processing ${conversations.length} conversations...`)
+    const startProcessing = Date.now()
 
     // Process conversations using fetch API directly
     const processedConversations = []
     
-    for (const conv of conversations) {
+    for (let i = 0; i < conversations.length; i++) {
+      const conv = conversations[i]
       try {
+        console.log(`[${i+1}/${conversations.length}] Processing conversation: ${conv.title}`)
+        const convStart = Date.now()
+        
         // Summarize conversation
         const messages = conv.messages || []
         const conversationText = messages
           .map((msg: any) => `${msg.role}: ${msg.content}`)
           .join('\n\n')
 
+        console.log(`  - Calling OpenAI summarization...`)
         // Call OpenAI chat completion API
         const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -305,7 +312,10 @@ serve(async (req) => {
         const summaryData = await summaryResponse.json()
         const summaryText = summaryData.choices[0]?.message?.content || 'No summary available'
         const title = conv.title || `Conversation ${conv.id}`
+        console.log(`  - Summarization complete (${Date.now() - convStart}ms)`)
 
+        console.log(`  - Calling OpenAI embeddings...`)
+        const embedStart = Date.now()
         // Generate embedding
         const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
           method: 'POST',
@@ -324,6 +334,8 @@ serve(async (req) => {
         }
 
         const embeddingData = await embeddingResponse.json()
+        console.log(`  - Embeddings complete (${Date.now() - embedStart}ms)`)
+        console.log(`  Total conversation time: ${Date.now() - convStart}ms`)
 
         processedConversations.push({
           conversation_id: conv.id,
@@ -338,6 +350,8 @@ serve(async (req) => {
         // Continue with other conversations
       }
     }
+
+    console.log(`Total processing time: ${Date.now() - startProcessing}ms`)
 
     if (processedConversations.length === 0) {
       return new Response(
