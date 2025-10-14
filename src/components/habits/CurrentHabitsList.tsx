@@ -227,29 +227,29 @@ export const CurrentHabitsList = ({
                 </div>
               </div>
   
-              <div className="flex items-end justify-end w-24">
+              <div className="flex items-center justify-end w-24 h-6">
                 <div className="flex items-center justify-end">
                   <Button
-                    size="sm"
                     variant="ghost"
+                    size={undefined}
                     onClick={goToPreviousWeek}
-                    className="h-6 w-6 p-0"
+                    className="h-6 w-6 p-0 min-w-0 min-h-0 text-xs"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <Button
-                    size="sm"
                     variant="ghost"
+                    size={undefined}
                     onClick={goToCurrentWeek}
-                    className="h-6 px-3 text-xs font-medium"
+                    className="h-6 px-3 text-xs font-medium min-w-0 min-h-0"
                   >
                     Today
                   </Button>
                   <Button
-                    size="sm"
                     variant="ghost"
+                    size={undefined}
                     onClick={goToNextWeek}
-                    className="h-6 w-6 p-0"
+                    className="h-6 w-6 p-0 min-w-0 min-h-0 text-xs"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>

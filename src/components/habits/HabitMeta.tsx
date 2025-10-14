@@ -43,12 +43,7 @@ export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = fals
             )}
           </TitleWrapper>
           <div className={`flex items-center gap-4 ${statsTextSize} text-muted-foreground ${useCardTitle ? 'mt-2' : ''}`}>
-            {/* {showStreak && typeof habit.streak === 'number' && habit.streak > 0 && ( */}
-              <span className="flex items-center gap-1">
-                <Flame className={`${iconSize}`} />
-                {habit.streak}
-              </span>
-            {/* )} */}
+
             <span className="flex items-center gap-1">
               <MoveUpRight className={iconSize} />
               {computedTotalCompletions} total
@@ -61,6 +56,12 @@ export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = fals
                 custom_days: habit.custom_days ?? undefined
               })}
             </span>
+            {showStreak && typeof habit.streak === 'number' && habit.streak > 0 && (
+            <span className="flex items-center gap-1">
+                <Flame className={`${iconSize}`} />
+                {habit.streak}
+              </span>
+            )}
           </div>
         </div>
       </div>
