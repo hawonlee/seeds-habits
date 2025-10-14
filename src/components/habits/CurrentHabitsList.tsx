@@ -5,7 +5,7 @@ import { Plus, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { HabitCard } from "./HabitCard";
 import { CategoryManager } from "./CategoryManager";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import ReorderIndicator from "@/components/ui/ReorderIndicator";
 
 interface CurrentHabitsListProps {
@@ -87,6 +87,7 @@ export const CurrentHabitsList = ({
   const [dragOverPlacement, setDragOverPlacement] = useState<'before' | 'after' | null>(null);
   const [dragOverEnd, setDragOverEnd] = useState<boolean>(false);
   const [activeGapIndex, setActiveGapIndex] = useState<number | null>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
 
   const handleDragStart = (habit: Habit) => {
     setDraggedHabitId(habit.id);
@@ -157,6 +158,7 @@ export const CurrentHabitsList = ({
   const handleDragEnd = () => {
     setDraggedHabitId(null);
     setDragOverHabitId(null);
+    setActiveGapIndex(null);
   };
   return (
     <div className="h-full overflow-y-auto">
@@ -249,7 +251,28 @@ export const CurrentHabitsList = ({
           </div>
 
           {/* Card Rows with explicit gap drop zones */}
-          <div className="space-y-2">
+          <div
+            ref={listContainerRef}
+            className="space-y-1"
+            onDragOver={(e) => {
+              if (!draggedHabitId) return;
+              // Keep the end indicator visible when dragging near/below the bottom of the list
+              const container = listContainerRef.current;
+              if (!container) return;
+              const rect = container.getBoundingClientRect();
+              const y = e.clientY;
+              const threshold = 8; // px buffer from bottom of container
+              if (y >= rect.bottom - threshold) {
+                e.preventDefault();
+                setActiveGapIndex(habits.length);
+              }
+            }}
+            onDrop={(e) => {
+              if (activeGapIndex !== null) {
+                handleDropAtGap(e, activeGapIndex);
+              }
+            }}
+          >
             {habits.map((habit, index) => (
               <div key={habit.id} className="relative">
                 {/* Gap before each item (including before first when index===0) */}
@@ -265,14 +288,24 @@ export const CurrentHabitsList = ({
                   onDrop={(e) => handleDropAtGap(e, index)}
                   className="relative h-2"
                 >
-                  {activeGapIndex === index && draggedHabitId && (
-                    <ReorderIndicator className="top-0" />
-                  )}
+                  {(() => {
+                    const draggedIndex = draggedHabitId ? habits.findIndex(h => h.id === draggedHabitId) : -1;
+                    const isSamePlace = draggedIndex !== -1 && (index === draggedIndex || index === draggedIndex + 1);
+                    return activeGapIndex === index && draggedHabitId && !isSamePlace;
+                  })() && <ReorderIndicator className="top-0" />}
                 </div>
 
                 {/* Row wrapper */}
                 <div
                   draggable
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (!draggedHabitId) return;
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    const midpoint = rect.top + rect.height / 2;
+                    const gapIndex = e.clientY < midpoint ? index : index + 1;
+                    setActiveGapIndex(gapIndex);
+                  }}
                   onDragStart={(e) => {
                     if (e.dataTransfer) {
                       e.dataTransfer.setData('text/plain', habit.id);
@@ -281,6 +314,11 @@ export const CurrentHabitsList = ({
                     setDraggedHabitId(habit.id);
                   }}
                   onDragEnd={handleDragEnd}
+                  onDrop={(e) => {
+                    if (activeGapIndex !== null) {
+                      handleDropAtGap(e, activeGapIndex);
+                    }
+                  }}
                   className={`relative transition-all duration-200 select-none ${
                     draggedHabitId === habit.id ? 'opacity-30' : ''
                   }`}
@@ -313,11 +351,13 @@ export const CurrentHabitsList = ({
                   setActiveGapIndex((prev) => (prev === habits.length ? null : prev));
                 }}
                 onDrop={(e) => handleDropAtGap(e, habits.length)}
-                className="relative h-2"
+                className="relative h-8"
               >
-                {activeGapIndex === habits.length && draggedHabitId && (
-                  <ReorderIndicator className="top-0" />
-                )}
+                {(() => {
+                  const draggedIndex = draggedHabitId ? habits.findIndex(h => h.id === draggedHabitId) : -1;
+                  const isSamePlace = draggedIndex !== -1 && (habits.length === draggedIndex || habits.length === draggedIndex + 1);
+                  return activeGapIndex === habits.length && draggedHabitId && !isSamePlace;
+                })() && <ReorderIndicator className="top-0" />}
               </div>
             )}
           </div>

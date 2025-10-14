@@ -33,7 +33,7 @@ export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, i
 
     return (
          <div
-             className={`group bg-habitbg transition-all duration-200 ease-in-out rounded-lg p-3 w-full ${isActive ? 'bg-habitbghover' : 'bg-habitbg'} ${getRowSpan()}`}
+             className={`group bg-habitbg transition-all duration-200 ease-in-out rounded-lg p-3 w-full hover:cursor-pointer ${isActive ? 'bg-habitbghover' : 'bg-habitbg'} ${getRowSpan()}`}
              onClick={() => onEdit(entry)}
          >
             <div className="pb-3">
