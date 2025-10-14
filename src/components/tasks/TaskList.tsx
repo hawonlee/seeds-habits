@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -142,6 +142,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
   const [overEnd, setOverEnd] = useState<boolean>(false);
   const endZoneId = `END_ZONE_${taskList.id}`;
   const endZone = useDroppable({ id: endZoneId });
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
@@ -150,8 +151,19 @@ export const TaskListCard: React.FC<TaskListProps> = ({
     setActiveId(null);
     setOverId(null);
     setOverPlacement(null);
-    setOverEnd(false);
-    if (!over) return;
+    // If drop occurred outside any droppable but we were showing end indicator, move to last
+    if (!over) {
+      if (overEnd && active?.id) {
+        const oldIndex = tasks.findIndex((task) => task.id === active.id);
+        if (oldIndex !== -1) {
+          const reorderedTasks = arrayMove(tasks, oldIndex, tasks.length - 1);
+          const taskIds = reorderedTasks.map((task) => task.id);
+          onReorderTasks(taskList.id, taskIds);
+        }
+      }
+      setOverEnd(false);
+      return;
+    }
 
     const oldIndex = tasks.findIndex((task) => task.id === active.id);
     if (oldIndex === -1) return;
@@ -178,7 +190,18 @@ export const TaskListCard: React.FC<TaskListProps> = ({
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
+    // Pointer Y for proximity calculations
+    const clientY = (event as any).activatorEvent?.clientY ?? (event as any).sensor?.coords?.y ?? 0;
+
     if (!over) {
+      // If the pointer is near/below the bottom of the list, keep end indicator on
+      const rect = listRef.current?.getBoundingClientRect();
+      if (rect && clientY >= rect.bottom - 8) {
+        setOverId(null);
+        setOverPlacement(null);
+        setOverEnd(true);
+        return;
+      }
       setOverId(null);
       setOverPlacement(null);
       setOverEnd(false);
@@ -201,7 +224,6 @@ export const TaskListCard: React.FC<TaskListProps> = ({
     const rect = targetEl.getBoundingClientRect();
     const midpoint = rect.top + rect.height / 2;
     const pointerY = (event as any).delta ? rect.top + rect.height / 2 : (event as any).over?.rect?.top || (event as any).activatorEvent?.clientY || 0; // fallback
-    const clientY = (event as any).activatorEvent?.clientY ?? (event as any).sensor?.coords?.y ?? 0;
     const y = clientY || pointerY;
     setOverId(String(over.id));
     setOverPlacement(y < midpoint ? 'before' : 'after');
@@ -359,7 +381,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
               items={tasks.map(task => task.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-0 overflow-y-auto">
+              <div ref={listRef} className="space-y-0 overflow-y-auto">
                 {tasks.map((task, index) => (
                   <SortableTaskItem
                     key={task.id}
@@ -376,11 +398,11 @@ export const TaskListCard: React.FC<TaskListProps> = ({
                   />
                 ))}
               {/* End-of-list drop zone indicator for after last task (dnd-kit droppable) */}
-              {tasks.length > 0 && (
-                <div ref={endZone.setNodeRef} className="relative h-2">
+              {/* {tasks.length > 0 && (
+                <div ref={endZone.setNodeRef} className="relative h-8">
                   {overEnd && <ReorderIndicator className="top-0" />}
                 </div>
-              )}
+              )} */}
               </div>
             </SortableContext>
 
