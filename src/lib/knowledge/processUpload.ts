@@ -48,29 +48,45 @@ export async function processUploadedConversations(
       throw new Error('Invalid JSON file. Please export your ChatGPT conversations as JSON.');
     }
 
-    onProgress?.({
-      stage: 'parsing',
-      progress: 15,
-      message: 'Uploading to server...',
-    });
-
     // Get current user session
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       throw new Error('Not authenticated');
     }
 
-    // Stage 2: Send RAW JSON string to Edge Function
-    // Server will handle all parsing to avoid blocking the browser
+    onProgress?.({
+      stage: 'parsing',
+      progress: 15,
+      message: 'Uploading to storage...',
+    });
+
+    // Stage 2: Upload to Supabase Storage (handles large files better than Edge Function body)
+    const fileName = `conversations_${Date.now()}.json`;
+    const filePath = `${session.user.id}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('knowledge-graph-uploads')
+      .upload(filePath, new Blob([conversationsJson], { type: 'application/json' }), {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(`Failed to upload file: ${uploadError.message}`);
+    }
+
     onProgress?.({
       stage: 'summarizing',
       progress: 25,
       message: 'Processing conversations with AI...',
     });
 
-    // Call Supabase Edge Function with raw JSON string
+    // Stage 3: Tell Edge Function to process the file from Storage
     const { data, error } = await supabase.functions.invoke('process-knowledge-graph', {
-      body: { conversationsJson }, // Send raw string, not parsed array
+      body: { 
+        storageFilePath: filePath, // Send file path instead of huge JSON
+        userId: session.user.id,
+      },
     });
 
     if (error) {

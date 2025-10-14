@@ -188,23 +188,45 @@ serve(async (req) => {
 
     // Get request body
     console.log('Parsing request body...')
-    const { conversationsJson } = await req.json()
+    const { storageFilePath, userId } = await req.json()
     
-    if (!conversationsJson || typeof conversationsJson !== 'string') {
+    if (!storageFilePath || typeof storageFilePath !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Invalid request body: expected conversationsJson string' }),
+        JSON.stringify({ error: 'Invalid request body: expected storageFilePath' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Parse JSON on server to avoid blocking client browser
+    // Download file from Supabase Storage
+    console.log('Downloading file from storage:', storageFilePath)
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from('knowledge-graph-uploads')
+      .download(storageFilePath)
+
+    if (downloadError) {
+      console.error('Storage download error:', downloadError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to download file from storage', details: downloadError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Convert blob to text
+    console.log('Converting file to text...')
+    const conversationsJson = await fileData.text()
+    console.log('File size:', conversationsJson.length, 'bytes')
+
+    // Parse JSON on server
     let rawConversations: any[];
     try {
+      console.log('Parsing JSON...')
       rawConversations = JSON.parse(conversationsJson);
       if (!Array.isArray(rawConversations)) {
         throw new Error('Expected array of conversations');
       }
+      console.log('Found', rawConversations.length, 'raw conversations')
     } catch (e) {
+      console.error('JSON parse error:', e)
       return new Response(
         JSON.stringify({ error: 'Invalid JSON format', details: e.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -398,6 +420,18 @@ serve(async (req) => {
       throw new Error(`Failed to insert edges: ${edgesError.message}`)
     }
 
+    // Clean up: Delete the uploaded file from storage
+    console.log('Cleaning up storage file:', storageFilePath)
+    const { error: deleteError } = await supabase.storage
+      .from('knowledge-graph-uploads')
+      .remove([storageFilePath])
+    
+    if (deleteError) {
+      console.warn('Failed to delete storage file:', deleteError.message)
+      // Don't fail the request if cleanup fails
+    }
+
+    console.log('✅ Processing complete!')
     return new Response(
       JSON.stringify({
         success: true,
