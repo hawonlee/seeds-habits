@@ -43,12 +43,12 @@ export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = fals
             )}
           </TitleWrapper>
           <div className={`flex items-center gap-4 ${statsTextSize} text-muted-foreground ${useCardTitle ? 'mt-2' : ''}`}>
-            {showStreak && typeof habit.streak === 'number' && habit.streak > 0 && (
+            {/* {showStreak && typeof habit.streak === 'number' && habit.streak > 0 && ( */}
               <span className="flex items-center gap-1">
-                <Flame className={`${iconSize} text-orange-500`} />
-                {habit.streak}d
+                <Flame className={`${iconSize}`} />
+                {habit.streak}
               </span>
-            )}
+            {/* )} */}
             <span className="flex items-center gap-1">
               <MoveUpRight className={iconSize} />
               {computedTotalCompletions} total
