@@ -1,9 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// OpenAI SDK for Deno
-import OpenAI from 'npm:openai@4.52.0'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -203,11 +200,9 @@ serve(async (req) => {
       )
     }
 
-    console.log('Initializing OpenAI client...')
-    const openai = new OpenAI({ apiKey: openaiApiKey })
     console.log(`Processing ${conversations.length} conversations...`)
 
-    // Process conversations
+    // Process conversations using fetch API directly
     const processedConversations = []
     
     for (const conv of conversations) {
@@ -218,35 +213,61 @@ serve(async (req) => {
           .map((msg: any) => `${msg.role}: ${msg.content}`)
           .join('\n\n')
 
-        const summary = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'Summarize this conversation, focusing on key learnings, insights, and knowledge gained. Be concise but comprehensive.'
-            },
-            {
-              role: 'user',
-              content: conversationText.slice(0, 8000) // Limit to avoid token limits
-            }
-          ],
-          max_tokens: 300,
+        // Call OpenAI chat completion API
+        const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'Summarize this conversation, focusing on key learnings, insights, and knowledge gained. Be concise but comprehensive.'
+              },
+              {
+                role: 'user',
+                content: conversationText.slice(0, 8000) // Limit to avoid token limits
+              }
+            ],
+            max_tokens: 300,
+          }),
         })
 
-        const summaryText = summary.choices[0]?.message?.content || 'No summary available'
+        if (!summaryResponse.ok) {
+          throw new Error(`OpenAI API error: ${summaryResponse.status}`)
+        }
+
+        const summaryData = await summaryResponse.json()
+        const summaryText = summaryData.choices[0]?.message?.content || 'No summary available'
         const title = conv.title || `Conversation ${conv.id}`
 
         // Generate embedding
-        const embedding = await openai.embeddings.create({
-          model: 'text-embedding-3-large',
-          input: summaryText,
+        const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'text-embedding-3-large',
+            input: summaryText,
+          }),
         })
+
+        if (!embeddingResponse.ok) {
+          throw new Error(`OpenAI Embeddings API error: ${embeddingResponse.status}`)
+        }
+
+        const embeddingData = await embeddingResponse.json()
 
         processedConversations.push({
           conversation_id: conv.id,
           title,
           summary: summaryText,
-          embedding: embedding.data[0].embedding,
+          embedding: embeddingData.data[0].embedding,
           timestamp: conv.timestamp || new Date().toISOString(),
           message_count: messages.length,
         })
