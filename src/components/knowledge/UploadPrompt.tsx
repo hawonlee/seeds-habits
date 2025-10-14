@@ -40,14 +40,7 @@ export function UploadPrompt({ onUploadComplete }: UploadPromptProps) {
       const text = await file.text();
       setProgress(15);
 
-      // Validate it's valid JSON
-      try {
-        JSON.parse(text);
-      } catch (e) {
-        throw new Error('Invalid JSON file. Please export your ChatGPT conversations as JSON.');
-      }
-
-      // Process conversations client-side
+      // Process conversations (parsing happens server-side to avoid blocking browser)
       await processUploadedConversations(text, (progressData) => {
         setProgress(progressData.progress);
         
@@ -233,15 +226,9 @@ export function UploadButton({ onUploadComplete }: { onUploadComplete?: () => vo
 
     try {
       const text = await file.text();
-      JSON.parse(text); // Validate JSON
 
-      const response = await fetch('/api/knowledge/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversations: text }),
-      });
-
-      if (!response.ok) throw new Error('Upload failed');
+      // Call processUploadedConversations which uses Edge Function
+      await processUploadedConversations(text);
 
       onUploadComplete?.();
     } catch (err) {

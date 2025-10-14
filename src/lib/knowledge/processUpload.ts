@@ -2,16 +2,16 @@
  * Process Uploaded Conversations
  * 
  * Handles the full pipeline of processing uploaded ChatGPT conversations:
- * 1. Parse conversations
- * 2. Send to Supabase Edge Function for processing
- * 3. Edge Function handles: summarization, embedding, graph building, and storage
+ * 1. Lightweight validation on client
+ * 2. Send RAW JSON string to Supabase Edge Function
+ * 3. Edge Function handles ALL parsing, summarization, embedding, and graph building
  * 
- * This now uses centralized OpenAI API key stored in Supabase secrets.
+ * This architecture avoids blocking the browser's main thread with heavy compute.
+ * All parsing and AI processing happens server-side.
  * 
  * @module processUpload
  */
 
-import { parseConversations } from './conversationParser';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ProcessingProgress {
@@ -31,23 +31,27 @@ export async function processUploadedConversations(
   onProgress?: ProgressCallback
 ): Promise<void> {
   try {
-    // Stage 1: Parse conversations
+    // Stage 1: Validate JSON format (lightweight check)
     onProgress?.({
       stage: 'parsing',
       progress: 10,
-      message: 'Parsing conversations...',
+      message: 'Validating file format...',
     });
 
-    const conversations = parseConversations(conversationsJson);
-    
-    if (conversations.length === 0) {
-      throw new Error('No valid conversations found in the file');
+    // Quick validation without full parse (just check if it's valid JSON structure)
+    try {
+      const firstChar = conversationsJson.trim()[0];
+      if (firstChar !== '[' && firstChar !== '{') {
+        throw new Error('Invalid JSON format');
+      }
+    } catch (e) {
+      throw new Error('Invalid JSON file. Please export your ChatGPT conversations as JSON.');
     }
 
     onProgress?.({
       stage: 'parsing',
-      progress: 20,
-      message: `Found ${conversations.length} conversations`,
+      progress: 15,
+      message: 'Uploading to server...',
     });
 
     // Get current user session
@@ -56,16 +60,17 @@ export async function processUploadedConversations(
       throw new Error('Not authenticated');
     }
 
-    // Stage 2: Send to Edge Function for processing
+    // Stage 2: Send RAW JSON string to Edge Function
+    // Server will handle all parsing to avoid blocking the browser
     onProgress?.({
       stage: 'summarizing',
-      progress: 30,
+      progress: 25,
       message: 'Processing conversations with AI...',
     });
 
-    // Call Supabase Edge Function
+    // Call Supabase Edge Function with raw JSON string
     const { data, error } = await supabase.functions.invoke('process-knowledge-graph', {
-      body: { conversations },
+      body: { conversationsJson }, // Send raw string, not parsed array
     });
 
     if (error) {

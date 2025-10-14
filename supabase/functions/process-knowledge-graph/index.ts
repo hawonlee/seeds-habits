@@ -7,6 +7,114 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Conversation parsing types and functions (moved from client to avoid blocking browser)
+interface Message {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: number;
+}
+
+interface ParsedConversation {
+  id: string;
+  title: string;
+  timestamp: string;
+  messages: Message[];
+}
+
+interface ConversationNode {
+  id: string;
+  message: {
+    id: string;
+    author: {
+      role: string;
+    };
+    content: {
+      content_type: string;
+      parts: string[];
+    };
+    create_time: number | null;
+  } | null;
+  children: string[];
+}
+
+interface RawConversation {
+  id: string;
+  title: string;
+  create_time: number;
+  update_time: number;
+  mapping: Record<string, ConversationNode>;
+}
+
+/**
+ * Parse conversations on server to avoid blocking browser
+ */
+function parseConversations(jsonData: RawConversation[]): ParsedConversation[] {
+  const conversations: ParsedConversation[] = [];
+
+  for (const conv of jsonData) {
+    try {
+      const messages = extractMessages(conv.mapping);
+      
+      if (messages.length === 0) {
+        continue;
+      }
+
+      conversations.push({
+        id: conv.id,
+        title: conv.title || 'Untitled Conversation',
+        timestamp: new Date(conv.create_time * 1000).toISOString(),
+        messages,
+      });
+    } catch (error) {
+      console.error(`Error parsing conversation ${conv.id}:`, error);
+    }
+  }
+
+  return conversations;
+}
+
+function extractMessages(mapping: Record<string, ConversationNode>): Message[] {
+  const messages: Message[] = [];
+  
+  const rootNode = Object.values(mapping).find(
+    node => node.id === 'client-created-root' || node.message === null
+  );
+  
+  if (!rootNode) {
+    return messages;
+  }
+
+  const visited = new Set<string>();
+  
+  function traverse(nodeId: string) {
+    if (visited.has(nodeId)) return;
+    visited.add(nodeId);
+    
+    const node = mapping[nodeId];
+    if (!node) return;
+
+    if (node.message?.content?.parts && Array.isArray(node.message.content.parts)) {
+      const role = node.message.author?.role;
+      const content = node.message.content.parts.join('\n').trim();
+      
+      if ((role === 'user' || role === 'assistant') && content) {
+        messages.push({
+          role: role as 'user' | 'assistant',
+          content,
+          timestamp: node.message.create_time || undefined,
+        });
+      }
+    }
+
+    if (node.children && node.children.length > 0) {
+      traverse(node.children[0]);
+    }
+  }
+
+  traverse(rootNode.id);
+  return messages;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -45,11 +153,35 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { conversations } = await req.json()
+    const { conversationsJson } = await req.json()
     
-    if (!conversations || !Array.isArray(conversations)) {
+    if (!conversationsJson || typeof conversationsJson !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Invalid request body' }),
+        JSON.stringify({ error: 'Invalid request body: expected conversationsJson string' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Parse JSON on server to avoid blocking client browser
+    let rawConversations: any[];
+    try {
+      rawConversations = JSON.parse(conversationsJson);
+      if (!Array.isArray(rawConversations)) {
+        throw new Error('Expected array of conversations');
+      }
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON format', details: e.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Parse conversation structure (extract messages from nested format)
+    const conversations = parseConversations(rawConversations)
+    
+    if (conversations.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'No valid conversations found in file' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
