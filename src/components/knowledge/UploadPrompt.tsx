@@ -13,7 +13,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Brain, Upload, FileText, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { processUploadedConversations } from '@/lib/knowledge/processUpload';
-import { APIKeySettings, getStoredAPIKey } from './APIKeySettings';
 
 interface UploadPromptProps {
   onUploadComplete?: () => void;
@@ -30,14 +29,6 @@ export function UploadPrompt({ onUploadComplete }: UploadPromptProps) {
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Check if API key is set
-    const apiKey = getStoredAPIKey();
-    if (!apiKey) {
-      setStatus('error');
-      setError('Please set your OpenAI API key first');
-      return;
-    }
 
     setFileName(file.name);
     setStatus('uploading');
@@ -216,16 +207,11 @@ export function UploadPrompt({ onUploadComplete }: UploadPromptProps) {
             </Alert>
           )}
 
-          {/* API Key Settings */}
-          <div className="flex justify-center">
-            <APIKeySettings />
-          </div>
-
           {/* Privacy Notice */}
           <div className="text-xs text-kg-text-tertiary text-center space-y-1">
-            <p>🔒 Your conversations are processed securely in your browser</p>
-            <p>Your API key and data never leave your control</p>
+            <p>🔒 Your conversations are processed securely on our servers</p>
             <p>Only you can access your knowledge graph</p>
+            <p>Your data is isolated and protected with Row Level Security</p>
           </div>
         </CardContent>
       </Card>

@@ -44,14 +44,13 @@ npm run dev
 
 ## Knowledge Graph Feature 🧠
 
-Transform your ChatGPT conversation history into an interactive 3D knowledge network. Each user's data is completely private and isolated.
+Transform your ChatGPT conversation history into an interactive 3D knowledge network. Each user's data is completely private and isolated, processed securely on our servers.
 
 ### Quick Start (First-Time Users)
 
 1. Navigate to `/knowledge` in the app
-2. Click "Set API Key" and enter your OpenAI API key (stored locally in your browser)
-3. Upload your `conversations.json` from ChatGPT export
-4. Wait for processing (1-5 minutes depending on conversation count)
+2. Upload your `conversations.json` from ChatGPT export
+3. Wait for processing (1-5 minutes depending on conversation count)
 5. Explore your personal knowledge graph!
 
 📚 **Full documentation**: See [docs/knowledge-graph/](./docs/knowledge-graph/)

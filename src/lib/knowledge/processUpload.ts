@@ -3,19 +3,15 @@
  * 
  * Handles the full pipeline of processing uploaded ChatGPT conversations:
  * 1. Parse conversations
- * 2. Summarize and generate embeddings
- * 3. Build kNN graph
- * 4. Run UMAP projection (optional)
- * 5. Store in Supabase
+ * 2. Send to Supabase Edge Function for processing
+ * 3. Edge Function handles: summarization, embedding, graph building, and storage
  * 
- * This runs client-side with user's API key for privacy.
+ * This now uses centralized OpenAI API key stored in Supabase secrets.
  * 
  * @module processUpload
  */
 
 import { parseConversations } from './conversationParser';
-import { processConversation } from './embeddingService';
-import { buildKNNGraph } from './knnBuilder';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ProcessingProgress {
@@ -28,7 +24,7 @@ export interface ProcessingProgress {
 export type ProgressCallback = (progress: ProcessingProgress) => void;
 
 /**
- * Process uploaded conversations and store in Supabase
+ * Process uploaded conversations via Supabase Edge Function
  */
 export async function processUploadedConversations(
   conversationsJson: string,
@@ -50,146 +46,59 @@ export async function processUploadedConversations(
 
     onProgress?.({
       stage: 'parsing',
-      progress: 15,
+      progress: 20,
       message: `Found ${conversations.length} conversations`,
     });
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       throw new Error('Not authenticated');
     }
 
-    // Stage 2 & 3: Summarize and embed (combined)
+    // Stage 2: Send to Edge Function for processing
     onProgress?.({
       stage: 'summarizing',
-      progress: 20,
+      progress: 30,
       message: 'Processing conversations with AI...',
     });
 
-    const processedConversations = [];
-    for (let i = 0; i < conversations.length; i++) {
-      const conv = conversations[i];
-      
-      try {
-        const processed = await processConversation(conv);
-        processedConversations.push({
-          conversation: conv,
-          ...processed,
-        });
-
-        const progress = 20 + ((i + 1) / conversations.length) * 40;
-        onProgress?.({
-          stage: i < conversations.length / 2 ? 'summarizing' : 'embedding',
-          progress,
-          message: `Processed ${i + 1} of ${conversations.length} conversations...`,
-        });
-      } catch (error) {
-        console.error(`Failed to process conversation ${conv.id}:`, error);
-        // Continue with other conversations
-      }
-    }
-
-    if (processedConversations.length === 0) {
-      throw new Error('Failed to process any conversations');
-    }
-
-    // Stage 4: Build kNN graph
-    onProgress?.({
-      stage: 'graphing',
-      progress: 65,
-      message: 'Building knowledge graph...',
+    // Call Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('process-knowledge-graph', {
+      body: { conversations },
     });
 
-    const graphData = buildKNNGraph(
-      processedConversations.map(p => ({
-        id: p.conversation.id,
-        embedding: p.embedding,
-      })),
-      5 // k=5 neighbors
-    );
+    if (error) {
+      throw new Error(error.message || 'Failed to process conversations');
+    }
+
+    if (!data?.success) {
+      throw new Error('Processing failed on server');
+    }
+
+    onProgress?.({
+      stage: 'embedding',
+      progress: 60,
+      message: 'Generating embeddings...',
+    });
 
     onProgress?.({
       stage: 'graphing',
       progress: 75,
-      message: 'Knowledge graph built',
+      message: 'Building knowledge graph...',
     });
-
-    // Stage 5: Store in Supabase
-    onProgress?.({
-      stage: 'storing',
-      progress: 80,
-      message: 'Saving to database...',
-    });
-
-    // Delete existing data for this user
-    await supabase
-      .from('lkg_nodes')
-      .delete()
-      .eq('user_id', user.id);
-
-    await supabase
-      .from('lkg_edges')
-      .delete()
-      .eq('user_id', user.id);
-
-    // Insert nodes
-    const nodesToInsert = processedConversations.map((p) => ({
-      user_id: user.id,
-      conversation_id: p.conversation.id,
-      title: p.title,
-      summary: p.summary,
-      embedding: p.embedding,
-      timestamp: p.conversation.timestamp,
-      metadata: {
-        message_count: p.conversation.messages.length,
-      },
-    }));
-
-    const { data: insertedNodes, error: nodesError } = await supabase
-      .from('lkg_nodes')
-      .insert(nodesToInsert)
-      .select('id, conversation_id');
-
-    if (nodesError) {
-      throw new Error(`Failed to insert nodes: ${nodesError.message}`);
-    }
 
     onProgress?.({
       stage: 'storing',
       progress: 90,
-      message: 'Saving connections...',
+      message: 'Saving to database...',
     });
-
-    // Create conversation_id to database id mapping
-    const idMap = new Map<string, string>();
-    insertedNodes.forEach(node => {
-      idMap.set(node.conversation_id, node.id);
-    });
-
-    // Insert edges
-    const edgesToInsert = graphData.edges
-      .filter(edge => idMap.has(edge.source) && idMap.has(edge.target))
-      .map(edge => ({
-        user_id: user.id,
-        source_id: idMap.get(edge.source)!,
-        target_id: idMap.get(edge.target)!,
-        weight: edge.weight,
-      }));
-
-    const { error: edgesError } = await supabase
-      .from('lkg_edges')
-      .insert(edgesToInsert);
-
-    if (edgesError) {
-      throw new Error(`Failed to insert edges: ${edgesError.message}`);
-    }
 
     // Complete!
     onProgress?.({
       stage: 'complete',
       progress: 100,
-      message: 'Knowledge graph created successfully!',
+      message: `Knowledge graph created successfully! Processed ${data.processed} conversations.`,
     });
 
   } catch (error) {
