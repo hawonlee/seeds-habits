@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { CardTitle } from "@/components/ui/card";
-import { MoveUpRight, Repeat } from "lucide-react";
+import { MoveUpRight, Repeat, Flame } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { getCategoryById, formatFrequency } from "@/lib/categories";
 import { useHabitCompletionsContext } from "@/components/HabitCompletionsProvider";
@@ -9,9 +9,10 @@ interface HabitMetaProps {
   habit: Habit;
   useCardTitle?: boolean;
   size?: "sm" | "md";
+  showStreak?: boolean;
 }
 
-export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = false, size = "sm" }) => {
+export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = false, size = "sm", showStreak = false }) => {
   const categoryName = getCategoryById(habit.category)?.name || habit.category;
   const iconSize = size === "md" ? "h-4 w-4" : "h-3 w-3";
   const titleTextSize = size === "md" ? "text-xs" : "text-xs";
@@ -42,6 +43,12 @@ export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = fals
             )}
           </TitleWrapper>
           <div className={`flex items-center gap-4 ${statsTextSize} text-muted-foreground ${useCardTitle ? 'mt-2' : ''}`}>
+            {showStreak && typeof habit.streak === 'number' && habit.streak > 0 && (
+              <span className="flex items-center gap-1">
+                <Flame className={`${iconSize} text-orange-500`} />
+                {habit.streak}d
+              </span>
+            )}
             <span className="flex items-center gap-1">
               <MoveUpRight className={iconSize} />
               {computedTotalCompletions} total

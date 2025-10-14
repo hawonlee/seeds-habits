@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, Flame } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { getCategoryById, getCategoryCSSVariables } from "@/lib/categories";
 import { HabitMeta } from "./HabitMeta";
@@ -152,8 +152,8 @@ export const HabitCard = ({
           onClick={() => onEditHabit?.(habit)}
         >
 
-          {/* Left side - Habit name and details */}
-          <HabitMeta habit={habit} size="sm" />
+          {/* Left side - Habit name and details (+ streak via HabitMeta) */}
+          <HabitMeta habit={habit} size="sm" showStreak />
 
           {/* Right side - Weekly day buttons */}
           <div className="flex items-center ml-4">
