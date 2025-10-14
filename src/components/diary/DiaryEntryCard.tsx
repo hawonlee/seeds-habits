@@ -20,6 +20,17 @@ export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, i
     // Fixed single-row height and single-line preview
     const getRowSpan = () => 'row-span-1';
 
+    const getFirstLineText = (html: string): string => {
+        if (!html) return '';
+        // Normalize HTML line breaks to newlines, strip remaining tags, then take first line
+        const normalized = html
+            .replace(/<br\s*\/?\s*>/gi, '\n')
+            .replace(/<\/?(div|p)[^>]*>/gi, '')
+            .replace(/<[^>]+>/g, '');
+        const firstLine = normalized.split(/\r?\n/)[0] || '';
+        return firstLine.trim();
+    };
+
     return (
          <div
              className={`group bg-habitbg transition-all duration-200 ease-in-out rounded-lg p-3 w-full ${isActive ? 'bg-habitbghover' : 'bg-habitbg'} ${getRowSpan()}`}
@@ -54,7 +65,7 @@ export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, i
             {/* Body Overview */}
             <div className="flex flex-col h-full overflow-hidden relative">
                 <p className="text-xs text-muted-foreground max-w-full block truncate">
-                    {entry.body}
+                    {getFirstLineText(entry.body)}
                 </p>
             </div>
         </div>
