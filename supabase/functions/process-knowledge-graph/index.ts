@@ -117,8 +117,11 @@ function extractMessages(mapping: Record<string, ConversationNode>): Message[] {
 }
 
 serve(async (req) => {
+  console.log('Edge Function invoked:', req.method, req.url)
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight')
     return new Response(null, { 
       status: 200,
       headers: corsHeaders 
@@ -126,9 +129,14 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Processing POST request...')
+    
     // Get authorization header
     const authHeader = req.headers.get('Authorization')
+    console.log('Authorization header present:', !!authHeader)
+    
     if (!authHeader) {
+      console.error('Missing authorization header')
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -136,8 +144,18 @@ serve(async (req) => {
     }
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    console.log('Initializing Supabase client...')
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -146,17 +164,30 @@ serve(async (req) => {
     })
 
     // Get user from JWT
+    console.log('Verifying user authentication...')
     const jwt = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabase.auth.getUser(jwt)
     
-    if (authError || !user) {
+    if (authError) {
+      console.error('Auth error:', authError.message)
       return new Response(
-        JSON.stringify({ error: 'Invalid authorization' }),
+        JSON.stringify({ error: 'Invalid authorization', details: authError.message }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    
+    if (!user) {
+      console.error('No user found from JWT')
+      return new Response(
+        JSON.stringify({ error: 'Invalid authorization - no user' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    console.log('User authenticated:', user.id)
 
     // Get request body
+    console.log('Parsing request body...')
     const { conversationsJson } = await req.json()
     
     if (!conversationsJson || typeof conversationsJson !== 'string') {
@@ -378,20 +409,29 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('==== CRITICAL ERROR ====')
     console.error('Error processing knowledge graph:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
-    const errorStack = error instanceof Error ? error.stack : ''
-    console.error('Error details:', { message: errorMessage, stack: errorStack })
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace'
+    console.error('Error message:', errorMessage)
+    console.error('Error stack:', errorStack)
+    console.error('Error type:', typeof error)
+    console.error('========================')
     
     return new Response(
       JSON.stringify({ 
         error: errorMessage,
-        details: 'Check Edge Function logs for more information'
+        type: typeof error,
+        stack: errorStack.split('\n').slice(0, 5).join('\n'), // First 5 lines
+        details: 'Check Edge Function logs in Supabase dashboard'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
+
+// Log startup
+console.log('Edge Function process-knowledge-graph initialized')
 
 // Helper function for cosine similarity
 function cosineSimilarity(a: number[], b: number[]): number {
