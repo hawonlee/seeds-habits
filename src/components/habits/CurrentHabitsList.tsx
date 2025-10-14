@@ -85,6 +85,7 @@ export const CurrentHabitsList = ({
   const [draggedHabitId, setDraggedHabitId] = useState<string | null>(null);
   const [dragOverHabitId, setDragOverHabitId] = useState<string | null>(null);
   const [dragOverPlacement, setDragOverPlacement] = useState<'before' | 'after' | null>(null);
+  const [dragOverEnd, setDragOverEnd] = useState<boolean>(false);
 
   const handleDragStart = (habit: Habit) => {
     setDraggedHabitId(habit.id);
@@ -107,6 +108,7 @@ export const CurrentHabitsList = ({
   const handleDragLeave = () => {
     setDragOverHabitId(null);
     setDragOverPlacement(null);
+    setDragOverEnd(false);
   };
 
   const handleDrop = (e: React.DragEvent, targetHabit: Habit) => {
@@ -135,6 +137,29 @@ export const CurrentHabitsList = ({
     setDraggedHabitId(null);
     setDragOverHabitId(null);
     setDragOverPlacement(null);
+  };
+
+  const handleDropAtEnd = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!draggedHabitId || !onReorderHabits) return;
+
+    const draggedIndex = habits.findIndex(h => h.id === draggedHabitId);
+    if (draggedIndex === -1) {
+      setDraggedHabitId(null);
+      setDragOverEnd(false);
+      return;
+    }
+
+    const newHabits = [...habits];
+    const [draggedHabit] = newHabits.splice(draggedIndex, 1);
+    newHabits.push(draggedHabit);
+    const newOrder = newHabits.map(h => h.id);
+    onReorderHabits(newOrder);
+
+    setDraggedHabitId(null);
+    setDragOverHabitId(null);
+    setDragOverPlacement(null);
+    setDragOverEnd(false);
   };
 
   const handleDragEnd = () => {
@@ -274,6 +299,22 @@ export const CurrentHabitsList = ({
                 )}
               </div>
             ))}
+            {/* End-of-list drop zone to allow placing after the last item */}
+            {habits.length > 0 && (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (draggedHabitId) setDragOverEnd(true);
+                }}
+                onDragLeave={() => setDragOverEnd(false)}
+                onDrop={handleDropAtEnd}
+                className="relative h-2"
+              >
+                {dragOverEnd && draggedHabitId && (
+                  <ReorderIndicator className="top-0" />
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -24,6 +24,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
   DragEndEvent,
   DragOverEvent,
   DragOverlay,
@@ -138,6 +139,9 @@ export const TaskListCard: React.FC<TaskListProps> = ({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [overPlacement, setOverPlacement] = useState<'before' | 'after' | null>(null);
+  const [overEnd, setOverEnd] = useState<boolean>(false);
+  const endZoneId = `END_ZONE_${taskList.id}`;
+  const endZone = useDroppable({ id: endZoneId });
 
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
@@ -146,13 +150,24 @@ export const TaskListCard: React.FC<TaskListProps> = ({
     setActiveId(null);
     setOverId(null);
     setOverPlacement(null);
-    if (over && active.id !== over.id) {
-      const oldIndex = tasks.findIndex((task) => task.id === active.id);
-      const newIndex = tasks.findIndex((task) => task.id === over.id);
+    setOverEnd(false);
+    if (!over) return;
 
+    const oldIndex = tasks.findIndex((task) => task.id === active.id);
+    if (oldIndex === -1) return;
+
+    if (over.id === endZoneId) {
+      const reorderedTasks = arrayMove(tasks, oldIndex, tasks.length - 1);
+      const taskIds = reorderedTasks.map((task) => task.id);
+      onReorderTasks(taskList.id, taskIds);
+      return;
+    }
+
+    if (active.id !== over.id) {
+      const newIndex = tasks.findIndex((task) => task.id === over.id);
+      if (newIndex === -1) return;
       const reorderedTasks = arrayMove(tasks, oldIndex, newIndex);
       const taskIds = reorderedTasks.map((task) => task.id);
-      
       onReorderTasks(taskList.id, taskIds);
     }
   };
@@ -163,9 +178,22 @@ export const TaskListCard: React.FC<TaskListProps> = ({
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) {
+    if (!over) {
       setOverId(null);
       setOverPlacement(null);
+      setOverEnd(false);
+      return;
+    }
+    if (over.id === endZoneId) {
+      setOverId(null);
+      setOverPlacement(null);
+      setOverEnd(true);
+      return;
+    }
+    if (active.id === over.id) {
+      setOverId(null);
+      setOverPlacement(null);
+      setOverEnd(false);
       return;
     }
     const targetEl = document.querySelector(`[data-task-id="${over.id}"]`) as HTMLElement | null;
@@ -177,6 +205,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
     const y = clientY || pointerY;
     setOverId(String(over.id));
     setOverPlacement(y < midpoint ? 'before' : 'after');
+    setOverEnd(false);
   };
 
   const colorOptions = COLOR_OPTIONS.map(color => ({
@@ -346,6 +375,12 @@ export const TaskListCard: React.FC<TaskListProps> = ({
                     overPlacement={overPlacement}
                   />
                 ))}
+              {/* End-of-list drop zone indicator for after last task (dnd-kit droppable) */}
+              {tasks.length > 0 && (
+                <div ref={endZone.setNodeRef} className="relative h-2">
+                  {overEnd && <ReorderIndicator className="top-0" />}
+                </div>
+              )}
               </div>
             </SortableContext>
 
