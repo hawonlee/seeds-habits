@@ -34,6 +34,24 @@ export interface LKGNode {
   umap_x: number | null;
   /** UMAP y-coordinate for visualization (optional) */
   umap_y: number | null;
+  /** UMAP z-coordinate for 3D visualization (optional) */
+  umap_z?: number | null;
+  /** Learning type classification */
+  learning_type?: string | null;
+  /** Confidence score (0-1) */
+  confidence_score?: number | null;
+  /** Extracted entities */
+  entities?: Record<string, string[]> | null;
+  /** Key learnings extracted */
+  key_learnings?: string[] | null;
+  /** Questions raised in conversation */
+  questions_raised?: string[] | null;
+  /** Resources mentioned */
+  resources_mentioned?: string[] | null;
+  /** Cluster ID for topic grouping */
+  cluster_id?: number | null;
+  /** Cluster label */
+  cluster_label?: string | null;
   /** Additional metadata */
   metadata: {
     /** Number of messages in conversation */

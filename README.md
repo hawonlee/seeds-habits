@@ -44,27 +44,33 @@ npm run dev
 
 ## Knowledge Graph Feature 🧠
 
-Transform your ChatGPT conversation history into an interactive knowledge network.
+Transform your ChatGPT conversation history into an interactive 3D knowledge network. Each user's data is completely private and isolated.
 
-### Quick Start
+### Quick Start (First-Time Users)
 
-```bash
-# 1. Get your ChatGPT conversations export (conversations.txt)
-# 2. Add OpenAI API key to .env
-# 3. Run the knowledge graph builder
-./run-lkg.sh 50
-
-# 4. View in the app by clicking "Knowledge" in the header
-```
+1. Navigate to `/knowledge` in the app
+2. Click "Set API Key" and enter your OpenAI API key (stored locally in your browser)
+3. Upload your `conversations.json` from ChatGPT export
+4. Wait for processing (1-5 minutes depending on conversation count)
+5. Explore your personal knowledge graph!
 
 📚 **Full documentation**: See [docs/knowledge-graph/](./docs/knowledge-graph/)
 
+### Privacy & Security
+
+- ✅ **Complete Data Isolation**: Each user's conversations are stored separately with user_id
+- ✅ **Client-Side Processing**: Your data is processed in your browser, never on our servers
+- ✅ **Your API Key**: Stored locally in browser, never sent to our backend
+- ✅ **Row Level Security**: Supabase RLS policies ensure users only see their own data
+
 ### What You Get
 
-- **Interactive Graph**: Pan, zoom, click nodes to explore
-- **Temporal Visualization**: See how your interests evolved over time
-- **Semantic Search**: Find related conversations automatically
-- **Insights**: Discover patterns and connections in your knowledge
+- **3D Interactive Graph**: Rotate, zoom, and fly to nodes in 3D space
+- **2D View**: Classic 2D network visualization option
+- **Smart Filtering**: Filter by learning type, confidence, time range, and connections
+- **Beautiful UI**: Glassmorphic design with neural network aesthetics
+- **Export Options**: Download as JSON, CSV, or Markdown report
+- **Mobile Optimized**: Responsive design works on all devices
 
 ## Project Structure
 

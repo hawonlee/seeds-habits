@@ -156,8 +156,9 @@ export function buildKNNGraph(
 ): GraphEdge[] {
   const edges: GraphEdge[] = [];
 
-  console.log(`Building kNN graph: k=${k}, threshold=${threshold}`);
-  console.log(`Processing ${nodes.length} nodes...`);
+  // Debug logging (disabled in production)
+  // console.log(`Building kNN graph: k=${k}, threshold=${threshold}`);
+  // console.log(`Processing ${nodes.length} nodes...`);
 
   for (let i = 0; i < nodes.length; i++) {
     const neighbors = findKNearestNeighbors(i, nodes, k, threshold);
@@ -179,11 +180,10 @@ export function buildKNNGraph(
     onProgress(nodes.length, nodes.length);
   }
 
-  console.log(`Generated ${edges.length} edges`);
-  
-  // Calculate statistics
-  const avgDegree = edges.length / nodes.length;
-  console.log(`Average degree: ${avgDegree.toFixed(2)}`);
+  // Debug logging (disabled in production)
+  // console.log(`Generated ${edges.length} edges`);
+  // const avgDegree = edges.length / nodes.length;
+  // console.log(`Average degree: ${avgDegree.toFixed(2)}`);
 
   return edges;
 }

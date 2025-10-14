@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UMAP Projection Script
-Projects high-dimensional embeddings to 2D using UMAP
+Projects high-dimensional embeddings to 2D or 3D using UMAP
 """
 
 import sys
@@ -15,30 +15,31 @@ except ImportError:
     sys.exit(1)
 
 
-def project_embeddings(embeddings_data, n_neighbors=15, min_dist=0.1, metric='cosine'):
+def project_embeddings(embeddings_data, n_neighbors=15, min_dist=0.1, metric='cosine', n_components=3):
     """
-    Project embeddings to 2D using UMAP
+    Project embeddings to 2D or 3D using UMAP
     
     Args:
         embeddings_data: List of dicts with 'id' and 'embedding' keys
         n_neighbors: UMAP parameter (default 15)
         min_dist: UMAP parameter (default 0.1)
         metric: Distance metric (default 'cosine')
+        n_components: Number of dimensions (2 or 3, default 3 for 3D visualization)
     
     Returns:
-        List of dicts with 'id', 'x', 'y' keys
+        List of dicts with 'id', 'x', 'y' keys (and 'z' if 3D)
     """
     # Extract embeddings and IDs
     ids = [item['id'] for item in embeddings_data]
     embeddings = np.array([item['embedding'] for item in embeddings_data])
     
-    print(f"Projecting {len(embeddings)} embeddings from {embeddings.shape[1]}D to 2D", file=sys.stderr)
+    print(f"Projecting {len(embeddings)} embeddings from {embeddings.shape[1]}D to {n_components}D", file=sys.stderr)
     
     # Create UMAP reducer
     reducer = umap.UMAP(
         n_neighbors=n_neighbors,
         min_dist=min_dist,
-        n_components=2,
+        n_components=n_components,
         metric=metric,
         random_state=42,
         verbose=True
@@ -50,11 +51,14 @@ def project_embeddings(embeddings_data, n_neighbors=15, min_dist=0.1, metric='co
     # Format results
     results = []
     for i, node_id in enumerate(ids):
-        results.append({
+        result = {
             'id': node_id,
             'x': float(projected[i, 0]),
             'y': float(projected[i, 1])
-        })
+        }
+        if n_components == 3:
+            result['z'] = float(projected[i, 2])
+        results.append(result)
     
     print(f"Projection complete", file=sys.stderr)
     
@@ -73,10 +77,11 @@ def main():
         n_neighbors = input_data.get('n_neighbors', 15)
         min_dist = input_data.get('min_dist', 0.1)
         metric = input_data.get('metric', 'cosine')
+        n_components = input_data.get('n_components', 3)  # Default to 3D
         embeddings_data = input_data['embeddings']
         
         # Project
-        results = project_embeddings(embeddings_data, n_neighbors, min_dist, metric)
+        results = project_embeddings(embeddings_data, n_neighbors, min_dist, metric, n_components)
         
         # Output results as JSON
         json.dump(results, sys.stdout)

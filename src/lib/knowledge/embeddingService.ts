@@ -13,10 +13,29 @@ import OpenAI from 'openai';
 import type { ParsedConversation } from './conversationParser';
 import { formatConversationText } from './conversationParser';
 
-// Initialize OpenAI client with API key from environment
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY,
-});
+/**
+ * Get OpenAI client - works in both browser and Node.js
+ */
+function getOpenAIClient(): OpenAI {
+  // In browser: use localStorage
+  if (typeof window !== 'undefined') {
+    const apiKey = localStorage.getItem('lkg_openai_api_key');
+    if (!apiKey) {
+      throw new Error('OpenAI API key not set. Please configure your API key.');
+    }
+    return new OpenAI({
+      apiKey,
+      dangerouslyAllowBrowser: true, // Required for client-side usage
+    });
+  }
+  
+  // In Node.js: use environment variables
+  const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY environment variable not set');
+  }
+  return new OpenAI({ apiKey });
+}
 
 /**
  * Represents a summarized conversation
@@ -65,13 +84,28 @@ export async function summarizeConversation(
   try {
     const conversationText = formatConversationText(conversation);
     
-    const prompt = `Summarize this conversation in 2-3 sentences, focusing on:
-- Main topics discussed
-- Key insights or questions
-- Any actionable outcomes
+    const prompt = `Extract learning insights from this conversation. Focus on what the user learned, not just what was discussed:
 
-${conversationText}`;
+**What was learned:**
+- Key concepts, theories, or mental models understood
+- Skills or technologies explored (be specific: frameworks, tools, languages)
+- Problems solved or debugging techniques learned
 
+**Learning depth:**
+- Was this exploratory (just discovering), conceptual (understanding theory), or practical (implementing)?
+- Were questions answered completely or left open?
+
+**Knowledge artifacts:**
+- Resources mentioned (documentation, articles, tools)
+- People or experts referenced
+- Specific takeaways or "aha moments"
+
+Conversation:
+${conversationText}
+
+Provide a concise summary (2-3 sentences) emphasizing learning outcomes and knowledge gained.`;
+
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -131,6 +165,7 @@ ${conversationText}`;
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
+    const openai = getOpenAIClient();
     const response = await openai.embeddings.create({
       model: 'text-embedding-3-large',
       input: text,

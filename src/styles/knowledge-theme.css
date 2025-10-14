@@ -1,0 +1,332 @@
+/**
+ * Knowledge Graph Design System
+ * Custom CSS variables for a beautiful, futuristic neural network aesthetic
+ */
+
+:root {
+  /* === Background Colors === */
+  --kg-bg-primary: #0a0a0f;
+  --kg-bg-secondary: #15151f;
+  --kg-bg-tertiary: #1a1a28;
+  --kg-bg-card: rgba(20, 20, 32, 0.8);
+  --kg-bg-card-hover: rgba(25, 25, 40, 0.9);
+  
+  /* === Accent Colors === */
+  --kg-accent-blue: #00d4ff;
+  --kg-accent-purple: #b74cff;
+  --kg-accent-teal: #00ffc8;
+  --kg-accent-pink: #ff4c9f;
+  --kg-accent-amber: #ffb84c;
+  
+  /* === Text Colors === */
+  --kg-text-primary: #ffffff;
+  --kg-text-secondary: #a0a0b0;
+  --kg-text-tertiary: #6a6a7a;
+  --kg-text-muted: #4a4a5a;
+  
+  /* === Glow Effects === */
+  --kg-glow-blue: rgba(0, 212, 255, 0.6);
+  --kg-glow-purple: rgba(183, 76, 255, 0.6);
+  --kg-glow-teal: rgba(0, 255, 200, 0.6);
+  --kg-glow-pink: rgba(255, 76, 159, 0.6);
+  
+  /* === Border Colors === */
+  --kg-border-subtle: rgba(255, 255, 255, 0.1);
+  --kg-border-normal: rgba(255, 255, 255, 0.2);
+  --kg-border-strong: rgba(255, 255, 255, 0.3);
+  
+  /* === Semantic Colors === */
+  --kg-success: #00ff88;
+  --kg-warning: #ffaa00;
+  --kg-error: #ff4466;
+  --kg-info: #00aaff;
+  
+  /* === Learning Type Colors === */
+  --kg-learn-conceptual: #00d4ff;
+  --kg-learn-practical: #00ffc8;
+  --kg-learn-debugging: #ff4c9f;
+  --kg-learn-exploratory: #b74cff;
+  --kg-learn-deepdive: #ffb84c;
+  
+  /* === Spacing === */
+  --kg-space-xs: 0.25rem;
+  --kg-space-sm: 0.5rem;
+  --kg-space-md: 1rem;
+  --kg-space-lg: 1.5rem;
+  --kg-space-xl: 2rem;
+  --kg-space-2xl: 3rem;
+  
+  /* === Border Radius === */
+  --kg-radius-sm: 0.375rem;
+  --kg-radius-md: 0.5rem;
+  --kg-radius-lg: 0.75rem;
+  --kg-radius-xl: 1rem;
+  --kg-radius-full: 9999px;
+  
+  /* === Shadows === */
+  --kg-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --kg-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --kg-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --kg-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --kg-shadow-glow: 0 0 20px rgba(0, 212, 255, 0.3);
+  
+  /* === Transitions === */
+  --kg-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --kg-transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --kg-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* === Typography === */
+  --kg-font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --kg-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}
+
+/* === Utility Classes === */
+
+/* Glassmorphic Card */
+.kg-glass-card {
+  background: var(--kg-bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--kg-border-subtle);
+  border-radius: var(--kg-radius-lg);
+  box-shadow: var(--kg-shadow-lg);
+  transition: all var(--kg-transition-normal);
+}
+
+.kg-glass-card:hover {
+  background: var(--kg-bg-card-hover);
+  border-color: var(--kg-border-normal);
+  box-shadow: var(--kg-shadow-xl), var(--kg-shadow-glow);
+}
+
+/* Gradient Text */
+.kg-gradient-text {
+  background: linear-gradient(135deg, var(--kg-accent-blue), var(--kg-accent-purple), var(--kg-accent-teal));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 600;
+}
+
+/* Gradient Border */
+.kg-gradient-border {
+  position: relative;
+  background: var(--kg-bg-card);
+  border-radius: var(--kg-radius-lg);
+}
+
+.kg-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--kg-radius-lg);
+  padding: 1px;
+  background: linear-gradient(135deg, var(--kg-accent-blue), var(--kg-accent-purple), var(--kg-accent-teal));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glow Effect */
+.kg-glow-blue {
+  box-shadow: 0 0 20px var(--kg-glow-blue), 0 0 40px var(--kg-glow-blue);
+}
+
+.kg-glow-purple {
+  box-shadow: 0 0 20px var(--kg-glow-purple), 0 0 40px var(--kg-glow-purple);
+}
+
+.kg-glow-teal {
+  box-shadow: 0 0 20px var(--kg-glow-teal), 0 0 40px var(--kg-glow-teal);
+}
+
+/* Learning Type Badges */
+.kg-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--kg-space-xs) var(--kg-space-sm);
+  border-radius: var(--kg-radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all var(--kg-transition-fast);
+}
+
+.kg-badge-conceptual {
+  background: rgba(0, 212, 255, 0.2);
+  color: var(--kg-learn-conceptual);
+  border: 1px solid var(--kg-learn-conceptual);
+}
+
+.kg-badge-practical {
+  background: rgba(0, 255, 200, 0.2);
+  color: var(--kg-learn-practical);
+  border: 1px solid var(--kg-learn-practical);
+}
+
+.kg-badge-debugging {
+  background: rgba(255, 76, 159, 0.2);
+  color: var(--kg-learn-debugging);
+  border: 1px solid var(--kg-learn-debugging);
+}
+
+.kg-badge-exploratory {
+  background: rgba(183, 76, 255, 0.2);
+  color: var(--kg-learn-exploratory);
+  border: 1px solid var(--kg-learn-exploratory);
+}
+
+.kg-badge-deepdive {
+  background: rgba(255, 184, 76, 0.2);
+  color: var(--kg-learn-deepdive);
+  border: 1px solid var(--kg-learn-deepdive);
+}
+
+/* Pulse Animation */
+@keyframes kg-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.kg-pulse {
+  animation: kg-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Floating Animation */
+@keyframes kg-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.kg-float {
+  animation: kg-float 3s ease-in-out infinite;
+}
+
+/* Shimmer Animation */
+@keyframes kg-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.kg-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--kg-bg-card) 0%,
+    var(--kg-bg-card-hover) 50%,
+    var(--kg-bg-card) 100%
+  );
+  background-size: 1000px 100%;
+  animation: kg-shimmer 2s infinite;
+}
+
+/* Scrollbar Styling */
+.kg-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.kg-scrollbar::-webkit-scrollbar-track {
+  background: var(--kg-bg-secondary);
+  border-radius: var(--kg-radius-sm);
+}
+
+.kg-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--kg-border-strong);
+  border-radius: var(--kg-radius-sm);
+}
+
+.kg-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--kg-accent-blue);
+}
+
+/* Neural Network Pattern Background */
+.kg-neural-bg {
+  background-color: var(--kg-bg-primary);
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(183, 76, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(0, 255, 200, 0.05) 0%, transparent 50%);
+}
+
+/* === Mobile Optimization === */
+@media (max-width: 768px) {
+  /* Adjust spacing for mobile */
+  :root {
+    --kg-space-md: 0.75rem;
+    --kg-space-lg: 1rem;
+    --kg-space-xl: 1.5rem;
+    --kg-space-2xl: 2rem;
+  }
+
+  /* Hide complex effects on mobile for performance */
+  .kg-glass-card {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Simplify backgrounds */
+  .kg-neural-bg {
+    background-image: radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.03) 0%, transparent 50%);
+  }
+
+  /* Make touch targets larger */
+  button, .kg-badge {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Stack layout */
+  .kg-glass-card {
+    margin: var(--kg-space-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small mobile adjustments */
+  :root {
+    --kg-space-sm: 0.375rem;
+    --kg-space-md: 0.5rem;
+    --kg-space-lg: 0.75rem;
+  }
+
+  /* Reduce font sizes */
+  .kg-gradient-text {
+    font-size: 1.25rem;
+  }
+
+  /* Hide decorative elements */
+  .kg-pulse, .kg-glow-blue, .kg-glow-purple, .kg-glow-teal {
+    animation: none;
+    box-shadow: none;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover effects on touch devices */
+  .kg-glass-card:hover {
+    background: var(--kg-bg-card);
+    border-color: var(--kg-border-subtle);
+    box-shadow: var(--kg-shadow-lg);
+  }
+
+  /* Increase tap target sizes */
+  button, a, input, select {
+    padding: var(--kg-space-sm) var(--kg-space-md);
+  }
+}
+

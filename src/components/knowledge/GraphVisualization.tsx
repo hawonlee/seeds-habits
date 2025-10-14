@@ -51,7 +51,7 @@ export function GraphVisualization({
   selectedNodeId,
   onNodeClick,
 }: GraphVisualizationProps) {
-  const graphRef = useRef<any>();
+  const graphRef = useRef<{ zoomToFit?: (duration: number, padding: number) => void; centerAt?: (x: number, y: number, duration: number) => void }>();
 
   // Calculate node degrees
   const degreeMap = useMemo(() => {
@@ -171,13 +171,14 @@ export function GraphVisualization({
             onNodeClick(lkgNode);
           }
         }}
-        cooldownTicks={100}
-        enableNodeDrag={true}
+        cooldownTicks={0}
+        enableNodeDrag={false}
         enableZoomInteraction={true}
         enablePanInteraction={true}
-        backgroundColor="#ffffff"
-        d3AlphaDecay={0.02}
-        d3VelocityDecay={0.3}
+        backgroundColor="transparent"
+        d3AlphaDecay={0.99}
+        d3VelocityDecay={0.99}
+        warmupTicks={0}
       />
     </div>
   );

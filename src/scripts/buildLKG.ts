@@ -12,6 +12,9 @@ import { processBatch } from '../lib/knowledge/embeddingService';
 import { buildKNNGraph, calculateGraphStats } from '../lib/knowledge/knnBuilder';
 import type { GraphNode, GraphEdge } from '../lib/knowledge/knnBuilder';
 import type { ConversationEmbedding } from '../lib/knowledge/embeddingService';
+import { extractEntities, extractKeyLearnings, extractQuestions } from '../lib/knowledge/entityExtractor';
+import { classifyLearning } from '../lib/knowledge/learningClassifier';
+import type { ParsedConversation } from '../lib/knowledge/conversationParser';
 
 // Configuration
 const CONVERSATIONS_FILE = path.join(process.cwd(), 'conversations.txt');
@@ -59,11 +62,26 @@ async function getUserId(): Promise<string> {
 }
 
 /**
- * Store nodes in Supabase
+ * Enhanced node data with learning extraction
  */
-async function storeNodes(userId: string, embeddings: ConversationEmbedding[]): Promise<Map<string, string>> {
+interface EnhancedNodeData extends ConversationEmbedding {
+  learningType: string;
+  confidenceScore: number;
+  entities: Record<string, string[]>;
+  keyLearnings: string[];
+  questionsRaised: string[];
+}
+
+/**
+ * Store nodes in Supabase with enhanced learning data
+ */
+async function storeNodes(
+  userId: string, 
+  embeddings: ConversationEmbedding[],
+  enhancedData: Map<string, EnhancedNodeData>
+): Promise<Map<string, string>> {
   console.log('\nStoring nodes in database...');
-  console.log(`Attempting to store ${embeddings.length} nodes...`);
+  console.log(`Attempting to store ${embeddings.length} nodes with enhanced learning data...`);
   
   const conversationIdToDbId = new Map<string, string>();
   
@@ -74,6 +92,8 @@ async function storeNodes(userId: string, embeddings: ConversationEmbedding[]): 
   );
   
   for (const emb of embeddings) {
+    const enhanced = enhancedData.get(emb.conversationId);
+    
     // Try with service client first, fall back to regular client
     const result = await serviceClient
       .from('lkg_nodes')
@@ -87,6 +107,13 @@ async function storeNodes(userId: string, embeddings: ConversationEmbedding[]): 
         metadata: {
           message_count: emb.messageCount,
         },
+        // Enhanced learning data
+        learning_type: enhanced?.learningType || 'exploratory',
+        confidence_score: enhanced?.confidenceScore || 0.5,
+        entities: enhanced?.entities || {},
+        key_learnings: enhanced?.keyLearnings || [],
+        questions_raised: enhanced?.questionsRaised || [],
+        resources_mentioned: enhanced?.entities?.resources || [],
       })
       .select('id')
       .single();
@@ -146,8 +173,8 @@ async function storeEdges(userId: string, edges: GraphEdge[], idMap: Map<string,
 /**
  * Run UMAP projection using Python script
  */
-async function runUmapProjection(nodes: GraphNode[]): Promise<Map<string, { x: number; y: number }>> {
-  console.log('\nRunning UMAP projection...');
+async function runUmapProjection(nodes: GraphNode[]): Promise<Map<string, { x: number; y: number; z?: number }>> {
+  console.log('\nRunning UMAP projection (3D)...');
   
   return new Promise((resolve, reject) => {
     const pythonScript = path.join(__dirname, 'umapProjection.py');
@@ -178,10 +205,17 @@ async function runUmapProjection(nodes: GraphNode[]): Promise<Map<string, { x: n
       
       try {
         const results = JSON.parse(stdout);
-        const coordinatesMap = new Map<string, { x: number; y: number }>();
+        const coordinatesMap = new Map<string, { x: number; y: number; z?: number }>();
         
         for (const result of results) {
-          coordinatesMap.set(result.id, { x: result.x, y: result.y });
+          const coords: { x: number; y: number; z?: number } = { 
+            x: result.x, 
+            y: result.y 
+          };
+          if (result.z !== undefined) {
+            coords.z = result.z;
+          }
+          coordinatesMap.set(result.id, coords);
         }
         
         console.log(`UMAP projection complete for ${coordinatesMap.size} nodes`);
@@ -191,7 +225,7 @@ async function runUmapProjection(nodes: GraphNode[]): Promise<Map<string, { x: n
       }
     });
     
-    // Send data to Python script
+    // Send data to Python script (requesting 3D projection)
     const inputData = {
       embeddings: nodes.map(node => ({
         id: node.id,
@@ -200,6 +234,7 @@ async function runUmapProjection(nodes: GraphNode[]): Promise<Map<string, { x: n
       n_neighbors: Math.min(15, nodes.length - 1),
       min_dist: 0.1,
       metric: 'cosine',
+      n_components: 3, // Request 3D projection
     };
     
     python.stdin.write(JSON.stringify(inputData));
@@ -211,7 +246,7 @@ async function runUmapProjection(nodes: GraphNode[]): Promise<Map<string, { x: n
  * Update nodes with UMAP coordinates
  */
 async function updateUmapCoordinates(
-  coordinates: Map<string, { x: number; y: number }>,
+  coordinates: Map<string, { x: number; y: number; z?: number }>,
   idMap: Map<string, string>
 ) {
   console.log('\nUpdating UMAP coordinates in database...');
@@ -222,12 +257,18 @@ async function updateUmapCoordinates(
     const dbId = idMap.get(conversationId);
     if (!dbId) continue;
     
+    const updateData: { umap_x: number; umap_y: number; umap_z?: number } = {
+      umap_x: coords.x,
+      umap_y: coords.y,
+    };
+    
+    if (coords.z !== undefined) {
+      updateData.umap_z = coords.z;
+    }
+    
     const { error } = await supabase
       .from('lkg_nodes')
-      .update({
-        umap_x: coords.x,
-        umap_y: coords.y,
-      })
+      .update(updateData)
       .eq('id', dbId);
     
     if (!error) {
@@ -263,6 +304,56 @@ async function main() {
       console.log(`Progress: ${processed}/${total}`);
     });
     
+    // 3.5. Extract entities and classify learning (NEW ENHANCED PIPELINE)
+    console.log('\nExtracting learning insights and entities...');
+    const enhancedData = new Map<string, EnhancedNodeData>();
+    
+    for (let i = 0; i < conversations.length; i++) {
+      const conversation = conversations[i];
+      const embedding = embeddings[i];
+      
+      if ((i + 1) % 10 === 0 || i === conversations.length - 1) {
+        console.log(`Progress: ${i + 1}/${conversations.length}`);
+      }
+      
+      try {
+        // Extract entities (technologies, concepts, people, resources, skills)
+        const entities = await extractEntities(conversation);
+        
+        // Classify learning type and confidence
+        const classification = await classifyLearning(conversation);
+        
+        // Extract key learnings from summary
+        const keyLearnings = extractKeyLearnings(embedding.summary);
+        
+        // Extract questions raised
+        const questionsRaised = extractQuestions(conversation);
+        
+        enhancedData.set(conversation.id, {
+          ...embedding,
+          learningType: classification.learningType,
+          confidenceScore: classification.confidenceScore,
+          entities: entities,
+          keyLearnings: keyLearnings,
+          questionsRaised: questionsRaised,
+        });
+        
+      } catch (error) {
+        console.error(`Error processing conversation ${conversation.id}:`, error);
+        // Store with defaults if extraction fails
+        enhancedData.set(conversation.id, {
+          ...embedding,
+          learningType: 'exploratory',
+          confidenceScore: 0.5,
+          entities: { technologies: [], concepts: [], people: [], resources: [], skills: [] },
+          keyLearnings: [],
+          questionsRaised: [],
+        });
+      }
+    }
+    
+    console.log(`Enhanced ${enhancedData.size} conversations with learning insights`);
+    
     // 4. Build kNN graph
     console.log('\nBuilding kNN graph...');
     const graphNodes: GraphNode[] = embeddings.map(emb => ({
@@ -290,8 +381,8 @@ async function main() {
     console.log(`Max degree: ${stats.maxDegree}`);
     console.log(`Edge density: ${(stats.density * 100).toFixed(4)}%`);
     
-    // 6. Store nodes in database
-    const idMap = await storeNodes(userId, embeddings);
+    // 6. Store nodes in database (with enhanced learning data)
+    const idMap = await storeNodes(userId, embeddings, enhancedData);
     
     // 7. Store edges in database
     await storeEdges(userId, edges, idMap);
