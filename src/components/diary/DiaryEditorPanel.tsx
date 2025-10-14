@@ -212,6 +212,11 @@ export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClo
   }, [title, body, category, onSave]);
 
   const handleClose = useCallback(() => {
+    // If this is a new, untouched entry, closing should discard it
+    if (entry.id === 'new' && !title.trim() && !body.trim()) {
+      onClose();
+      return;
+    }
     onClose();
   }, [onClose]);
 

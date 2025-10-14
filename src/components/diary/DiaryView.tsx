@@ -192,6 +192,21 @@ export const DiaryView: React.FC = () => {
     user_id: ''
   }), []);
 
+  // Placeholder card entry for a new (unsaved) editor session
+  const placeholderCardEntry: DiaryEntry | null = useMemo(() => {
+    if (editingEntry && editingEntry.id === 'new') {
+      return {
+        ...editingEntry,
+        title: 'New Diary Entry'
+      };
+    }
+    return null;
+  }, [editingEntry]);
+
+  const entriesForList: DiaryEntry[] = useMemo(() => {
+    return placeholderCardEntry ? [placeholderCardEntry, ...diaryEntries] : diaryEntries;
+  }, [placeholderCardEntry, diaryEntries]);
+
   const handleCreateNewEntry = () => {
     setEditingEntry(blankEntry);
   };
@@ -261,7 +276,7 @@ export const DiaryView: React.FC = () => {
         editingEntry ? (
           <div className="flex w-full overflow-x-hidden">
             <div className="flex-1 min-w-0 pr-4">
-              {diaryEntries.length === 0 ? (
+              {entriesForList.length === 0 ? (
                 <Card className="p-8 text-center">
                   <CardContent>
                     <h3 className="text-sm font-semibold mb-10">No diary entries yet</h3>
@@ -272,7 +287,7 @@ export const DiaryView: React.FC = () => {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 gap-4 auto-rows-min">
-                {diaryEntries.map((entry) => (
+                {entriesForList.map((entry) => (
                     <DiaryEntryCard
                       key={entry.id}
                       entry={entry}
@@ -306,7 +321,7 @@ export const DiaryView: React.FC = () => {
           </div>
         ) : (
           <div>
-            {diaryEntries.length === 0 ? (
+            {entriesForList.length === 0 ? (
               <Card className="p-8 text-center">
                 <CardContent>
                   <h3 className="text-sm font-semibold mb-10">No diary entries yet</h3>
@@ -317,7 +332,7 @@ export const DiaryView: React.FC = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-3 gap-4 auto-rows-min">
-                {diaryEntries.map((entry) => (
+                {entriesForList.map((entry) => (
                   <DiaryEntryCard
                     key={entry.id}
                     entry={entry}
