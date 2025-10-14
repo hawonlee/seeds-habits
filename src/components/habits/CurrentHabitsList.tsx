@@ -88,6 +88,7 @@ export const CurrentHabitsList = ({
   const [dragOverEnd, setDragOverEnd] = useState<boolean>(false);
   const [activeGapIndex, setActiveGapIndex] = useState<number | null>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
+  const dropHandledRef = useRef<boolean>(false);
 
   const handleDragStart = (habit: Habit) => {
     setDraggedHabitId(habit.id);
@@ -132,15 +133,10 @@ export const CurrentHabitsList = ({
     setActiveGapIndex(null);
   };
 
-  const handleDropAtGap = (e: React.DragEvent, gapIndex: number) => {
-    e.preventDefault();
-    if (!draggedHabitId || !onReorderHabits) return;
+  const commitReorderToGap = (gapIndex: number) => {
+    if (!draggedHabitId || !onReorderHabits) return false;
     const draggedIndex = habits.findIndex(h => h.id === draggedHabitId);
-    if (draggedIndex === -1) {
-      setDraggedHabitId(null);
-      setActiveGapIndex(null);
-      return;
-    }
+    if (draggedIndex === -1) return false;
     let insertIndex = gapIndex;
     if (draggedIndex < gapIndex) insertIndex = gapIndex - 1;
     const newHabits = [...habits];
@@ -148,6 +144,14 @@ export const CurrentHabitsList = ({
     newHabits.splice(insertIndex, 0, draggedHabit);
     const newOrder = newHabits.map(h => h.id);
     onReorderHabits(newOrder);
+    return true;
+  };
+
+  const handleDropAtGap = (e: React.DragEvent, gapIndex: number) => {
+    e.preventDefault();
+    if (commitReorderToGap(gapIndex)) {
+      dropHandledRef.current = true;
+    }
     setDraggedHabitId(null);
     setActiveGapIndex(null);
     setDragOverHabitId(null);
@@ -156,6 +160,11 @@ export const CurrentHabitsList = ({
   };
 
   const handleDragEnd = () => {
+    // If drop wasn't handled and the preview is at the bottom, reorder to last
+    if (!dropHandledRef.current && draggedHabitId && activeGapIndex === habits.length) {
+      commitReorderToGap(habits.length);
+    }
+    dropHandledRef.current = false;
     setDraggedHabitId(null);
     setDragOverHabitId(null);
     setActiveGapIndex(null);
@@ -268,9 +277,16 @@ export const CurrentHabitsList = ({
               }
             }}
             onDrop={(e) => {
-              if (activeGapIndex !== null) {
-                handleDropAtGap(e, activeGapIndex);
+              // If dropped below the container, force reorder to last
+              const container = listContainerRef.current;
+              if (container) {
+                const rect = container.getBoundingClientRect();
+                if (e.clientY > rect.bottom) {
+                  handleDropAtGap(e, habits.length);
+                  return;
+                }
               }
+              if (activeGapIndex !== null) handleDropAtGap(e, activeGapIndex);
             }}
           >
             {habits.map((habit, index) => (
@@ -279,10 +295,23 @@ export const CurrentHabitsList = ({
                 <div
                   onDragOver={(e) => {
                     e.preventDefault();
-                    if (draggedHabitId) setActiveGapIndex(index);
+                    if (!draggedHabitId) return;
+                    // If cursor is below the container, do not clear bottom indicator
+                    const container = listContainerRef.current;
+                    if (container) {
+                      const rect = container.getBoundingClientRect();
+                      if (e.clientY > rect.bottom) return;
+                    }
+                    setActiveGapIndex(index);
                   }}
                   onDragLeave={(e) => {
                     // Only clear if leaving the gap area entirely
+                    const container = listContainerRef.current;
+                    if (container) {
+                      const rect = container.getBoundingClientRect();
+                      // Do not clear when cursor is below container bottom
+                      if (e.clientY > rect.bottom) return;
+                    }
                     setActiveGapIndex((prev) => (prev === index ? null : prev));
                   }}
                   onDrop={(e) => handleDropAtGap(e, index)}
@@ -301,6 +330,14 @@ export const CurrentHabitsList = ({
                   onDragOver={(e) => {
                     e.preventDefault();
                     if (!draggedHabitId) return;
+                    const container = listContainerRef.current;
+                    if (container) {
+                      const crect = container.getBoundingClientRect();
+                      if (e.clientY > crect.bottom) {
+                        setActiveGapIndex(habits.length);
+                        return;
+                      }
+                    }
                     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                     const midpoint = rect.top + rect.height / 2;
                     const gapIndex = e.clientY < midpoint ? index : index + 1;
