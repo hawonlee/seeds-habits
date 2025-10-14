@@ -14,7 +14,7 @@ import { useDiaryEntries } from '@/hooks/useDiaryEntries';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchCategories, getCategories, FALLBACK_CATEGORIES, resolveCategoryBgColor, type Category } from '@/lib/categories';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, formatDateLocal } from '@/lib/utils';
 import { DiaryEntryCard } from './DiaryEntryCard';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { DiaryEditorPanel } from './DiaryEditorPanel';
@@ -62,7 +62,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
     e.preventDefault();
     if (!title.trim() || !body.trim() || !entryDate) return;
     
-    const dateString = entryDate.toISOString().split('T')[0];
+    const dateString = formatDateLocal(entryDate);
     onSave({ title: title.trim(), body: body.trim(), category, entry_date: dateString });
   };
 
@@ -186,7 +186,7 @@ export const DiaryView: React.FC = () => {
     title: '',
     body: '',
     category: 'none',
-    entry_date: new Date().toISOString().split('T')[0],
+    entry_date: formatDateLocal(new Date()),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     user_id: ''

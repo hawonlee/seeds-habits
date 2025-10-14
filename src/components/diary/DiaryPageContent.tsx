@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { formatDateLocal } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Plus, Home } from 'lucide-react';
@@ -21,7 +22,7 @@ export const DiaryPageContent: React.FC = () => {
     title: '',
     body: '',
     category: 'none',
-    entry_date: new Date().toISOString().split('T')[0],
+    entry_date: formatDateLocal(new Date()),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     user_id: ''

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { formatDateLocal } from '@/lib/utils';
 import { useDiaryEntries } from '@/hooks/useDiaryEntries';
 import { DiaryEditForm } from '@/components/diary/DiaryEditForm';
 import type { Database } from '@/integrations/supabase/types';
@@ -82,7 +83,7 @@ export const DiaryEditPage: React.FC = () => {
     title: '',
     body: '',
     category: 'none',
-    entry_date: new Date().toISOString().split('T')[0],
+    entry_date: formatDateLocal(new Date()),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     user_id: ''

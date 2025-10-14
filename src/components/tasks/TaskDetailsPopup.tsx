@@ -154,7 +154,10 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSave();
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSave();
+                    }
                     if (e.key === 'Escape') handleCancel();
                   }}
                   onBlur={handleSave}
@@ -167,7 +170,11 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
                   onChange={(e) => setEditNotes(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') handleCancel();
-                    if (e.key === 'Enter' && e.ctrlKey) handleSave();
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSave();
+                    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                      e.preventDefault();
+                      handleSave();
+                    }
                   }}
                   onBlur={handleSave}
                   className="text-xxs resize-none px-1 py-0.5 border-none min-h-[20px] text-muted-foreground bg-transparent overflow-hidden"
