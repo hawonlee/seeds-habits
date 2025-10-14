@@ -1,6 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import OpenAI from 'https://esm.sh/openai@4.28.0'
+
+// OpenAI SDK for Deno
+import OpenAI from 'npm:openai@4.52.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -194,13 +196,16 @@ serve(async (req) => {
     // Initialize OpenAI with secret key
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
+      console.error('OpenAI API key not found in environment')
       return new Response(
-        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        JSON.stringify({ error: 'OpenAI API key not configured in Supabase secrets' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    console.log('Initializing OpenAI client...')
     const openai = new OpenAI({ apiKey: openaiApiKey })
+    console.log(`Processing ${conversations.length} conversations...`)
 
     // Process conversations
     const processedConversations = []
@@ -353,8 +358,15 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing knowledge graph:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
+    const errorStack = error instanceof Error ? error.stack : ''
+    console.error('Error details:', { message: errorMessage, stack: errorStack })
+    
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ 
+        error: errorMessage,
+        details: 'Check Edge Function logs for more information'
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
