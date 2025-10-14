@@ -69,7 +69,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           <div className="flex items-center gap-2">
             <SegmentedToggle
               options={[
-                { value: 'list', label: 'List' },
+                { value: 'list', label: 'Habits' },
                 { value: 'tasks', label: 'Tasks' },
                 { value: 'diary', label: 'Diary' },
                 { value: 'calendar', label: 'Cal' },

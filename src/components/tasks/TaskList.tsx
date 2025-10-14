@@ -143,7 +143,6 @@ export const TaskListCard: React.FC<TaskListProps> = ({
   const endZoneId = `END_ZONE_${taskList.id}`;
   const endZone = useDroppable({ id: endZoneId });
   const listRef = useRef<HTMLDivElement>(null);
-  const lastPointerYRef = useRef<number>(0);
   const bottomThreshold = 16; // px buffer near bottom to trigger end indicator
 
   // Handle drag end
@@ -155,9 +154,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
     setOverPlacement(null);
     // If drop occurred outside any droppable but we were showing end indicator, move to last
     if (!over) {
-      const listRect = listRef.current?.getBoundingClientRect();
-      const isBelowBottom = listRect ? lastPointerYRef.current >= (listRect.bottom - bottomThreshold) : overEnd;
-      if (isBelowBottom && active?.id) {
+      if (overEnd && active?.id) {
         const oldIndex = tasks.findIndex((task) => task.id === active.id);
         if (oldIndex !== -1) {
           const reorderedTasks = arrayMove(tasks, oldIndex, tasks.length - 1);
@@ -194,26 +191,24 @@ export const TaskListCard: React.FC<TaskListProps> = ({
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    // Pointer Y for proximity calculations
-    const clientY = (event as any).activatorEvent?.clientY ?? (event as any).sensor?.coords?.y ?? 0;
-    lastPointerYRef.current = clientY;
-
-    // Always prioritize showing the end indicator if cursor is near/below list bottom
+    const clientY = (event.activatorEvent as MouseEvent)?.clientY ?? 0;
     const listRect = listRef.current?.getBoundingClientRect();
-    if (listRect && clientY >= listRect.bottom - bottomThreshold) {
-      setOverId(null);
-      setOverPlacement(null);
-      setOverEnd(true);
-      return;
+    const threshold = bottomThreshold;
+
+    if (listRect) {
+      if (clientY >= listRect.bottom - threshold) {
+        setOverEnd(true);
+        setOverId(null);
+        setOverPlacement(null);
+        return;
+      }
     }
 
-    if (!over) {
+    setOverEnd(false);
+
+    if (!over || over.id === active.id) {
       setOverId(null);
       setOverPlacement(null);
-      // Only clear when pointer is definitely above the bottom threshold
-      const rectCheck = listRef.current?.getBoundingClientRect();
-      const stillBelow = rectCheck ? lastPointerYRef.current >= (rectCheck.bottom - bottomThreshold) : false;
-      setOverEnd(stillBelow);
       return;
     }
     if (over.id === endZoneId) {
@@ -230,13 +225,10 @@ export const TaskListCard: React.FC<TaskListProps> = ({
     }
     const targetEl = document.querySelector(`[data-task-id="${over.id}"]`) as HTMLElement | null;
     if (!targetEl) return;
-    const targetRect = targetEl.getBoundingClientRect();
-    const midpoint = targetRect.top + targetRect.height / 2;
-    const pointerY = (event as any).delta ? targetRect.top + targetRect.height / 2 : (event as any).over?.rect?.top || (event as any).activatorEvent?.clientY || 0; // fallback
-    const y = clientY || pointerY;
+    const rect = targetEl.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
     setOverId(String(over.id));
-    setOverPlacement(y < midpoint ? 'before' : 'after');
-    setOverEnd(false);
+    setOverPlacement(clientY < midpoint ? 'before' : 'after');
   };
 
   const colorOptions = COLOR_OPTIONS.map(color => ({
@@ -409,7 +401,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
               {/* End-of-list drop zone indicator for after last task (dnd-kit droppable) */}
               {tasks.length > 0 && (
                 <div ref={endZone.setNodeRef} className="relative h-8">
-                  {(overEnd || (activeId && !overId)) && <ReorderIndicator className="top-0" />}
+                  {overEnd && <ReorderIndicator className="top-0" />}
                 </div>
               )}
               </div>
