@@ -234,14 +234,23 @@ serve(async (req) => {
     }
 
     // Parse conversation structure (extract messages from nested format)
-    const conversations = parseConversations(rawConversations)
+    const allConversations = parseConversations(rawConversations)
     
-    if (conversations.length === 0) {
+    if (allConversations.length === 0) {
       return new Response(
         JSON.stringify({ error: 'No valid conversations found in file' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // Limit to prevent timeout (Edge Functions have 150 second limit on free tier)
+    // Process most recent conversations first
+    const MAX_CONVERSATIONS = 50
+    const conversations = allConversations
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, MAX_CONVERSATIONS)
+    
+    console.log(`Processing ${conversations.length} of ${allConversations.length} total conversations (most recent)`)
 
     // Initialize OpenAI with secret key
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
@@ -436,8 +445,12 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         processed: processedConversations.length,
+        total: allConversations.length,
         nodes: insertedNodes.length,
         edges: edgesToInsert.length,
+        message: allConversations.length > MAX_CONVERSATIONS 
+          ? `Processed ${processedConversations.length} most recent conversations out of ${allConversations.length} total`
+          : `Processed all ${processedConversations.length} conversations`,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

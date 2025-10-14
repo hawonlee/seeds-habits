@@ -116,10 +116,11 @@ export async function processUploadedConversations(
     });
 
     // Complete!
+    const successMessage = data.message || `Knowledge graph created successfully! Processed ${data.processed} conversations.`;
     onProgress?.({
       stage: 'complete',
       progress: 100,
-      message: `Knowledge graph created successfully! Processed ${data.processed} conversations.`,
+      message: successMessage,
     });
 
   } catch (error) {
