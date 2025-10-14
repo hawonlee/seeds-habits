@@ -39,46 +39,43 @@ export const CurrentHabitsList = ({
   onRefreshHabits,
   onReorderHabits
 }: CurrentHabitsListProps) => {
-  const [currentWeek, setCurrentWeek] = useState(() => {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    return startOfWeek;
+  // Track a moving 7-day window whose last day (rightmost square) is viewEndDate
+  const [viewEndDate, setViewEndDate] = useState(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
   });
 
-  const getWeekDays = () => {
-    return Array.from({ length: 7 }, (_, i) => {
-      const day = new Date(currentWeek);
-      day.setDate(currentWeek.getDate() + i);
-      return day;
-    });
-  };
-
-  const weekDays = getWeekDays();
+  // Header day labels (Sun-Sat) remain constant; dates reflect the 7-day range ending at viewEndDate
+  const headerDays = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(viewEndDate);
+    day.setHours(0, 0, 0, 0);
+    day.setDate(viewEndDate.getDate() - (6 - i));
+    return day;
+  });
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const goToPreviousWeek = () => {
-    const newWeek = new Date(currentWeek);
-    newWeek.setDate(currentWeek.getDate() - 7);
-    setCurrentWeek(newWeek);
+    const next = new Date(viewEndDate);
+    next.setDate(viewEndDate.getDate() - 7);
+    setViewEndDate(next);
   };
 
   const goToNextWeek = () => {
-    const newWeek = new Date(currentWeek);
-    newWeek.setDate(currentWeek.getDate() + 7);
-    setCurrentWeek(newWeek);
+    const next = new Date(viewEndDate);
+    next.setDate(viewEndDate.getDate() + 7);
+    setViewEndDate(next);
   };
 
   const goToCurrentWeek = () => {
     const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    setCurrentWeek(startOfWeek);
+    today.setHours(0, 0, 0, 0);
+    setViewEndDate(today);
   };
 
   const formatWeekRange = () => {
-    const start = weekDays[0];
-    const end = weekDays[6];
+    const start = headerDays[0];
+    const end = headerDays[6];
     const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     return `${startStr} - ${endStr}`;
@@ -186,7 +183,7 @@ export const CurrentHabitsList = ({
               {/* Day Headers above checkbox columns */}
               <div className="flex items-center">
                 <div className="flex items-center">
-                  {weekDays.map((day, index) => {
+                  {headerDays.map((day, index) => {
                     const today = new Date();
                     const isToday = day.toDateString() === today.toDateString();
                     return (
@@ -253,8 +250,6 @@ export const CurrentHabitsList = ({
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, habit)}
                 className={`relative transition-all duration-200 select-none ${
-                  dragOverHabitId === habit.id ? 'opacity-50' : ''
-                } ${
                   draggedHabitId === habit.id ? 'opacity-30' : ''
                 }`}
               >
@@ -264,7 +259,7 @@ export const CurrentHabitsList = ({
                 <HabitCard
                   habit={habit}
                   adoptionThreshold={adoptionThreshold}
-                  currentWeek={currentWeek}
+                  viewEndDate={viewEndDate}
                   onEditHabit={onEditHabit}
                   onDeleteHabit={onDeleteHabit}
                   onUpdateHabit={onUpdateHabit}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DiaryEntryCard } from './DiaryEntryCard';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
+import { DiaryEditorPanel } from './DiaryEditorPanel';
 import type { Database } from '@/integrations/supabase/types';
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
@@ -163,16 +164,40 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
 
 export const DiaryView: React.FC = () => {
   const navigate = useNavigate();
-  const { diaryEntries, loading, deleteDiaryEntry } = useDiaryEntries();
+  const { diaryEntries, loading, deleteDiaryEntry, updateDiaryEntry, createDiaryEntry } = useDiaryEntries();
   const [deletingEntry, setDeletingEntry] = useState<DiaryEntry | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
+
+  const getMostRecentEntry = (entries: DiaryEntry[]): DiaryEntry | null => {
+    if (!entries || entries.length === 0) return null;
+    const sorted = [...entries].sort((a, b) => {
+      const aDate = new Date(`${a.entry_date}T00:00:00`).getTime();
+      const bDate = new Date(`${b.entry_date}T00:00:00`).getTime();
+      if (bDate !== aDate) return bDate - aDate;
+      // Tie-breaker: updated_at
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+    return sorted[0] || null;
+  };
+
+  const blankEntry: DiaryEntry = useMemo(() => ({
+    id: 'new',
+    title: '',
+    body: '',
+    category: 'none',
+    entry_date: new Date().toISOString().split('T')[0],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    user_id: ''
+  }), []);
 
   const handleCreateNewEntry = () => {
-    navigate('/diary/edit/new');
+    setEditingEntry(blankEntry);
   };
 
   const handleEditEntry = (entry: DiaryEntry) => {
-    navigate(`/diary/edit/${entry.id}`);
+    setEditingEntry(entry);
   };
 
   const handleDeleteClick = (entry: DiaryEntry) => {
@@ -185,6 +210,17 @@ export const DiaryView: React.FC = () => {
     setIsDeleting(true);
     try {
       await deleteDiaryEntry(deletingEntry.id);
+      // If the currently edited entry was deleted, switch to most recent remaining entry
+      if (editingEntry && editingEntry.id === deletingEntry.id) {
+        const remaining = diaryEntries.filter(e => e.id !== deletingEntry.id);
+        if (remaining.length === 0) {
+          // Close the editor when no entries remain
+          setEditingEntry(null);
+        } else {
+          const next = getMostRecentEntry(remaining);
+          setEditingEntry(next);
+        }
+      }
       setDeletingEntry(null);
     } catch (error) {
       console.error('Error deleting diary entry:', error);
@@ -196,6 +232,15 @@ export const DiaryView: React.FC = () => {
   const handleDeleteCancel = () => {
     setDeletingEntry(null);
   };
+
+  // Safety: if entries update and the currently edited entry no longer exists, switch to most recent
+  useEffect(() => {
+    // Do not override when creating a brand new entry (id === 'new')
+    if (editingEntry && editingEntry.id !== 'new' && !diaryEntries.find(e => e.id === editingEntry.id)) {
+      const next = getMostRecentEntry(diaryEntries);
+      setEditingEntry(next);
+    }
+  }, [diaryEntries, editingEntry]);
 
   return (
     <div className="">
@@ -212,31 +257,78 @@ export const DiaryView: React.FC = () => {
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : diaryEntries.length === 0 ? (
-        <Card className="p-8 text-center">
-          <CardContent>
-            <h3 className="text-sm font-semibold mb-10">No diary entries yet</h3>
-            <Button variant="default" onClick={handleCreateNewEntry}>
-              Create First Entry
-            </Button>
-          </CardContent>
-        </Card>
       ) : (
-        <div className="grid grid-cols-3 gap-4 auto-rows-min">
-          {diaryEntries.map((entry) => (
-            <DiaryEntryCard
-              key={entry.id}
-              entry={entry}
-              onEdit={handleEditEntry}
-              onDelete={(id) => {
-                const entryToDelete = diaryEntries.find(e => e.id === id);
-                if (entryToDelete) {
-                  handleDeleteClick(entryToDelete);
-                }
-              }}
-            />
-          ))}
-        </div>
+        editingEntry ? (
+          <div className="flex w-full overflow-x-hidden">
+            <div className="flex-1 min-w-0 pr-4">
+              {diaryEntries.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <CardContent>
+                    <h3 className="text-sm font-semibold mb-10">No diary entries yet</h3>
+                    <Button variant="default" onClick={handleCreateNewEntry}>
+                      Create First Entry
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 auto-rows-min">
+                {diaryEntries.map((entry) => (
+                    <DiaryEntryCard
+                      key={entry.id}
+                      entry={entry}
+                      isActive={editingEntry?.id === entry.id}
+                      onEdit={handleEditEntry}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="w-4/5 flex-none">
+              <DiaryEditorPanel
+                entry={editingEntry}
+                onClose={() => setEditingEntry(null)}
+                onSave={async (data) => {
+                  if (editingEntry.id === 'new') {
+                    const created = await createDiaryEntry(data);
+                    setEditingEntry(created);
+                  } else {
+                    await updateDiaryEntry(editingEntry.id, data);
+                  }
+                }}
+                onDelete={(id) => {
+                  const entryToDelete = diaryEntries.find(e => e.id === id);
+                  if (entryToDelete) {
+                    handleDeleteClick(entryToDelete);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div>
+            {diaryEntries.length === 0 ? (
+              <Card className="p-8 text-center">
+                <CardContent>
+                  <h3 className="text-sm font-semibold mb-10">No diary entries yet</h3>
+                  <Button variant="default" onClick={handleCreateNewEntry}>
+                    Create First Entry
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-3 gap-4 auto-rows-min">
+                {diaryEntries.map((entry) => (
+                  <DiaryEntryCard
+                    key={entry.id}
+                    entry={entry}
+                    isActive={editingEntry?.id === entry.id}
+                    onEdit={handleEditEntry}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )
       )}
 
       <DeleteConfirmationModal

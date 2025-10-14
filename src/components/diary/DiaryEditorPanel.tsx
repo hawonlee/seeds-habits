@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { CalendarIcon, Loader2, CheckCircle2, AlertTriangle, X, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchCategories, getCategories, FALLBACK_CATEGORIES, resolveCategoryBgColor, type Category } from '@/lib/categories';
@@ -19,9 +19,10 @@ interface DiaryEditorPanelProps {
   entry: DiaryEntry;
   onClose: () => void;
   onSave: (data: { title: string; body: string; category: string; entry_date: string }) => Promise<void> | void;
+  onDelete?: (id: string) => void;
 }
 
-export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClose, onSave }) => {
+export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClose, onSave, onDelete }) => {
   const { user } = useAuth();
   const [title, setTitle] = useState(entry.title);
   const [body, setBody] = useState(entry.body);
@@ -31,11 +32,13 @@ export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClo
   const [categories, setCategories] = useState<Category[]>(getCategories());
   const [loadingCategories, setLoadingCategories] = useState(false);
   const contentEditableRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const isMountedRef = useRef(true);
   const [hasUserTyped, setHasUserTyped] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -65,6 +68,11 @@ export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClo
     };
   }, []);
 
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setIsVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   const populateEntry = useCallback(() => {
     const safeBody = entry.body ?? '';
     setTitle(entry.title);
@@ -77,21 +85,33 @@ export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClo
     if (contentEditableRef.current) {
       const element = contentEditableRef.current;
       element.innerHTML = safeBody.replace(/\n/g, '<br>');
-      requestAnimationFrame(() => {
-        const selection = window.getSelection();
-        if (!selection) return;
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      });
+      // Only move cursor to body for existing entries; for new entries keep focus on title
+      if (entry.id !== 'new') {
+        requestAnimationFrame(() => {
+          const selection = window.getSelection();
+          if (!selection) return;
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        });
+      }
     }
   }, [entry.body, entry.category, entry.entry_date, entry.title]);
 
   useEffect(() => {
     populateEntry();
   }, [entry.id, populateEntry]);
+
+  // When creating a brand new entry, focus the title input initially
+  useEffect(() => {
+    if (entry.id === 'new') {
+      requestAnimationFrame(() => {
+        titleInputRef.current?.focus();
+      });
+    }
+  }, [entry.id]);
 
   const performSave = useCallback(async () => {
     if (!entryDate || !title.trim() || !hasUserTyped) {
@@ -191,20 +211,39 @@ export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClo
     }
   }, [title, body, category, onSave]);
 
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
   return (
-    <div className="w-full h-full border-l pl-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-sm font-medium">Edit Entry</div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+    <div className={cn(
+      "w-full h-full rounded-lg bg-habitbg p-4 transform transition-all duration-200 ease-out",
+      isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"
+    )}>
+      <div className="relative flex items-center justify-between">
+        {onDelete && (
+          <Button
+            variant="text"
+            size="text"
+            onClick={() => onDelete(entry.id)}
+            className="absolute top-0 right-8"
+            title="Delete entry"
+            aria-label="Delete entry"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+        <Button variant="text" size="text" onClick={handleClose} className="absolute top-0 right-0" title="Close editor" aria-label="Close editor">
           <X className="h-4 w-4" />
         </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-6">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Input
               id="title"
+            ref={titleInputRef}
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value);
@@ -212,11 +251,11 @@ export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClo
                 triggerAutosave();
               }}
               placeholder="Enter diary entry title"
-              className="text-2xl font-semibold border-none shadow-none p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="text-2xl bg-transparent font-semibold border-none shadow-none p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
               required
             />
 
-            <div className="flex items-center gap-2 text-xs text-muted-foreground w-48 justify-end">
+            <div className="flex items-end gap-2 text-xs text-muted-foreground w-48 justify-end mt-5">
               {isSaving ? (
                 <span className="inline-flex items-center gap-1 text-primary">
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -253,7 +292,7 @@ export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClo
           </div>
 
           <div className="flex items-center gap-2 mb-8">
-            <Select
+            {/* <Select
               value={category}
               onValueChange={(value) => {
                 setCategory(value);
@@ -290,7 +329,7 @@ export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClo
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </Select> */}
 
             <div className="space-y-2">
               <Popover
@@ -302,13 +341,14 @@ export const DiaryEditorPanel: React.FC<DiaryEditorPanelProps> = ({ entry, onClo
               >
                 <PopoverTrigger asChild>
                   <Button
-                    variant="ghost"
+                    variant="text"
+                    size="text"
                     className={cn(
                       "justify-start text-left font-normal",
                       !entryDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-1 h-4 w-4" />
+                    <CalendarIcon className="h-4 w-4" />
                     {entryDate ? format(entryDate, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>

@@ -89,7 +89,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
       >
         {/* Header */}
         <div className="p-5 flex-shrink-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-end">
           {/* <h2 className="text-xs font-medium text-foreground">Habits</h2> */}
             <Button
               onClick={onToggleCollapse}
@@ -100,7 +100,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               <PanelLeft className="h-4 w-4" />
             </Button>
 
-            <img src={logo} alt="logo" className="h-5 w-5" />
+            {/* <img src={logo} alt="logo" className="h-5 w-5" /> */}
 
           </div>
         </div>

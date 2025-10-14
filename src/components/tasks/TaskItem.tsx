@@ -68,7 +68,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
         className="transition-all duration-200 hover:bg-button-ghost-hover/40 rounded-sm px-1 flex items-center cursor-pointer"
         onClick={handleCardClick}
       >
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-2 w-full">
           {/* Checkbox */}
           <div data-prevent-click>
             <Checkbox
@@ -92,7 +92,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
 
               {/* Due Date */}
               {task.due_date && (
-                <div className="text-xxs text-muted-foreground mt-1" data-prevent-click>
+                <div className="text-xxs text-muted-foreground mt-1">
                   {formatDateOnly(task.due_date)}
                 </div>
               )}

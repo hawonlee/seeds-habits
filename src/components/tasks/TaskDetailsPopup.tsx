@@ -158,7 +158,7 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
                     if (e.key === 'Escape') handleCancel();
                   }}
                   onBlur={handleSave}
-                  className="h-5 text-xxs px-1 mb-[1.5px] bg-transparent border-none"
+                  className="h-[19px] text-xxs px-1 mb-[1.5px] bg-transparent border-none"
                   autoFocus
                 />
                 <Textarea
@@ -176,13 +176,13 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 -mt-0.5">
                 {isEditingDueDate ? (
                   <Popover open={isEditingDueDate} onOpenChange={setIsEditingDueDate}>
                     <PopoverTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xxs justify-end font-normal hover:bg-muted min-w-[60px]">
+                      <Button variant="text" size="sm" className="h-6 px-2 text-xxs justify-end font-normal min-w-[60px] text-muted-foreground hover:text-foreground">
                         {task.due_date ? (
-                          <span className="flex items-center gap-1 text-muted-foreground">
+                          <span className="text-muted-foreground hover:text-foreground">
                             <CalendarIcon size={12} />
                             {format(new Date(task.due_date), 'MMM d')}
                           </span>
@@ -208,10 +208,9 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
                       />
                     </PopoverContent>
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant="text"
+                      size="text"
                       onClick={handleDelete}
-                      className="h-6 w-6 p-0 hover:bg-muted text-destructive hover:text-destructive"
                       title="Delete task"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -220,27 +219,26 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
                 ) : (
                   <div className="flex items-center gap-1">
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant="text"
+                      size="text"
                       onClick={() => setIsEditingDueDate(true)}
-                      className="h-6 px-2 text-xxs justify-end font-normal hover:bg-muted min-w-[60px]"
+                      className="h-6 px-2 text-xxs justify-end font-normal min-w-[60px] transition-all duration-200 text-muted-foreground hover:text-foreground group"
                       title={task.due_date ? formatDateOnly(task.due_date) : 'Set due date'}
                     >
                       {task.due_date ? (
-                        <span className="flex items-center gap-1 text-muted-foreground">
+                        <span className="flex items-center gap-1 transition-all duration-200 text-muted-foreground group-hover:text-foreground">
                           <CalendarIcon size={12} />
                           {formatDateOnly(task.due_date)}
                         </span>
                       ) : (
-                        <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+                        <CalendarIcon className="h-3 w-3 transition-all duration-200 text-muted-foreground group-hover:text-foreground" />
                       )}
                     </Button>
 
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant="text"
+                      size="text"
                       onClick={handleDelete}
-                      className="h-6 w-6 p-0 hover:bg-muted text-destructive hover:text-destructive"
                       title="Delete task"
                     >
                       <Trash2 className="h-3 w-3" />

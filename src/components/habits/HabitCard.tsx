@@ -38,7 +38,7 @@ interface HabitCardProps {
   // Selected day for the week variant
   selectedDate?: Date;
   // Table variant helpers
-  currentWeek?: Date; // for table variant weekly checkboxes
+  viewEndDate?: Date; // for table variant: end date of 7-day window (last square)
 }
 
 export const HabitCard = ({
@@ -59,7 +59,7 @@ export const HabitCard = ({
   onCheckInForDate,
   onUndoCheckInForDate,
   selectedDate,
-  currentWeek
+  viewEndDate
 }: HabitCardProps) => {
   const [showInlineEdit, setShowInlineEdit] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -115,11 +115,20 @@ export const HabitCard = ({
     };
   };
 
-  const tableWeekSummary = getWeekSummary(currentWeek);
-  const tableWeekDays = tableWeekSummary.days;
+  // For the table variant, render the last 7 days ending at the provided viewEndDate, or today if none.
+  const endAnchor = (() => {
+    const anchor = viewEndDate ? new Date(viewEndDate) : new Date();
+    anchor.setHours(0, 0, 0, 0);
+    return anchor;
+  })();
+  const lastSevenDaysEndingAtAnchor = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(endAnchor);
+    day.setDate(endAnchor.getDate() - (6 - i));
+    return day;
+  });
   const tableProgress = isDailyHabit
-    ? getDailyProgress(today)
-    : getWeeklyProgress(currentWeek);
+    ? getDailyProgress(endAnchor)
+    : getWeeklyProgress(new Date(new Date(endAnchor).setDate(endAnchor.getDate() - endAnchor.getDay())));
 
   // Table variant - horizontal layout with weekly checkboxes
   if (variant === 'table') {
@@ -148,7 +157,7 @@ export const HabitCard = ({
 
           {/* Right side - Weekly day buttons */}
           <div className="flex items-center ml-4">
-            {tableWeekDays.map((day, index) => {
+            {lastSevenDaysEndingAtAnchor.map((day, index) => {
               const dayDone = completionHandlers.isDoneOnDate(day);
               const isToday = day.toDateString() === new Date().toDateString();
               const sizeClasses = isToday ? 'w-10 h-10' : 'w-6 h-6';
@@ -183,10 +192,10 @@ export const HabitCard = ({
           <div className="relative w-24 h-12">
             <div className={`absolute inset-0 flex items-center justify-end pr-3`}>
               <ProgressCircle
-                value={tableProgress.progressPct}
+                value={(isDailyHabit ? getDailyProgress(endAnchor) : getWeeklyProgress(new Date(new Date(endAnchor).setDate(endAnchor.getDate() - endAnchor.getDay())))).progressPct}
                 strokeWidth={5}
                 color={getCategoryCSSVariables(habit.category).primary}
-                label={`${tableProgress.completed}/${tableProgress.target}`}
+                label={`${(isDailyHabit ? getDailyProgress(endAnchor) : getWeeklyProgress(new Date(new Date(endAnchor).setDate(endAnchor.getDate() - endAnchor.getDay())))).completed}/${(isDailyHabit ? getDailyProgress(endAnchor) : getWeeklyProgress(new Date(new Date(endAnchor).setDate(endAnchor.getDate() - endAnchor.getDay())))).target}`}
               />
             </div>
           </div>
