@@ -5,6 +5,8 @@ import OpenAI from 'https://esm.sh/openai@4.28.0'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400', // 24 hours
 }
 
 // Conversation parsing types and functions (moved from client to avoid blocking browser)
@@ -118,7 +120,10 @@ function extractMessages(mapping: Record<string, ConversationNode>): Message[] {
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    })
   }
 
   try {
