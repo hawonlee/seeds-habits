@@ -12,6 +12,7 @@ import { Task, TaskList } from "@/hooks/useTasks";
 import { Filter, ListFilter, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import type { Database } from "@/integrations/supabase/types";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
@@ -51,11 +52,13 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
 
   const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'week' | 'day'>(getInitialViewMode);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [filter, setFilter] = useState<CalendarFilter>({
-    habits: true,
-    tasks: true,
-    diaries: true
-  });
+  const { calendarFilters, setCalendarFilters, ready: prefsReady } = useUserPreferences();
+  const [filter, setFilter] = useState<CalendarFilter>(calendarFilters);
+
+  // Keep local filter in sync with preferences load
+  useEffect(() => {
+    setFilter(calendarFilters);
+  }, [calendarFilters]);
 
   // Save view mode to localStorage whenever it changes
   useEffect(() => {
@@ -136,10 +139,12 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
   };
 
   const handleFilterChange = (key: keyof CalendarFilter) => {
-    setFilter(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
+    setFilter(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      // Persist to Supabase preferences
+      setCalendarFilters(next);
+      return next;
+    });
   };
 
   const getFilteredData = () => {
@@ -154,6 +159,13 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
   };
 
   const renderContent = () => {
+    if (!prefsReady) {
+      return (
+        <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+          Loading...
+        </div>
+      );
+    }
     const filteredData = getFilteredData();
     
     switch (calendarViewMode) {
@@ -274,6 +286,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
         <div className="h-full">
+          {/* Prevent flash of all items on calendar mount by using hydrated filter immediately */}
           {renderContent()}
         </div>
       </div>

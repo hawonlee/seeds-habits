@@ -1,21 +1,23 @@
-import React, { useMemo, useRef, useState } from 'react';
+"use client";
+import React, { useCallback, useState } from 'react';
 import {
   DndContext,
   closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
-  DragOverEvent,
-  useDroppable,
+  useDndContext,
+  DragOverlay,
 } from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
+// Local fallback for arrayMove
+function arrayMove<T>(arr: T[], from: number, to: number): T[] {
+  const copy = arr.slice();
+  if (from === to || from < 0 || to < 0 || from >= copy.length || to >= copy.length) return copy;
+  const [item] = copy.splice(from, 1);
+  copy.splice(to, 0, item);
+  return copy;
+}
 import ReorderIndicator from '@/components/ui/ReorderIndicator';
 
 type IdGetter<T> = (item: T) => string;
@@ -27,180 +29,193 @@ interface ReorderableListProps<T> {
   renderItem: RenderItem<T>;
   onReorder: (ids: string[]) => void;
   className?: string;
-  indicatorOffsetClassBefore?: string; // e.g., '-top-1.5' to center within gap above
-  indicatorOffsetClassAfter?: string;  // e.g., '-bottom-1.5' to center within gap below
 }
 
-function SortableRow<T extends { __id?: string }>(props: {
-  id: string;
-  children: React.ReactNode;
-  activeId?: string | null;
-  overId?: string | null;
-  overPlacement?: 'before' | 'after' | null;
-  indicatorOffsetClassBefore: string;
-  indicatorOffsetClassAfter: string;
-}) {
-  const { id, children, activeId, overId, overPlacement, indicatorOffsetClassBefore, indicatorOffsetClassAfter } = props;
-  const { setNodeRef, attributes, listeners } = useSortable({ id });
-  const isActive = activeId === id;
-
-  return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      data-task-id={id}
-      className={`relative ${isActive ? 'opacity-30' : ''}`}
-    >
-      {activeId && overId === id && activeId !== overId && overPlacement === 'before' && (
-        <ReorderIndicator className={indicatorOffsetClassBefore} />
-      )}
-      {children}
-      {activeId && overId === id && activeId !== overId && overPlacement === 'after' && (
-        <ReorderIndicator className={indicatorOffsetClassAfter} />
-      )}
-    </div>
-  );
-}
-
-export function ReorderableList<T>({ items, getId, renderItem, onReorder, className, indicatorOffsetClassBefore = '-top-0.5', indicatorOffsetClassAfter = '-bottom-0.5' }: ReorderableListProps<T>) {
+export function ReorderableList<T>({
+  items,
+  getId,
+  renderItem,
+  onReorder,
+  className,
+}: ReorderableListProps<T>) {
+  const ids = items.map(getId);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
     })
   );
 
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
-  const [overPlacement, setOverPlacement] = useState<'before' | 'after' | null>(null);
-  const [overEnd, setOverEnd] = useState<boolean>(false);
-  const listRef = useRef<HTMLDivElement>(null);
-  const bottomThreshold = 16;
-  const endZoneId = 'END_ZONE_GENERIC';
-  const endZone = useDroppable({ id: endZoneId });
+  const activeItem = activeId ? items.find((i) => getId(i) === activeId) : undefined;
 
-  const ids = useMemo(() => items.map(getId), [items, getId]);
+  const handleDragEnd = useCallback(({ active, over }: { active: any; over: any }) => {
+    // Compute reorder immediately to avoid flicker
+    setTargetIndex((currentTarget) => {
+      const fromIndex = ids.indexOf(active?.id as string);
+      if (fromIndex === -1) {
+        setActiveId(null);
+        return null;
+      }
 
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active?.id ?? null);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    const currentIds = ids;
-
-    setOverId(null);
-    setOverPlacement(null);
-
-    if (!over) {
-      if (overEnd && active?.id) {
-        const oldIndex = currentIds.findIndex((x) => x === active.id);
-        if (oldIndex !== -1) {
-          const reordered = arrayMove(currentIds, oldIndex, currentIds.length - 1);
-          onReorder(reordered);
+      let toIndex: number | null = null;
+      if (over?.id) {
+        const overIndex = ids.indexOf(over.id as string);
+        if (overIndex !== -1) {
+          const isMovingDown = fromIndex < overIndex;
+          toIndex = isMovingDown ? overIndex + 1 : overIndex;
         }
+      } else if (currentTarget != null) {
+        // Fallback to last computed targetIndex (e.g., hovering after last item)
+        toIndex = currentTarget;
       }
-      setOverEnd(false);
-      setActiveId(null);
-      return;
-    }
 
-    const oldIndex = currentIds.findIndex((x) => x === active.id);
-    if (oldIndex === -1) {
-      setActiveId(null);
-      setOverEnd(false);
-      return;
-    }
-
-    if (over.id === endZoneId) {
-      const reordered = arrayMove(currentIds, oldIndex, currentIds.length - 1);
-      onReorder(reordered);
-      setActiveId(null);
-      setOverEnd(false);
-      return;
-    }
-
-    if (active.id !== over.id) {
-      const newIndex = currentIds.findIndex((x) => x === over.id);
-      if (newIndex !== -1) {
-        const reordered = arrayMove(currentIds, oldIndex, newIndex);
-        onReorder(reordered);
+      if (toIndex == null) {
+        setActiveId(null);
+        return null;
       }
-    }
-    setActiveId(null);
-    setOverEnd(false);
-  };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    const clientY = (event.activatorEvent as MouseEvent)?.clientY ?? 0;
-    const listRect = listRef.current?.getBoundingClientRect();
-
-    if (listRect) {
-      if (clientY >= listRect.bottom - bottomThreshold) {
-        setOverEnd(true);
-        setOverId(null);
-        setOverPlacement(null);
-        return;
+      const adjusted = toIndex > fromIndex ? toIndex - 1 : toIndex;
+      const clamped = Math.max(0, Math.min(adjusted, ids.length - 1));
+      if (clamped !== fromIndex) {
+        const newOrder = arrayMove(ids, fromIndex, clamped);
+        onReorder(newOrder);
       }
-    }
-
-    setOverEnd(false);
-
-    if (!over || over.id === active.id) {
-      setOverId(null);
-      setOverPlacement(null);
-      return;
-    }
-
-    const targetEl = document.querySelector(`[data-task-id="${over.id}"]`) as HTMLElement | null;
-    if (!targetEl) return;
-    const rect = targetEl.getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
-    setOverId(String(over.id));
-    setOverPlacement(clientY < midpoint ? 'before' : 'after');
-  };
+      setActiveId(null);
+      return null;
+    });
+  }, [ids, onReorder]);
 
   return (
-    <div ref={listRef} className={className}>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-          <div className="space-y-0">
-            {items.map((item) => {
-              const id = getId(item);
-              return (
-                <SortableRow
-                  key={id}
-                  id={id}
-                  activeId={activeId}
-                  overId={overId}
-                  overPlacement={overPlacement}
-                  indicatorOffsetClassBefore={indicatorOffsetClassBefore}
-                  indicatorOffsetClassAfter={indicatorOffsetClassAfter}
-                >
-                  {renderItem(item, { isActive: activeId === id })}
-                </SortableRow>
-              );
-            })}
-
-            {items.length > 0 && (
-              <div ref={endZone.setNodeRef} className="relative h-8">
-                {overEnd && <ReorderIndicator className="top-1/2 -translate-y-1/2" />}
-              </div>
-            )}
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <InnerList
+        items={items}
+        ids={ids}
+        getId={getId}
+        renderItem={renderItem}
+        onReorder={onReorder}
+        className={className}
+        activeId={activeId}
+        setActiveId={setActiveId}
+        targetIndex={targetIndex}
+        setTargetIndex={setTargetIndex}
+      />
+      <DragOverlay>
+        {activeItem ? (
+          <div className="opacity-50 pointer-events-none">
+            {renderItem(activeItem as T, { isActive: true })}
           </div>
-        </SortableContext>
-      </DndContext>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+function InnerList<T>({
+  items,
+  ids,
+  getId,
+  renderItem,
+  onReorder,
+  className,
+  activeId,
+  setActiveId,
+  targetIndex,
+  setTargetIndex,
+}: {
+  items: T[];
+  ids: string[];
+  getId: IdGetter<T>;
+  renderItem: RenderItem<T>;
+  onReorder: (ids: string[]) => void;
+  className?: string;
+  activeId: string | null;
+  setActiveId: (id: string | null) => void;
+  targetIndex: number | null;
+  setTargetIndex: (i: number | null) => void;
+}) {
+  const { active, over } = useDndContext();
+
+  // --- Update targetIndex live ---
+  React.useEffect(() => {
+    if (!active) {
+      setActiveId(null);
+      setTargetIndex(null);
+      return;
+    }
+    setActiveId(active.id as string);
+
+    if (!over) return;
+
+    const oldIndex = ids.indexOf(active.id as string);
+    const overIndex = ids.indexOf(over.id as string);
+
+    if (overIndex === -1) return;
+
+    const isMovingDown = oldIndex < overIndex;
+    const newIndex = isMovingDown ? overIndex + 1 : overIndex;
+    setTargetIndex(newIndex);
+  }, [active, over, ids, setActiveId, setTargetIndex]);
+
+  // --- Handle drop ---
+  React.useEffect(() => {
+    // No-op here; actual reorder is handled synchronously in onDragEnd to avoid flicker
+    if (!active && activeId && targetIndex != null) {
+      setTargetIndex(null);
+    }
+  }, [active, activeId, targetIndex, ids, onReorder, setTargetIndex]);
+
+  return (
+    <div className={className ?? 'space-y-0 relative'}>
+      {items.map((item, i) => {
+        const id = getId(item);
+        const showBefore = targetIndex === i;
+        const showAfterLast = i === items.length - 1 && targetIndex === items.length;
+        return (
+          <React.Fragment key={id}>
+            <DroppableRow id={id}>
+              {showBefore && (
+                <ReorderIndicator
+                  className={`absolute top-0 left-0 right-0 ${i === 0 ? '' : '-translate-y-1/2'}`}
+                />
+              )}
+              {renderItem(item, { isActive: activeId === id })}
+              {showAfterLast && (
+                <ReorderIndicator className="absolute bottom-0 left-0 right-0" />
+              )}
+            </DroppableRow>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+function DroppableRow({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef: setDropRef } = useDroppable({ id });
+  const { attributes, listeners, setNodeRef: setDragRef } =
+    useDraggable({ id });
+
+  return (
+    <div
+      ref={(el) => {
+        setDropRef(el);
+        setDragRef(el);
+      }}
+      {...attributes}
+      {...listeners}
+      data-task-id={id}
+      className={`relative select-none`}
+    >
+      {children}
     </div>
   );
 }
 
 export default ReorderableList;
-
-

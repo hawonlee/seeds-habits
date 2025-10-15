@@ -84,7 +84,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
               <div className="flex-1 mt-1">
                 <h3 className="text-xxs">{task.title}</h3>
                 {task.description && (
-                  <p className="text-xxs text-muted-foreground mt-1 leading-relaxed">
+                  <p className="text-xxs text-muted-foreground leading-relaxed">
                     {truncateNotes(task.description)}
                   </p>
                 )}

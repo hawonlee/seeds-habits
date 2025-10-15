@@ -134,7 +134,7 @@ export const CurrentHabitsList = ({
                         key={index}
                         className={`flex items-center justify-center gap-1 min-w-[32px] w-12 text-center`}
                       >
-                        <div className={`text-xs font-medium p-2  ${isToday ? 'text-foreground' : 'text-muted-foreground'} `}>{dayNames[day.getDay()]}</div>
+                        <div className={`text-xs p-2  ${isToday ? 'font-semibold text-foreground' : 'font-normal text-muted-foreground'} `}>{dayNames[day.getDay()]}</div>
                         {/* <div className={`text-xs text-neutral-400  ${isToday ? 'text-white bg-red-300 rounded-sm' : ''}`}>{day.getDate()}</div> */}
                       </div>
                     );
@@ -178,9 +178,7 @@ export const CurrentHabitsList = ({
             items={habits}
             getId={(h) => h.id}
             onReorder={handleReorder}
-            className="space-y-3"
-            indicatorOffsetClassBefore="-top-1.5"
-            indicatorOffsetClassAfter="-bottom-1.5"
+            className="flex flex-col gap-2"
             renderItem={(habit) => (
               <HabitCard
                 habit={habit}

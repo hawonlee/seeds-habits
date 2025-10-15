@@ -161,7 +161,7 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
                     if (e.key === 'Escape') handleCancel();
                   }}
                   onBlur={handleSave}
-                  className="h-[19px] text-xxs px-1 mb-[1.5px] bg-transparent border-none"
+                  className="h-[19px] text-xxs px-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   autoFocus
                 />
                 <Textarea
@@ -177,8 +177,10 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
                     }
                   }}
                   onBlur={handleSave}
-                  className="text-xxs resize-none px-1 py-0.5 border-none min-h-[20px] text-muted-foreground bg-transparent overflow-hidden"
-                  placeholder="Add notes..."
+                  // className="text-xxs resize-none px-1 py-0 border-none min-h-[20px] text-muted-foreground/85 bg-transparent overflow-hidden focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/85"
+                  className="resize-none -mt-[0.5px] text-[0.7rem] px-1 py-0 border-none text-muted-foreground/80 min-h-[20px] text-muted-foreground bg-transparent overflow-hidden focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/80"
+
+                  placeholder="Notes"
                 />
               </div>
 

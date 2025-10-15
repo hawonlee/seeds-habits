@@ -7,7 +7,7 @@ interface ReorderIndicatorProps {
 export const ReorderIndicator: React.FC<ReorderIndicatorProps> = ({ className }) => {
   return (
     <div
-      className={`pointer-events-none absolute left-0 right-0 h-0.5 rounded-full bg-foreground/50 ${className || ''}`}
+      className={`pointer-events-none absolute left-0 right-0 h-0.5 rounded-full bg-foreground/50 z-20 ${className || ''}`}
       aria-hidden="true"
     />
   );

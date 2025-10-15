@@ -364,6 +364,13 @@ export const useHabits = () => {
     if (!user) return false;
 
     try {
+      // Optimistic update: reorder locally first to avoid UI delay
+      setHabits(prev => {
+        const habitsMap = new Map(prev.map(h => [h.id, h]));
+        const reordered = habitIds.map(id => habitsMap.get(id)).filter(Boolean) as Habit[];
+        return reordered;
+      });
+
       // Update positions for all habits in the new order
       const updates = habitIds.map((habitId, index) => ({
         id: habitId,
@@ -382,12 +389,6 @@ export const useHabits = () => {
         }
       }
 
-      // Update local state
-      setHabits(prev => {
-        const habitsMap = new Map(prev.map(h => [h.id, h]));
-        return habitIds.map(id => habitsMap.get(id)).filter(Boolean) as Habit[];
-      });
-
       // Invalidate cache
       invalidateHabitsCacheForUser(user.id);
 
@@ -399,6 +400,8 @@ export const useHabits = () => {
         description: "Failed to reorder habits",
         variant: "destructive",
       });
+      // Roll back on error by refetching
+      void fetchHabits();
       return false;
     }
   };

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -287,14 +288,36 @@ export const DiaryView: React.FC = () => {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 gap-4 auto-rows-min">
-                {entriesForList.map((entry) => (
-                    <DiaryEntryCard
-                      key={entry.id}
-                      entry={entry}
-                      isActive={editingEntry?.id === entry.id}
-                      onEdit={handleEditEntry}
-                    />
-                  ))}
+                  {(() => {
+                    const nodes: React.ReactNode[] = [];
+                    let currentMonthKey: string | null = null;
+
+                    for (const entry of entriesForList) {
+                      const entryDate = new Date(entry.entry_date);
+                      const monthKey = format(entryDate, 'yyyy-MM');
+                      if (monthKey !== currentMonthKey) {
+                        currentMonthKey = monthKey;
+                        nodes.push(
+                          <div key={`divider-${monthKey}`} className="flex items-center gap-2">
+                            <div className="text-xs text-muted-foreground font-normal whitespace-nowrap">
+                              {format(entryDate, 'MMMM yyyy')}
+                            </div>
+                            <Separator className="flex-1" />
+                          </div>
+                        );
+                      }
+                      nodes.push(
+                        <DiaryEntryCard
+                          key={entry.id}
+                          entry={entry}
+                          isActive={editingEntry?.id === entry.id}
+                          onEdit={handleEditEntry}
+                        />
+                      );
+                    }
+
+                    return nodes;
+                  })()}
                 </div>
               )}
             </div>
@@ -332,14 +355,36 @@ export const DiaryView: React.FC = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-3 gap-4 auto-rows-min">
-                {entriesForList.map((entry) => (
-                  <DiaryEntryCard
-                    key={entry.id}
-                    entry={entry}
-                    isActive={editingEntry?.id === entry.id}
-                    onEdit={handleEditEntry}
-                  />
-                ))}
+                {(() => {
+                  const nodes: React.ReactNode[] = [];
+                  let currentMonthKey: string | null = null;
+
+                  for (const entry of entriesForList) {
+                    const entryDate = new Date(entry.entry_date);
+                    const monthKey = format(entryDate, 'yyyy-MM');
+                    if (monthKey !== currentMonthKey) {
+                      currentMonthKey = monthKey;
+                      nodes.push(
+                        <div key={`divider-${monthKey}`} className="col-span-3 flex items-center gap-2">
+                          <div className="text-xs text-muted-foreground font-normal whitespace-nowrap">
+                            {format(entryDate, 'MMMM yyyy')}
+                          </div>
+                          <Separator className="flex-1" />
+                        </div>
+                      );
+                    }
+                    nodes.push(
+                      <DiaryEntryCard
+                        key={entry.id}
+                        entry={entry}
+                        isActive={editingEntry?.id === entry.id}
+                        onEdit={handleEditEntry}
+                      />
+                    );
+                  }
+
+                  return nodes;
+                })()}
               </div>
             )}
           </div>

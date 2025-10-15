@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { formatDateLocal } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Plus, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +10,7 @@ import { DiaryEntryCard } from './DiaryEntryCard';
 import { DiaryEditModal } from './DiaryEditModal';
 import { DiaryEditorPanel } from './DiaryEditorPanel';
 import type { Database } from '@/integrations/supabase/types';
+import { format } from 'date-fns';
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
@@ -85,14 +87,35 @@ export const DiaryPageContent: React.FC = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              {diaryEntries.map((entry) => (
-                <DiaryEntryCard
-                  key={entry.id}
-                  entry={entry}
-                  onEdit={setEditingEntry}
-                  onDelete={handleDeleteEntry}
-                />
-              ))}
+              {(() => {
+                const nodes: React.ReactNode[] = [];
+                let currentMonthKey: string | null = null;
+
+                for (const entry of diaryEntries) {
+                  const entryDate = new Date(entry.entry_date);
+                  const monthKey = format(entryDate, 'yyyy-MM');
+                  if (monthKey !== currentMonthKey) {
+                    currentMonthKey = monthKey;
+                    nodes.push(
+                      <div key={`divider-${monthKey}`} className="flex items-center gap-2 mt-6 mb-2">
+                        <div className="text-xs text-muted-foreground font-bold whitespace-nowrap">
+                          {format(entryDate, 'MMMM yyyy')}
+                        </div>
+                        <Separator className="flex-1" />
+                      </div>
+                    );
+                  }
+                  nodes.push(
+                    <DiaryEntryCard
+                      key={entry.id}
+                      entry={entry}
+                      onEdit={setEditingEntry}
+                    />
+                  );
+                }
+
+                return nodes;
+              })()}
             </div>
           )}
         </div>

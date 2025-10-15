@@ -39,13 +39,13 @@ export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({ entry, onEdit, i
             <div className="pb-3">
                 <div className="flex items-start justify-between">
                     <div className="flex-1">
-                        <div className="text-sm">{entry.title}</div>
+                        <div className="text-xs font-medium">{entry.title}</div>
                         <div className="flex items-center gap-2 mt-1 text-xs">
-                            {entry.category !== 'none' && (
+                            {/* {entry.category !== 'none' && (
                                 <Badge categoryId={entry.category}>
                                     {getCategoryById(entry.category)?.name || entry.category}
                                 </Badge>
-                            )}
+                            )} */}
                             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                                 {entryDate.toLocaleDateString()}
                             </div>
