@@ -14,6 +14,7 @@ import { LoadingScreen, EmptyState } from '@/components/knowledge/LoadingScreen'
 import { ErrorBoundary, DataLoadError, isWebGLSupported } from '@/components/knowledge/ErrorBoundary';
 import { UploadPrompt, UploadButton } from '@/components/knowledge/UploadPrompt';
 import { userHasKnowledgeGraph } from '@/lib/knowledge/processUpload';
+import { recomputeKnowledgeGraph } from '@/lib/knowledge/recomputeGraph';
 import { useGraphFilters } from '@/hooks/useGraphFilters';
 import { Button } from '@/components/ui/button';
 import { Brain, RefreshCw, AlertCircle, Box, Grid3x3, SlidersHorizontal, Download, Camera } from 'lucide-react';
@@ -34,6 +35,8 @@ export default function KnowledgeGraph() {
   const [showControls, setShowControls] = useState(true);
   const [hasData, setHasData] = useState<boolean | null>(null);
   const [checkingData, setCheckingData] = useState(true);
+  const [isRecomputing, setIsRecomputing] = useState(false);
+  const [recomputeMessage, setRecomputeMessage] = useState<string | null>(null);
   
   // Graph filters
   const {
@@ -97,6 +100,27 @@ export default function KnowledgeGraph() {
   const handleUploadComplete = () => {
     setHasData(true);
     refetch();
+  };
+
+  // Handle recompute
+  const handleRecompute = async () => {
+    setIsRecomputing(true);
+    setRecomputeMessage(null);
+    try {
+      await recomputeKnowledgeGraph((progress) => {
+        setRecomputeMessage(progress.message);
+        if (progress.nextStep) {
+          // Show modal with instructions
+          alert(`Next step: ${progress.nextStep}`);
+        }
+      });
+      // Refetch graph data
+      refetch();
+    } catch (error) {
+      setRecomputeMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsRecomputing(false);
+    }
   };
 
   // Show loading while checking if user has data
@@ -187,6 +211,18 @@ export default function KnowledgeGraph() {
               Refresh
             </Button>
             
+            {/* Recompute Graph button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRecompute}
+              disabled={isRecomputing}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRecomputing ? 'animate-spin' : ''}`} />
+              {isRecomputing ? 'Recomputing...' : 'Recompute Graph'}
+            </Button>
+            
             {/* Export dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -244,6 +280,13 @@ export default function KnowledgeGraph() {
             resultCount={filteredData.nodes.length}
           />
         </div>
+
+        {/* Recompute message */}
+        {recomputeMessage && (
+          <Alert>
+            <AlertDescription>{recomputeMessage}</AlertDescription>
+          </Alert>
+        )}
       </div>
 
       {/* Main Content */}

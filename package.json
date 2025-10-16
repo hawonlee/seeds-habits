@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "build-lkg": "tsx src/scripts/buildLKG.ts",
-    "verify-conversations": "tsx src/scripts/verifyConversations.ts"
+    "verify-conversations": "tsx src/scripts/verifyConversations.ts",
+    "umap-project": "tsx src/scripts/fetchAndProjectUMAP.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

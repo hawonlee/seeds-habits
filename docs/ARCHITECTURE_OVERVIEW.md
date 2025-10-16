@@ -1045,6 +1045,106 @@ const [isAnimating, setIsAnimating] = useState(false);
 <Stars speed={0} fade={false} />
 ```
 
+### Global Recomputation & UMAP (POC - Manual Process)
+
+**Current Limitation**: For POC (up to 5 users), UMAP runs locally via manual script.
+
+**Problem**: 
+- Initial upload limited to 15 conversations per batch
+- Edges only computed within each batch
+- No way to reprocess all user data after multiple uploads
+- Node positions are arbitrary (no semantic clustering)
+
+**Solution**: Manual global recomputation system
+
+#### Workflow
+
+1. **User clicks "Recompute Graph" button** in the UI
+2. **Edge Function recomputes kNN edges** across ALL user nodes (not just 15-conversation batches)
+3. **User runs local Node.js script** to:
+   - Fetch embeddings from Supabase
+   - Call Python UMAP script (projects 3072D → 3D using cosine metric)
+   - Upload x,y,z coordinates back to database
+4. **User refreshes page** to see semantic layout
+
+#### Hybrid Strategy
+
+Only recomputes if node count grew >20% since last run:
+
+```typescript
+const growthRate = (currentNodes - lastRecomputeNodes) / lastRecomputeNodes
+if (growthRate < 0.2) {
+  return { skipped: true, message: "Need >20% growth to recompute" }
+}
+```
+
+This prevents unnecessary recomputation for small incremental uploads.
+
+#### Technical Details
+
+**Database Schema**:
+```sql
+-- Store UMAP coordinates on nodes
+ALTER TABLE lkg_nodes ADD COLUMN x numeric;
+ALTER TABLE lkg_nodes ADD COLUMN y numeric;
+ALTER TABLE lkg_nodes ADD COLUMN z numeric;
+
+-- Track recomputation history
+CREATE TABLE lkg_recompute_metadata (
+  id uuid PRIMARY KEY,
+  user_id uuid REFERENCES auth.users,
+  node_count_at_recompute int,
+  edges_created int,
+  umap_computed boolean,
+  created_at timestamp
+);
+```
+
+**Edge Function**: `recompute-knowledge-graph`
+- Fetches ALL nodes for user (no 15-limit)
+- Computes O(N²) kNN edges with k=5, threshold=0.25
+- Deletes old edges, inserts new edges
+- Records metadata for hybrid strategy
+
+**Local Script**: `npm run umap-project -- <user_id>`
+- Requires Python 3.8+ with `umap-learn`
+- Requires Supabase service role key
+- Takes 30-90 seconds for 50-100 nodes
+
+**UMAP Configuration**:
+```python
+reducer = umap.UMAP(
+    n_neighbors=15,      # Balance local vs global structure
+    min_dist=0.1,        # Minimum spacing between points
+    n_components=3,      # 3D output
+    metric='cosine',     # Semantic similarity
+    random_state=42,     # Reproducibility
+)
+```
+
+#### Why This Design?
+
+**For POC** (≤5 users):
+- ✅ No infrastructure cost (runs locally)
+- ✅ Fast to implement (no microservice deployment)
+- ✅ Easy to iterate (change UMAP parameters locally)
+- ❌ Poor UX (multi-step manual process)
+- ❌ Requires technical setup (Python + service key)
+
+**For Production** (see `docs/knowledge-graph/FUTURE_SCALING.md`):
+- Move UMAP to separate Python microservice (AWS Lambda)
+- Add background job queue (Upstash QStash)
+- Implement incremental UMAP (transform new nodes into existing space)
+- Add Realtime sync for live updates
+
+#### Documentation
+
+- **Setup Guide**: `docs/knowledge-graph/UMAP_GUIDE.md`
+- **Scaling Plan**: `docs/knowledge-graph/FUTURE_SCALING.md`
+- **Edge Function Code**: `supabase/functions/recompute-knowledge-graph/index.ts`
+- **Client Function**: `src/lib/knowledge/recomputeGraph.ts`
+- **Local Script**: `src/scripts/fetchAndProjectUMAP.ts`
+
 ---
 
 ## Performance & Optimization
