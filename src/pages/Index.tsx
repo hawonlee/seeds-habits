@@ -389,7 +389,7 @@ const Index = () => {
             }}
           >
             <ResizablePanel
-              defaultSize={55}
+              defaultSize={40}
               minSize={20}
               collapsible
               collapsedSize={3}
@@ -509,7 +509,7 @@ const Index = () => {
             </ResizablePanel>
             <ResizableHandle  />
             <ResizablePanel
-              defaultSize={110}
+              defaultSize={60}
               minSize={40}
               collapsible
               collapsedSize={0}

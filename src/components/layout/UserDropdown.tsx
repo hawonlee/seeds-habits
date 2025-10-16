@@ -4,10 +4,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { User, Settings, LogOut } from "lucide-react";
 
 interface UserDropdownProps {
-  user: any;
-  profile: any;
-  displayName: string;
-  userInitials: string;
+  user: any | null | undefined;
+  profile: any | null | undefined;
+  displayName?: string;
+  userInitials?: string;
   onOpenSettings: () => void;
   onSignOut: () => void;
 }
@@ -20,6 +20,10 @@ export const UserDropdown = ({
   onOpenSettings,
   onSignOut
 }: UserDropdownProps) => {
+  const safeEmail: string = (profile && profile.email) || (user && user.email) || "";
+  const safeDisplayName: string = displayName || (profile && profile.name) || (user && (user.name || (user.email ? user.email.split('@')[0] : ''))) || 'User';
+  const safeInitials: string = (userInitials && userInitials.trim())
+    || safeDisplayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -31,7 +35,7 @@ export const UserDropdown = ({
             <Avatar className="h-7 w-7">
               {/* <AvatarImage src={profile?.avatar_url || ""} alt={displayName} /> */}
               <AvatarFallback className="text-foreground bg-habitbg hover:bg-habitbghover transition-colors duration-200">
-                {userInitials || <User className="h-5 w-5" />}
+                {safeInitials || <User className="h-5 w-5" />}
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -39,8 +43,8 @@ export const UserDropdown = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56 mb-2">
         <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{displayName}</p>
-          <p className="text-xs text-muted-foreground">{profile?.email || user.email}</p>
+          <p className="text-sm font-medium">{safeDisplayName}</p>
+          <p className="text-xs text-muted-foreground">{safeEmail}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onOpenSettings}>
