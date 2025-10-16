@@ -12,6 +12,7 @@ import { useHabitCompletionsContext } from "@/components/HabitCompletionsProvide
 import { shouldHabitBeScheduledOnDate } from "./calendarFrequency";
 import { CalendarDiaryItem } from "@/components/calendar/CalendarDiaryItem";
 import type { Database } from "@/integrations/supabase/types";
+import { TimeGrid } from "./TimeGrid";
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
@@ -176,6 +177,18 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
     return allTasks;
   };
 
+  const getUntimedForDate = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const dueTasks = (tasks || []).filter(task => task.due_date && new Date(task.due_date).toISOString().split('T')[0] === dateString);
+    const scheduledTaskIds = getScheduledTasksFromCalendarItems(date);
+    const scheduledTasks = (tasks || []).filter(task => scheduledTaskIds.includes(task.id));
+    const allTasks = [...dueTasks];
+    scheduledTasks.forEach(t => { if (!allTasks.some(x => x.id === t.id)) allTasks.push(t); });
+    // Habits: already computed via plannedHabits + myHabits for the day
+    const diariesForDay = getDiaryEntriesForDate(date);
+    return { habits: [...plannedHabits, ...myHabits], tasks: allTasks, diaries: diariesForDay };
+  };
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -229,7 +242,7 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
     >
       <div>
         <div className="space-y-6">
-          <div className="flex text-xs items-center gap-2">
+          <div className="flex text-xs items-center gap-2 px-4">
             <div className="">
               {currentDate.toLocaleDateString('en-US', { weekday: 'long' })}
             </div>
@@ -237,259 +250,67 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
               <span className="">{currentDate.getDate()}</span>
             </div>
           </div>
-          {/* Quick Summary - First 4 items */}
-          {(() => {
-            const allItems: Array<{ type: 'habit' | 'task' | 'diary'; data: any; completed?: boolean }> = [
-              ...completedHabits.map(habit => ({ type: 'habit' as const, data: habit, completed: true })),
-              ...plannedHabits.map(habit => ({ type: 'habit' as const, data: habit, completed: false })),
-              ...myHabits.map(habit => ({ type: 'habit' as const, data: habit, completed: false })),
-              ...getTasksForDate(currentDate).map(task => ({ type: 'task' as const, data: task })),
-              ...getDiaryEntriesForDate(currentDate).map(entry => ({ type: 'diary' as const, data: entry }))
-            ];
-            
-            if (allItems.length > 0) {
+
+          {/* Time grid for the day */}
+          <TimeGrid
+            mode="day"
+            currentDate={currentDate}
+            startHour={0}
+            endHour={24}
+            stepMinutes={30}
+            maxHeight={670}
+            untimedAreaHeight={120}
+            renderUntimed={(day) => {
+              const { habits: habitsForDay, tasks: tasksForDay, diaries: diariesForDay } = getUntimedForDate(day);
+              const scheduledTaskIds = getScheduledTasksFromCalendarItems(day);
               return (
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-neutral-700 mb-3">Today's Overview</h3>
-                  <div className="grid gap-2">
-                    {allItems.map((item, index) => {
-                      if (item.type === 'habit') {
-                        const isScheduled = isHabitScheduledOnDate(item.data.id, currentDate);
-                        return (
-                          <CalendarHabitItem
-                            key={item.data.id}
-                            habit={item.data}
-                            date={currentDate}
-                            isCompleted={item.completed || false}
-                            onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
-                            isScheduled={isScheduled}
-                            onUnschedule={onHabitUnschedule}
-                          />
-                        );
-                      } else if (item.type === 'task') {
-                        const taskList = taskLists.find(list => list.id === item.data.task_list_id);
-                        const isScheduled = getScheduledTasksFromCalendarItems(currentDate).includes(item.data.id);
-                        return (
-                          <TaskCalendarItem
-                            key={item.data.id}
-                            task={item.data}
-                            date={currentDate}
-                            taskList={taskList}
-                            onToggleComplete={onTaskToggleComplete || (() => {})}
-                            onUnschedule={(taskId, taskDate) => {
-                              if (onTaskDelete) {
-                                onTaskDelete(taskId, taskDate);
-                              }
-                            }}
-                            isScheduled={isScheduled}
-                          />
-                        );
-                      } else if (item.type === 'diary') {
-                        return (
-                          <CalendarDiaryItem
-                            key={item.data.id}
-                            entry={item.data}
-                            date={currentDate}
-                            onClick={onDiaryEntryClick}
-                          />
-                        );
-                      }
-                      return null;
-                    })}
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          })()}
-
-          {/* Completed Habits */
-          }
-          {completedHabits.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold text-green-700 mb-4 flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                Completed Habits ({completedHabits.length})
-              </h3>
-              <div className="grid gap-3">
-                {completedHabits.map(habit => {
-                  const isScheduled = isHabitScheduledOnDate(habit.id, currentDate);
-                  const handleRightClick = (e: React.MouseEvent) => {
-                    if (isScheduled && onHabitUnschedule) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onHabitUnschedule(habit.id, currentDate);
-                    }
-                  };
-                  return (
-                    <div key={habit.id} onContextMenu={handleRightClick}>
-                      <HabitCard
-                        habit={habit}
-                        adoptionThreshold={7}
-                        onCheckIn={() => handleHabitCheckIn(habit, currentDate, isHabitCompletedOnDate(habit.id, currentDate))}
-                        onUndoCheckIn={() => handleHabitCheckIn(habit, currentDate, true)}
-                        onMoveHabit={() => {}}
-                        variant="week"
-                        weekStartDate={weekStartDate}
-                        isCompletedOnDate={isHabitCompletedOnDate}
-                        selectedDate={currentDate}
-                        onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
-                        onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Planned Habits */}
-          {plannedHabits.length > 0 && (
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-                Planned Habits ({plannedHabits.length})
-              </h3>
-              <div className="grid gap-3">
-                {plannedHabits.map(habit => {
-                  const isScheduled = isHabitScheduledOnDate(habit.id, currentDate);
-                  const handleRightClick = (e: React.MouseEvent) => {
-                    if (isScheduled && onHabitUnschedule) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onHabitUnschedule(habit.id, currentDate);
-                    }
-                  };
-                  return (
-                    <div key={habit.id} onContextMenu={handleRightClick}>
-                      <HabitCard
-                        habit={habit}
-                        adoptionThreshold={7}
-                        onCheckIn={() => handleHabitCheckIn(habit, currentDate, isHabitCompletedOnDate(habit.id, currentDate))}
-                        onUndoCheckIn={() => handleHabitCheckIn(habit, currentDate, true)}
-                        onMoveHabit={() => {}}
-                        variant="week"
-                        weekStartDate={weekStartDate}
-                        isCompletedOnDate={isHabitCompletedOnDate}
-                        selectedDate={currentDate}
-                        onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
-                        onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* My Habits */}
-          {myHabits.length > 0 && (
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-                My Habits ({myHabits.length})
-              </h3>
-              <div className="grid gap-3">
-                {myHabits.map(habit => {
-                  const isScheduled = isHabitScheduledOnDate(habit.id, currentDate);
-                  const handleRightClick = (e: React.MouseEvent) => {
-                    if (isScheduled && onHabitUnschedule) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onHabitUnschedule(habit.id, currentDate);
-                    }
-                  };
-                  return (
-                    <div key={habit.id} onContextMenu={handleRightClick}>
-                      <HabitCard
-                        habit={habit}
-                        adoptionThreshold={7}
-                        onCheckIn={() => handleHabitCheckIn(habit, currentDate, isHabitCompletedOnDate(habit.id, currentDate))}
-                        onUndoCheckIn={() => handleHabitCheckIn(habit, currentDate, true)}
-                        onMoveHabit={() => {}}
-                        variant="week"
-                        weekStartDate={weekStartDate}
-                        isCompletedOnDate={isHabitCompletedOnDate}
-                        selectedDate={currentDate}
-                        onCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, isHabitCompletedOnDate(habit.id, d))}
-                        onUndoCheckInForDate={(id, d) => handleHabitCheckIn(habit, d, true)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Tasks */}
-          {getTasksForDate(currentDate).length > 0 && (
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-                Tasks ({getTasksForDate(currentDate).length})
-              </h3>
-              <div className="grid gap-3">
-                {getTasksForDate(currentDate).map(task => {
-                  const taskList = taskLists.find(list => list.id === task.task_list_id);
-                  const isScheduled = getScheduledTasksFromCalendarItems(currentDate).includes(task.id);
-                  return (
-                    <div key={task.id}>
+                <div className="flex flex-col gap-2">
+                  {habitsForDay.map(habit => (
+                    <CalendarHabitItem
+                      key={`untimed-h-${habit.id}`}
+                      habit={habit}
+                      date={day}
+                      isCompleted={isHabitCompletedOnDate(habit.id, day)}
+                      onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
+                      isScheduled={isHabitScheduledOnDate(habit.id, day)}
+                      onUnschedule={onHabitUnschedule}
+                    />
+                  ))}
+                  {tasksForDay.map(task => {
+                    const taskList = taskLists?.find(list => list.id === task.task_list_id);
+                    return (
                       <TaskCalendarItem
+                        key={`untimed-t-${task.id}`}
                         task={task}
-                        date={currentDate}
+                        date={day}
                         taskList={taskList}
                         onToggleComplete={onTaskToggleComplete || (() => {})}
                         onUnschedule={(taskId, taskDate) => {
-                          if (onTaskDelete) {
-                            onTaskDelete(taskId, taskDate);
-                          }
+                          if (onTaskDelete) onTaskDelete(taskId, taskDate);
                         }}
-                        isScheduled={isScheduled}
+                        isScheduled={scheduledTaskIds.includes(task.id)}
                       />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+                    );
+                  })}
+                  {diariesForDay.map(entry => (
+                    <CalendarDiaryItem
+                      key={`untimed-d-${entry.id}`}
+                      entry={entry}
+                      date={day}
+                      onClick={onDiaryEntryClick}
+                    />
+                  ))}
+                </div>
+              );
+            }}
+            onSlotClick={(dt) => {
+              // Placeholder: later we will open a scheduler for tasks/habits with time ranges
+              console.log('Clicked time slot:', dt.toString());
+            }}
+          />
+          
 
-          {/* Diary Entries */}
-          {/* {getDiaryEntriesForDate(currentDate).length > 0 && (
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-                Diary Entries ({getDiaryEntriesForDate(currentDate).length})
-              </h3>
-              <div className="grid gap-3">
-                {getDiaryEntriesForDate(currentDate).map(entry => (
-                  <div key={entry.id} onClick={() => onDiaryEntryClick?.(entry)} className="cursor-pointer">
-                    <Card className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm mb-1">{entry.title}</h4>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {entry.body}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )} */}
-
-          {/* No habits message */}
-          {activeHabits.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <CalendarIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p className="text-xl font-medium">No active habits</p>
-              <p className="text-sm">
-                {isFuture 
-                  ? "No habits are planned for this day" 
-                  : "No habits were active on this day"
-                }
-              </p>
-            </div>
-          )}
+          
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import {X} from 'lucide-react';
 
 interface CalendarItemProps {
   children: React.ReactNode;
@@ -30,7 +31,7 @@ export const CalendarItem: React.FC<CalendarItemProps> = ({
   showDeleteButton = false,
   onDelete
 }) => {
-  const baseClasses = "text-xs px-1 rounded flex items-center gap-1.5 truncate h-5";
+  const baseClasses = "text-xxs px-1 rounded flex items-center gap-1.5 truncate h-5";
   
   const variantClasses = {
     default: "",
@@ -68,7 +69,7 @@ export const CalendarItem: React.FC<CalendarItemProps> = ({
           aria-label="Delete"
           title="Delete"
         >
-          ×
+          <X className="w-3.5 h-3.5" />
         </button>
       )}
     </div>

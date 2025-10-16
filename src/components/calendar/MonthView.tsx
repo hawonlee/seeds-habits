@@ -95,12 +95,12 @@ const DayCell = ({
           onDragLeave={onDragLeave}
           onDrop={onDrop}
         >
-          <div className="p-1 h-full">
+          <div className="p-[1px] h-full">
             <div className="calendar-cell-inner h-full bg-habitbg rounded-md p-2 flex flex-col">
               {/* Date number */}
-              <div className="h-8 flex items-center justify-end mb-1">
+              <div className="flex items-center justify-end mb-1">
                 <div className={`
-                  text-xs font-medium
+                  text-xs font-medium p-1
                   ${isToday ? 'text-white bg-red-600 rounded-full w-6 h-6 flex items-center justify-center' : ''}
                   ${!isToday && isCurrentMonth ? 'text-foreground' : ''}
                   ${!isToday && !isCurrentMonth ? 'text-muted-foreground' : ''}
@@ -483,21 +483,21 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
   return (
     <div className="w-full focus:outline-none">
       {/* Day headers above the table */}
       <div className="grid grid-cols-7 mb-2 px-1">
         {dayNames.map(day => (
-          <div key={day} className="text-center text-xs font-normal text-neutral-600">
+          <div key={day} className="text-center text-xs font-normal text-muted-foreground">
             {day}
           </div>
         ))}
       </div>
       
       {/* Scrollable calendar container */}
-      <div className="h-[630px] overflow-y-auto overflow-x-hidden scrollbar-hide focus:outline-none">
+      <div className="h-[680px] overflow-y-auto overflow-x-hidden scrollbar-hide focus:outline-none px-4">
         <div className="grid grid-cols-7">
         {/* Calendar days */}
         {days.map((date, index) => {

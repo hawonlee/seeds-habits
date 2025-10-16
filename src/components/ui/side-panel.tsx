@@ -21,6 +21,8 @@ interface SidePanelProps {
   minWidth?: number;
   maxWidth?: number;
   position?: 'left' | 'right';
+  onCollapseOther?: () => void; // optional: collapse the opposite side when this panel grows too wide
+  otherMinWidth?: number; // px: minimum width the other side should have before collapsing
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({
@@ -36,7 +38,9 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   initialWidth = 320,
   minWidth = 240,
   maxWidth = 520,
-  position = 'left'
+  position = 'left',
+  onCollapseOther,
+  otherMinWidth = 480
 }) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -54,6 +58,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [panelWidth, setPanelWidth] = useState<number>(initialWidth);
   const [isResizing, setIsResizing] = useState<boolean>(false);
+  const collapseOnReleaseRef = useRef<boolean>(false);
+  const collapseOtherOnReleaseRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -65,9 +71,27 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         : e.clientX - rect.left;
       const clamped = Math.max(minWidth, Math.min(maxWidth, proposed));
       setPanelWidth(clamped);
+      // If the user drags past the min width threshold, mark for collapse on release
+      const overshoot = minWidth - proposed; // positive when dragging past min
+      collapseOnReleaseRef.current = overshoot > 12; // 12px grace
+      // If this panel grows enough that the other side would be below its min width, mark to collapse it
+      const containerWidth = containerRef.current.parentElement?.getBoundingClientRect().width || window.innerWidth;
+      const otherWidth = containerWidth - clamped;
+      collapseOtherOnReleaseRef.current = otherWidth < otherMinWidth - 12; // grace
       e.preventDefault();
     };
-    const handleMouseUp = () => setIsResizing(false);
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      if (collapseOnReleaseRef.current && !isCollapsed) {
+        // Auto-collapse the panel when released past min width
+        onToggleCollapse();
+        collapseOnReleaseRef.current = false;
+      }
+      if (collapseOtherOnReleaseRef.current && onCollapseOther) {
+        onCollapseOther();
+        collapseOtherOnReleaseRef.current = false;
+      }
+    };
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     return () => {
@@ -79,7 +103,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`${isCollapsed ? 'w-0' : ''} fixed bg-side-panel-bg md:relative ${position === 'right' ? 'right-0' : 'left-0'} top-0 bottom-0 z-40 md:z-auto h-full bg-background overflow-hidden ${pointerClass} ${className} ${isResizing ? 'transition-none' : 'transition-all duration-300 ease-in-out'} ${position === 'right' ? 'border-l border-border' : 'border-r border-border'} shadow-lg md:shadow-none`}
+      className={`${isCollapsed ? 'w-0' : ''} ${position === 'right' ? '' : 'relative'} fixed md:relative ${position === 'right' ? 'right-0' : 'left-0'} top-0 bottom-0 z-40 md:z-auto h-full bg-background overflow-hidden ${pointerClass} ${className} ${isResizing ? 'transition-none' : 'transition-all duration-300 ease-in-out'} ${position === 'right' ? 'border-l border-border' : 'border-r border-border'} shadow-lg md:shadow-none`}
       style={{ width: isCollapsed ? 0 : panelWidth }}
       aria-hidden={isCollapsed}
     >

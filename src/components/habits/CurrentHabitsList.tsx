@@ -6,6 +6,7 @@ import { Habit } from "@/hooks/useHabits";
 import { HabitCard } from "./HabitCard";
 import { CategoryManager } from "./CategoryManager";
 import { useState } from "react";
+import { useContainerWidth } from "@/hooks/useContainerWidth";
 import { ReorderableList } from "@/components/ui/ReorderableList";
 
 interface CurrentHabitsListProps {
@@ -84,9 +85,12 @@ export const CurrentHabitsList = ({
   // Reordered via ReorderableList
 
   const handleReorder = (ids: string[]) => onReorderHabits?.(ids);
+  const { ref, width } = useContainerWidth<HTMLDivElement>();
+  const isNarrow = width > 0 && width < 720; // threshold for compacting
+
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
+    <div ref={ref} className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <h2 className="text-sm font-medium h-10 flex items-center">Current Habits</h2>
         <div>
           <CategoryManager adoptionThreshold={adoptionThreshold} onChangeAdoptionThreshold={onChangeAdoptionThreshold} />
@@ -100,7 +104,8 @@ export const CurrentHabitsList = ({
           </Button>
         </div>
       </div>
-      
+
+      <div className="flex-1 min-h-0 overflow-y-auto">
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -112,67 +117,71 @@ export const CurrentHabitsList = ({
           <p className="text-sm text-left">No active habits</p>
         </div>
       ) : (
-        <div className="rounded-lg overflow-hidden">
+        <div className="rounded-lg">
           {/* Week Navigation */}
-          <div className="flex justify-between pb-4">
-            <div className="flex items-center justify-center gap-10">
-              <div className="text-xs font-medium text-muted-foreground">
-                {formatWeekRange()}
+          {!isNarrow && (
+            <div className="flex justify-between pb-4">
+              <div className="flex items-center justify-center gap-10">
+                <div className="text-xs font-medium text-muted-foreground">
+                  {formatWeekRange()}
+                </div>
+
               </div>
 
-            </div>
+              <div className="flex items-center justify-center gap-4">
+                {/* Day Headers above checkbox columns */}
 
-            <div className="flex items-center justify-center gap-4">
-              {/* Day Headers above checkbox columns */}
-              <div className="flex items-center">
                 <div className="flex items-center">
-                  {headerDays.map((day, index) => {
-                    const today = new Date();
-                    const isToday = day.toDateString() === today.toDateString();
-                    return (
-                      <div
-                        key={index}
-                        className={`flex items-center justify-center gap-1 min-w-[32px] w-12 text-center`}
-                      >
-                        <div className={`text-xs p-2  ${isToday ? 'font-semibold text-foreground' : 'font-normal text-muted-foreground'} `}>{dayNames[day.getDay()]}</div>
-                        {/* <div className={`text-xs text-neutral-400  ${isToday ? 'text-white bg-red-300 rounded-sm' : ''}`}>{day.getDate()}</div> */}
-                      </div>
-                    );
-                  })}
+                  <div className="flex items-center">
+                    {headerDays.map((day, index) => {
+                      const today = new Date();
+                      const isToday = day.toDateString() === today.toDateString();
+                      return (
+                        <div
+                          key={index}
+                          className={`flex items-center justify-center gap-1 min-w-[32px] w-12 text-center`}
+                        >
+                          <div className={`text-xs p-2  ${isToday ? 'font-semibold text-foreground' : 'font-normal text-muted-foreground'} `}>{dayNames[day.getDay()]}</div>
+                          {/* <div className={`text-xs text-neutral-400  ${isToday ? 'text-white bg-red-300 rounded-sm' : ''}`}>{day.getDate()}</div> */}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-  
-              <div className="flex items-center justify-end w-24 h-6">
-                <div className="flex items-center justify-end">
-                  <Button
-                    variant="ghost"
-                    size={undefined}
-                    onClick={goToPreviousWeek}
-                    className="h-6 w-6 p-0 min-w-0 min-h-0 text-xs"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size={undefined}
-                    onClick={goToCurrentWeek}
-                    className="h-6 px-3 text-xs font-medium min-w-0 min-h-0"
-                  >
-                    Today
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size={undefined}
-                    onClick={goToNextWeek}
-                    className="h-6 w-6 p-0 min-w-0 min-h-0 text-xs"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
 
-          </div>
+
+                <div className="flex items-center justify-end w-24 h-6">
+                  <div className="flex items-center justify-end">
+                    <Button
+                      variant="ghost"
+                      size={undefined}
+                      onClick={goToPreviousWeek}
+                      className="h-6 w-6 p-0 min-w-0 min-h-0 text-xs"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size={undefined}
+                      onClick={goToCurrentWeek}
+                      className="h-6 px-3 text-xs font-medium min-w-0 min-h-0"
+                    >
+                      Today
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size={undefined}
+                      onClick={goToNextWeek}
+                      className="h-6 w-6 p-0 min-w-0 min-h-0 text-xs"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )}
 
           <ReorderableList
             items={habits}
@@ -190,13 +199,14 @@ export const CurrentHabitsList = ({
                 onCheckIn={onCheckIn}
                 onUndoCheckIn={onUndoCheckIn}
                 onMoveHabit={onMoveHabit}
-                variant="table"
+                variant={isNarrow ? 'default' : 'table'}
                 draggable={false}
               />
             )}
           />
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -8,7 +8,8 @@ import { useHabitSchedules } from "@/hooks/useHabitSchedules";
 import { useCalendarItems } from "@/hooks/useCalendarItems";
 import { useTasks } from "@/hooks/useTasks";
 import { CurrentHabitsList } from "@/components/habits/CurrentHabitsList";
-import { SidePanel } from "@/components/ui/side-panel";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import * as ResizablePrimitive from "react-resizable-panels";
 import { ExternalPanelToggle } from "@/components/ui/external-panel-toggle";
 import { CurrentHabitsSidePanel } from "@/components/layout/CurrentHabitsSidePanel";
 import { FutureAdoptedHabitsSidePanel } from "@/components/layout/FutureAdoptedHabitsSidePanel";
@@ -27,12 +28,17 @@ import { SegmentedToggle } from "@/components/ui/segmented-toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LandingPage } from "@/pages/LandingPage";
 import { TasksView } from "@/components/tasks/TasksView";
-import { CalendarSidePanel } from "@/components/layout/CalendarSidePanel";
+// import { CalendarSidePanel } from "@/components/layout/CalendarSidePanel";
 import {
   Loader2,
   Calendar,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  PanelLeft,
+  PanelRight,
+  CalendarIcon,
+  ListIcon,
+  Settings
 } from "lucide-react";
 
 
@@ -55,6 +61,12 @@ const Index = () => {
   const [showAdoptionSettings, setShowAdoptionSettings] = useState(false);
   const [adoptionThreshold, setAdoptionThreshold] = useState(21);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [isCalendarPanelCollapsed, setIsCalendarPanelCollapsed] = useState(true);
+  const [layout, setLayout] = useState<number[] | undefined>([55, 45]);
+  const mainPanelRef = useRef<ResizablePrimitive.ImperativePanelHandle | null>(null);
+  const calendarPanelRef = useRef<ResizablePrimitive.ImperativePanelHandle | null>(null);
+  const [mainCollapsed, setMainCollapsed] = useState(false);
+  const [calendarCollapsed, setCalendarCollapsed] = useState(false);
   const [showDiary, setShowDiary] = useState(false);
   const [showTasks, setShowTasks] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
@@ -63,20 +75,25 @@ const Index = () => {
   useEffect(() => {
     if (location.pathname === '/calendar') {
       setShowCalendar(true);
+      setIsCalendarPanelCollapsed(false);
       setShowDiary(false);
       setShowTasks(false);
+      setLayout([0, 100]);
     } else if (location.pathname === '/diary') {
       setShowCalendar(false);
       setShowDiary(true);
       setShowTasks(false);
+      setLayout([55, 45]);
     } else if (location.pathname === '/tasks') {
       setShowCalendar(false);
       setShowDiary(false);
       setShowTasks(true);
+      setLayout([55, 45]);
     } else {
       setShowCalendar(false);
       setShowDiary(false);
       setShowTasks(false);
+      setLayout([55, 45]);
     }
   }, [location.pathname]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -93,6 +110,7 @@ const Index = () => {
 
   // Panel collapse states
   const [isCombinedPanelCollapsed, setIsCombinedPanelCollapsed] = useState(true);
+  const [isMainCollapsed, setIsMainCollapsed] = useState(false);
 
   const totalPoints = habits.filter(h => h.phase === 'adopted').reduce((sum, h) => sum + h.points, 0);
   const currentHabits = habits.filter(h => h.phase === 'current');
@@ -115,6 +133,7 @@ const Index = () => {
       streak: 0,
       total_completions: 0,
       points: 0,
+      position: 0,
     };
 
     await addHabit(habitData);
@@ -355,21 +374,148 @@ const Index = () => {
           />
         )}
 
-        {/* Habit Dashboard */}
-        <div className="h-full flex">
-          {/* Main Content Area */}
-          <div className="flex-1 h-full">
-            <MainLayout
-              showCalendar={showCalendar}
-              showDiary={showDiary}
-              showTasks={showTasks}
-              onViewChange={handleViewChange}
-              isCombinedPanelCollapsed={isCombinedPanelCollapsed}
-              onTogglePanel={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
+        {/* Habit Dashboard - resizable panels */}
+        <div className="h-full">
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="h-full"
+            onLayout={(sizes) => {
+              setLayout(sizes);
+              // Track collapsed state based on size percentages
+              const leftIsCollapsed = sizes[0] <= 12;
+              const rightIsCollapsed = sizes[1] <= 0.1;
+              if (leftIsCollapsed !== mainCollapsed) setMainCollapsed(leftIsCollapsed);
+              if (rightIsCollapsed !== calendarCollapsed) setCalendarCollapsed(rightIsCollapsed);
+            }}
+          >
+            <ResizablePanel
+              defaultSize={55}
+              minSize={20}
+              collapsible
+              collapsedSize={3}
+              ref={mainPanelRef}
             >
-              {showDiary ? (
-                <DiaryView />
-              ) : showCalendar ? (
+              <div className={`h-full bg-background`}>
+                {mainCollapsed ? (
+                  <div className="h-full w-full py-7 px-1 flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground select-none">
+                    <Button
+                      size="text"
+                      variant="text"
+                      className=""
+                      onClick={() => {
+                        // Expand to the panel's minSize (20%) when reopening
+                        (mainPanelRef.current as any)?.expand?.();
+                        requestAnimationFrame(() => {
+                          (mainPanelRef.current as any)?.setSize?.(20);
+                        });
+                        setMainCollapsed(false);
+                      }}
+                      title="Show content"
+                    >
+                      <PanelLeft className="h-4 w-4" />
+                    </Button>
+                   
+                      <UserDropdown
+                        user={user}
+                        profile={profile}
+                        displayName={profile?.name || user?.email || 'User'}
+                        userInitials={(profile?.name || user?.email || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)}
+                        onOpenSettings={() => setShowUserSettings(true)}
+                        onSignOut={signOut}
+                      />
+                    </div>
+                  
+                ) : (
+                  <MainLayout
+                    showCalendar={showCalendar}
+                    showDiary={showDiary}
+                    showTasks={showTasks}
+                    onViewChange={handleViewChange}
+                    isCombinedPanelCollapsed={isCombinedPanelCollapsed}
+                    onTogglePanel={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
+                    isCalendarPanelCollapsed={calendarCollapsed}
+                    onToggleCalendarPanel={() => {
+                      if (calendarCollapsed) calendarPanelRef.current?.expand(); else calendarPanelRef.current?.collapse();
+                    }}
+                    isMainCollapsed={mainCollapsed}
+                    onToggleMainCollapsed={() => {
+                      if (mainCollapsed) mainPanelRef.current?.expand(); else mainPanelRef.current?.collapse();
+                    }}
+                  >
+                    {showDiary ? (
+                      <DiaryView />
+                    ) : showCalendar ? (
+                      <CurrentHabitsList
+                        habits={currentHabits}
+                        loading={habitsLoading || !hasLoaded}
+                        onAddHabit={() => {
+                          setAddToPhase('current');
+                          setNewHabit({
+                            title: '',
+                            notes: '',
+                            category: 'none',
+                            target_value: 1,
+                            target_unit: 'day',
+                            custom_days: [],
+                            leniency_threshold: 2
+                          });
+                          setIsAddDialogOpen(true);
+                        }}
+                        adoptionThreshold={adoptionThreshold}
+                        onChangeAdoptionThreshold={setAdoptionThreshold}
+                        onEditHabit={handleEditHabit}
+                        onDeleteHabit={handleDeleteHabit}
+                        onUpdateHabit={handleInlineUpdateHabit}
+                        onCheckIn={handleCheckIn}
+                        onUndoCheckIn={handleUndoCheckIn}
+                        onMoveHabit={handleMoveHabit}
+                        onRefreshHabits={refreshHabits}
+                        onReorderHabits={reorderHabits}
+                      />
+                    ) : showTasks ? (
+                      <TasksView />
+                    ) : (
+                      <CurrentHabitsList
+                        habits={currentHabits}
+                        loading={habitsLoading || !hasLoaded}
+                        onAddHabit={() => {
+                          setAddToPhase('current');
+                          setNewHabit({
+                            title: '',
+                            notes: '',
+                            category: 'none',
+                            target_value: 1,
+                            target_unit: 'day',
+                            custom_days: [],
+                            leniency_threshold: 2
+                          });
+                          setIsAddDialogOpen(true);
+                        }}
+                        adoptionThreshold={adoptionThreshold}
+                        onChangeAdoptionThreshold={setAdoptionThreshold}
+                        onEditHabit={handleEditHabit}
+                        onDeleteHabit={handleDeleteHabit}
+                        onUpdateHabit={handleInlineUpdateHabit}
+                        onCheckIn={handleCheckIn}
+                        onUndoCheckIn={handleUndoCheckIn}
+                        onMoveHabit={handleMoveHabit}
+                        onRefreshHabits={refreshHabits}
+                        onReorderHabits={reorderHabits}
+                      />
+                    )}
+                  </MainLayout>
+                )}
+              </div>
+            </ResizablePanel>
+            <ResizableHandle  />
+            <ResizablePanel
+              defaultSize={110}
+              minSize={40}
+              collapsible
+              collapsedSize={0}
+              ref={calendarPanelRef}
+            >
+              <div className="h-full">
                 <UnifiedCalendar
                   habits={habits}
                   schedules={schedules}
@@ -387,110 +533,9 @@ const Index = () => {
                   onTaskDelete={handleTaskDelete}
                   onDiaryEntryClick={handleDiaryEntryClick}
                 />
-              ) : showTasks ? (
-                <TasksView />
-              ) : (
-                <CurrentHabitsList
-                  habits={currentHabits}
-                  loading={habitsLoading || !hasLoaded}
-                  onAddHabit={() => {
-                    setAddToPhase('current');
-                    setNewHabit({
-                      title: '',
-                      notes: '',
-                      category: 'none',
-                      target_value: 1,
-                      target_unit: 'day',
-                      custom_days: [],
-                      leniency_threshold: 2
-                    });
-                    setIsAddDialogOpen(true);
-                  }}
-                  adoptionThreshold={adoptionThreshold}
-                  onChangeAdoptionThreshold={setAdoptionThreshold}
-                  onEditHabit={handleEditHabit}
-                  onDeleteHabit={handleDeleteHabit}
-                  onUpdateHabit={handleInlineUpdateHabit}
-                  onCheckIn={handleCheckIn}
-                  onUndoCheckIn={handleUndoCheckIn}
-                  onMoveHabit={handleMoveHabit}
-                  onRefreshHabits={refreshHabits}
-                  onReorderHabits={reorderHabits}
-                />
-              )}
-            </MainLayout>
-          </div>
-
-          {/* Side Panel */}
-          <SidePanel
-            isCollapsed={isCombinedPanelCollapsed}
-            onToggleCollapse={() => setIsCombinedPanelCollapsed(!isCombinedPanelCollapsed)}
-            title={showCalendar ? "Calendar Items" : "Future & Adopted"}
-            onOpenSettings={() => setShowUserSettings(true)}
-            onSignOut={signOut}
-            position="right"
-          >
-            {habitsLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <div className="h-5 w-5 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
-                  Loading panel...
-                </div>
               </div>
-            ) : showCalendar ? (
-              <CalendarSidePanel
-                tasks={tasks}
-                taskLists={taskLists}
-                onToggleComplete={handleTaskToggleComplete}
-                habits={currentHabits}
-                onAddHabit={() => {
-                  setAddToPhase('current');
-                  setNewHabit({
-                    title: '',
-                    notes: '',
-                    category: 'none',
-                    target_value: 1,
-                    target_unit: 'day',
-                    custom_days: [],
-                    leniency_threshold: 2
-                  });
-                  setIsAddDialogOpen(true);
-                }}
-                adoptionThreshold={adoptionThreshold}
-                onCheckIn={handleCheckIn}
-                onUndoCheckIn={handleUndoCheckIn}
-                onMoveHabit={handleMoveHabit}
-                onEditHabit={handleEditHabit}
-                onDeleteHabit={handleDeleteHabit}
-                onDragStart={handleDragStart}
-              />
-            ) : (
-              <FutureAdoptedHabitsSidePanel
-                futureHabits={futureHabits}
-                adoptedHabits={adoptedHabits}
-                onAddHabit={(phase) => {
-                  setAddToPhase(phase);
-                  setNewHabit({
-                    title: '',
-                    notes: '',
-                    category: 'none',
-                    target_value: 1,
-                    target_unit: 'day',
-                    custom_days: [],
-                    leniency_threshold: 2
-                  });
-                  setIsAddDialogOpen(true);
-                }}
-                adoptionThreshold={adoptionThreshold}
-                onEditHabit={handleEditHabit}
-                onDeleteHabit={handleDeleteHabit}
-                onUpdateHabit={handleInlineUpdateHabit}
-                onCheckIn={handleCheckIn}
-                onUndoCheckIn={handleUndoCheckIn}
-                onMoveHabit={handleMoveHabit}
-              />
-            )}
-          </SidePanel>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
 
         {/* Removed overlay DayHabitsDialog in favor of inline popovers in calendar views */}

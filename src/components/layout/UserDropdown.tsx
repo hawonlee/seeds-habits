@@ -26,11 +26,11 @@ export const UserDropdown = ({
         <div className="focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
           <Button 
             variant="ghost" 
-            className="h-8 w-8 rounded-full p-0 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none hover:bg-transparent"
+            className="h-7 w-7 rounded-full p-0 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none hover:bg-transparent"
           >
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={profile?.avatar_url || ""} alt={displayName} />
-              <AvatarFallback>
+            <Avatar className="h-7 w-7">
+              {/* <AvatarImage src={profile?.avatar_url || ""} alt={displayName} /> */}
+              <AvatarFallback className="text-foreground bg-habitbg hover:bg-habitbghover transition-colors duration-200">
                 {userInitials || <User className="h-5 w-5" />}
               </AvatarFallback>
             </Avatar>

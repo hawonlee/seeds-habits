@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useContainerWidth } from '@/hooks/useContainerWidth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -258,9 +259,12 @@ export const DiaryView: React.FC = () => {
     }
   }, [diaryEntries, editingEntry]);
 
+  const { ref, width } = useContainerWidth<HTMLDivElement>();
+  const cols = width < 560 ? 1 : width < 900 ? 2 : 3;
+
   return (
-    <div className="">
-      <div className="flex items-center justify-between mb-4 h-10">
+    <div ref={ref} className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4 h-10 flex-shrink-0">
         <div>
           <h1 className="text-sm font-medium">Diary</h1>
         </div>
@@ -269,6 +273,7 @@ export const DiaryView: React.FC = () => {
         </Button>
       </div>
 
+      <div className="flex-1 min-h-0 overflow-y-auto">
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -354,7 +359,7 @@ export const DiaryView: React.FC = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-3 gap-4 auto-rows-min">
+              <div className="grid gap-4 auto-rows-min" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
                 {(() => {
                   const nodes: React.ReactNode[] = [];
                   let currentMonthKey: string | null = null;
@@ -365,7 +370,7 @@ export const DiaryView: React.FC = () => {
                     if (monthKey !== currentMonthKey) {
                       currentMonthKey = monthKey;
                       nodes.push(
-                        <div key={`divider-${monthKey}`} className="col-span-3 flex items-center gap-2">
+                        <div key={`divider-${monthKey}`} className="col-span-full flex items-center gap-2">
                           <div className="text-xs text-muted-foreground font-normal whitespace-nowrap">
                             {format(entryDate, 'MMMM yyyy')}
                           </div>
@@ -390,6 +395,7 @@ export const DiaryView: React.FC = () => {
           </div>
         )
       )}
+      </div>
 
       <DeleteConfirmationModal
         isOpen={deletingEntry !== null}

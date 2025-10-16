@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useContainerWidth } from '@/hooks/useContainerWidth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,10 @@ export const TasksView: React.FC = () => {
   const [newListName, setNewListName] = useState('');
   const [newListDescription, setNewListDescription] = useState('');
   const [newListColor, setNewListColor] = useState(COLOR_OPTIONS[3].value); // Blue
+
+  // Width observer must be declared before any early returns
+  const { ref, width } = useContainerWidth<HTMLDivElement>();
+  const cols = width < 640 ? 1 : width < 920 ? 2 : 3;
 
   const handleCreateTaskList = () => {
     setIsCreatingList(true);
@@ -182,8 +187,8 @@ export const TasksView: React.FC = () => {
   }));
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between h-10 mb-4">
+    <div ref={ref} className="h-full flex flex-col">
+      <div className="flex items-center justify-between h-10 mb-4 flex-shrink-0">
         <h1 className="text-sm font-medium">Tasks</h1>
         <DropdownMenu open={isCreatingList} onOpenChange={setIsCreatingList}>
           <DropdownMenuTrigger asChild>
@@ -268,12 +273,13 @@ export const TasksView: React.FC = () => {
         </DropdownMenu>
       </div>
 
+      <div className="flex-1 min-h-0 overflow-y-auto">
       {taskLists.length === 0 ? (
         <div className="text-left">
             <h3 className="text-sm mb-2 text-muted-foreground">Create your first task list</h3>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        <div className={`grid gap-6 pb-4 items-stretch`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
           {taskLists.map((list) => (
             <TaskListCard
               key={list.id}
@@ -292,6 +298,7 @@ export const TasksView: React.FC = () => {
           ))}
         </div>
       )}
+      </div>
 
       {/* Dialogs */}
       <TaskDialog

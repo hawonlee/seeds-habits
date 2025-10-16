@@ -34,11 +34,12 @@ export function useUserPreferences() {
       return;
     }
     setLoading(true);
+    type PrefRow = { calendar_filters: CalendarFilters | null };
     const { data, error } = await supabase
-      .from('user_preferences')
+      .from('user_preferences' as any)
       .select('calendar_filters')
       .eq('user_id', user.id)
-      .single();
+      .single<PrefRow>();
 
     if (!error && data?.calendar_filters) {
       const raw = data.calendar_filters as Partial<CalendarFilters>;
@@ -57,8 +58,8 @@ export function useUserPreferences() {
       localStorage.setItem('calendar_filters', JSON.stringify(next));
     } catch {}
     await supabase
-      .from('user_preferences')
-      .upsert({ user_id: user.id, calendar_filters: next }, { onConflict: 'user_id' });
+      .from('user_preferences' as any)
+      .upsert({ user_id: user.id, calendar_filters: next } as any, { onConflict: 'user_id' });
   }, [user?.id]);
 
   useEffect(() => { void load(); }, [load]);
