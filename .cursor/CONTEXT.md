@@ -385,6 +385,63 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ---
 
+## Recent Changes
+
+### Knowledge Graph Renovation (October 2025)
+
+#### Global Scaling + Semantic Layout
+
+**Problem**: Initial upload limited to 15 conversations per batch. No way to reprocess all user data after multiple uploads. Node positions were arbitrary without semantic clustering.
+
+**Solution**: Manual global recomputation system with UMAP projection
+
+**Key Changes**:
+- **New Edge Function**: `recompute-knowledge-graph`
+  - Processes ALL user nodes (no 15-conversation limit)
+  - Rebuilds kNN graph globally with k=5, threshold=0.25
+  - Hybrid strategy: Only recomputes if >20% node growth
+  - Location: `supabase/functions/recompute-knowledge-graph/index.ts`
+
+- **Client-Side Integration**:
+  - New "Recompute Graph" button in Knowledge Graph UI
+  - Progress tracking with visual feedback
+  - Location: `src/lib/knowledge/recomputeGraph.ts`, `src/pages/KnowledgeGraph.tsx`
+
+- **UMAP Integration Script**:
+  - Local Node.js script to run Python UMAP projection
+  - Fetches embeddings from Supabase
+  - Projects 3072D → 3D using cosine metric
+  - Uploads x,y,z coordinates back to database
+  - Usage: `npm run umap-project -- <user_id>`
+  - Location: `src/scripts/fetchAndProjectUMAP.ts`
+
+- **Database Schema**:
+  - Added `x`, `y`, `z` columns to `lkg_nodes` for UMAP coordinates
+  - New `lkg_recompute_metadata` table to track recomputation history
+  - Migration: `supabase/migrations/20250117000000_add_recompute_metadata.sql`
+
+**Documentation**:
+- `docs/knowledge-graph/UMAP_GUIDE.md` - Step-by-step guide for running UMAP locally
+- `docs/knowledge-graph/FUTURE_SCALING.md` - Production scaling roadmap and cost estimates
+- Updated `docs/ARCHITECTURE_OVERVIEW.md` with global recomputation section
+
+**POC Limitation**: 
+UMAP runs locally (manual script) for POC phase (≤5 users). For production scaling:
+1. Deploy Python UMAP microservice (AWS Lambda / Cloud Function)
+2. Add background job queue (Upstash QStash / BullMQ)
+3. Implement incremental UMAP updates (transform new nodes)
+4. Add Realtime sync for live graph updates
+
+See `FUTURE_SCALING.md` for detailed scaling phases, cost estimates, and decision points.
+
+**Next Steps** (when scaling):
+1. Monitor active users - trigger Phase 1 at >5 users
+2. Deploy Python UMAP microservice (est. 2-3 days)
+3. Add background job queue (est. 3-5 days)
+4. Implement incremental UMAP updates (est. 1 week)
+
+---
+
 ## Contact & Support
 
 **Project Type**: Private productivity app
