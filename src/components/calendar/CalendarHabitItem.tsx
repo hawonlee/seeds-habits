@@ -49,6 +49,11 @@ export const CalendarHabitItem: React.FC<CalendarHabitItemProps> = ({
       }}
       showDeleteButton={isScheduled}
       onDelete={handleDelete}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', `habit:${habit.id}`);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
     >
       <Checkbox
         checked={isCompleted}

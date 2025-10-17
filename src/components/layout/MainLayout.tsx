@@ -67,6 +67,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <div className="flex w-full items-center justify-between gap-2">
 
           <div className="flex items-center gap-2">
+            {/* User dropdown anchored bottom-left of the main panel when expanded */}
+            {!isMainCollapsed && (
+              <div className="">
+                <UserDropdown
+                  user={user}
+                  profile={profile}
+                  displayName={profile?.name || user?.email || 'User'}
+                  userInitials={(profile?.name || user?.email || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  onOpenSettings={onTogglePanel}
+                  onSignOut={signOut}
+                />
+              </div>
+            )}
             {/* <ThemeToggle /> */}
             {/* <Button
               variant="ghost"
@@ -112,19 +125,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       {/* Content */}
       <div className="flex-1 min-w-0 px-8 pt-2 overflow-hidden min-h-0 relative">
         {children}
-        {/* User dropdown anchored bottom-left of the main panel when expanded */}
-        {!isMainCollapsed && (
-          <div className="absolute left-6 bottom-4">
-            <UserDropdown
-              user={user}
-              profile={profile}
-              displayName={profile?.name || user?.email || 'User'}
-              userInitials={(profile?.name || user?.email || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)}
-              onOpenSettings={onTogglePanel}
-              onSignOut={signOut}
-            />
-          </div>
-        )}
+        
       </div>
     </div>
   );

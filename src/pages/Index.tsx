@@ -375,14 +375,43 @@ const Index = () => {
         )}
 
         {/* Habit Dashboard - resizable panels */}
-        <div className="h-full">
+        <div className="h-full flex">
+          {mainCollapsed && (
+            <div className="w-12 shrink-0 h-full py-6 px-1 flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground select-none bg-background ">
+              <Button
+                size="text"
+                variant="text"
+                className=""
+                onClick={() => {
+                  (mainPanelRef.current as any)?.expand?.();
+                  requestAnimationFrame(() => {
+                    (mainPanelRef.current as any)?.setSize?.(20);
+                  });
+                  setMainCollapsed(false);
+                }}
+                title="Show content"
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+
+              <UserDropdown
+                user={user}
+                profile={profile}
+                displayName={profile?.name || user?.email || 'User'}
+                userInitials={(profile?.name || user?.email || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)}
+                onOpenSettings={() => setShowUserSettings(true)}
+                onSignOut={signOut}
+              />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
           <ResizablePanelGroup
             direction="horizontal"
             className="h-full"
             onLayout={(sizes) => {
               setLayout(sizes);
               // Track collapsed state based on size percentages
-              const leftIsCollapsed = sizes[0] <= 12;
+              const leftIsCollapsed = sizes[0] <= 0.1;
               const rightIsCollapsed = sizes[1] <= 0.1;
               if (leftIsCollapsed !== mainCollapsed) setMainCollapsed(leftIsCollapsed);
               if (rightIsCollapsed !== calendarCollapsed) setCalendarCollapsed(rightIsCollapsed);
@@ -392,7 +421,7 @@ const Index = () => {
               defaultSize={40}
               minSize={20}
               collapsible
-              collapsedSize={3}
+              collapsedSize={0}
               ref={mainPanelRef}
             >
               <div className={`h-full bg-background`}>
@@ -536,6 +565,7 @@ const Index = () => {
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
+          </div>
         </div>
 
         {/* Removed overlay DayHabitsDialog in favor of inline popovers in calendar views */}

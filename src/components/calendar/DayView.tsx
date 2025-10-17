@@ -307,6 +307,12 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
               // Placeholder: later we will open a scheduler for tasks/habits with time ranges
               console.log('Clicked time slot:', dt.toString());
             }}
+            onDropTask={(taskId, dateTime, isAllDay) => {
+              if (onTaskDrop) onTaskDrop(taskId, dateTime);
+            }}
+            onDropHabit={(habitId, dateTime, isAllDay) => {
+              if (onHabitDrop) onHabitDrop(habitId, dateTime);
+            }}
           />
           
 

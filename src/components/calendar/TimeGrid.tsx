@@ -10,6 +10,8 @@ interface TimeGridProps {
     maxHeight?: number; // px; when provided, makes grid vertically scrollable
     renderUntimed?: (date: Date) => React.ReactNode;
     untimedAreaHeight?: number; // px; fixed height to keep hour rows aligned across days
+    onDropTask?: (taskId: string, dateTime: Date, isAllDay: boolean) => void;
+    onDropHabit?: (habitId: string, dateTime: Date, isAllDay: boolean) => void;
 }
 
 const hoursInRange = (startHour: number, endHour: number) => {
@@ -42,7 +44,9 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
     onSlotClick,
     maxHeight,
     renderUntimed,
-    untimedAreaHeight = 96
+    untimedAreaHeight = 96,
+    onDropTask,
+    onDropHabit
 }) => {
     const hours = useMemo(() => hoursInRange(startHour, endHour), [startHour, endHour]);
     const slotsPerHour = stepMinutes === 30 ? 2 : 1;
@@ -102,7 +106,27 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                     {days.map((day) => (
                         <div key={day.toISOString()} className="relative border-l border-habitbg">
                             {/* Untimed items area */}
-                            <div className="sticky top-0 z-30  border-t border-l -ml-[1px] border-b border-habitbg px-2 py-2 overflow-y-auto" style={{ height: untimedAreaHeight }}>
+                            <div
+                                className="sticky top-0 z-30  border-t border-l -ml-[1px] border-b border-habitbg px-2 py-2 overflow-y-auto"
+                                style={{ height: untimedAreaHeight }}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = 'move';
+                                }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    const data = e.dataTransfer.getData('text/plain');
+                                    const dt = new Date(day);
+                                    dt.setHours(0, 0, 0, 0);
+                                    if (data.startsWith('task:')) {
+                                        const id = data.replace('task:', '');
+                                        onDropTask && onDropTask(id, dt, true);
+                                    } else if (data.startsWith('habit:')) {
+                                        const id = data.replace('habit:', '');
+                                        onDropHabit && onDropHabit(id, dt, true);
+                                    }
+                                }}
+                            >
                                 {renderUntimed ? renderUntimed(day) : null}
                             </div>
                             <div className="mb-3" />
@@ -128,6 +152,24 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                                                     const dt = new Date(day);
                                                     dt.setHours(h, minutes, 0, 0);
                                                     onSlotClick(dt);
+                                                }}
+                                                onDragOver={(e) => {
+                                                    e.preventDefault();
+                                                    e.dataTransfer.dropEffect = 'move';
+                                                }}
+                                                onDrop={(e) => {
+                                                    e.preventDefault();
+                                                    const data = e.dataTransfer.getData('text/plain');
+                                                    const minutes = idx * (60 / slotsPerHour);
+                                                    const dt = new Date(day);
+                                                    dt.setHours(h, minutes, 0, 0);
+                                                    if (data.startsWith('task:')) {
+                                                        const id = data.replace('task:', '');
+                                                        onDropTask && onDropTask(id, dt, false);
+                                                    } else if (data.startsWith('habit:')) {
+                                                        const id = data.replace('habit:', '');
+                                                        onDropHabit && onDropHabit(id, dt, false);
+                                                    }
                                                 }}
                                                 aria-label={`Schedule at ${h}:${idx * (60 / slotsPerHour)}`}
                                             />
