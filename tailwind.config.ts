@@ -90,6 +90,10 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				tertiary: {
+					DEFAULT: 'hsl(var(--tertiary))',
+					hover: 'hsl(var(--tertiary-hover))'
+				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
