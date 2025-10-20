@@ -28,7 +28,7 @@ const ResizableHandle = ({
   <ResizablePrimitive.PanelResizeHandle
     className={cn(
       // Base size + indicator line
-      "relative flex w-px items-center justify-center bg-border/50 after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2",
+      "relative flex w-px items-center justify-center bg-bordermuted  after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2",
       // Accessibility focus ring
       "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1",
       // Vertical mode sizing for the line

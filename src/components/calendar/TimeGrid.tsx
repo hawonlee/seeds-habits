@@ -91,7 +91,7 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                         </div>
                         {hours.map((h) => (
                             <div key={h} className="relative" style={{ height: slotsPerHour === 2 ? 64 : 48 }}>
-                                <div className="absolute -translate-y-2 right-2 text-[10px] text-neutral-400 select-none">
+                                <div className="absolute -translate-y-2 right-2 text-[10px] text-muted-foreground/60 select-none">
                                     {new Date(0, 0, 0, h).toLocaleTimeString([], { hour: 'numeric' })}
                                 </div>
                             </div>
@@ -107,14 +107,19 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                         <div key={day.toISOString()} className="relative border-l border-habitbg">
                             {/* Untimed items area */}
                             <div
-                                className="sticky top-0 z-30  border-t border-l -ml-[1px] border-b border-habitbg px-2 py-2 overflow-y-auto"
+                                className="sticky top-0 z-30  border-t border-l -ml-[1px] border-b border-habitbg px-2 py-2 overflow-y-auto transition-colors"
                                 style={{ height: untimedAreaHeight }}
                                 onDragOver={(e) => {
                                     e.preventDefault();
                                     e.dataTransfer.dropEffect = 'move';
+                                    (e.currentTarget as HTMLElement).classList.add('bg-muted/40', 'outline', 'outline-1', 'outline-blue-300');
+                                }}
+                                onDragLeave={(e) => {
+                                    (e.currentTarget as HTMLElement).classList.remove('bg-muted/40', 'outline', 'outline-1', 'outline-blue-300');
                                 }}
                                 onDrop={(e) => {
                                     e.preventDefault();
+                                    (e.currentTarget as HTMLElement).classList.remove('bg-muted/40', 'outline', 'outline-1', 'outline-blue-300');
                                     const data = e.dataTransfer.getData('text/plain');
                                     const dt = new Date(day);
                                     dt.setHours(0, 0, 0, 0);
@@ -134,7 +139,7 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                             {hours.map((h) => (
                                 <div key={`${day.toDateString()}-${h}`} className="relative" style={{ height: slotsPerHour === 2 ? 64 : 48 }}>
                                     {/* Hour line */}
-                                    <div className="absolute top-0 left-0 right-0 border-t border-neutral-200/60" />
+                                    <div className="absolute top-0 left-0 right-0 border-t border-border-muted" />
                                     {/* Half-hour line (if applicable) */}
                                     {/* {slotsPerHour === 2 && (
                     <div className="absolute left-0 right-0 border-t border-dashed border-neutral-200/70" style={{ top: '50%' }} />
@@ -156,9 +161,14 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                                                 onDragOver={(e) => {
                                                     e.preventDefault();
                                                     e.dataTransfer.dropEffect = 'move';
+                                                    (e.currentTarget as HTMLElement).classList.add('bg-muted/30', 'outline', 'outline-1', 'outline-blue-300');
+                                                }}
+                                                onDragLeave={(e) => {
+                                                    (e.currentTarget as HTMLElement).classList.remove('bg-muted/30', 'outline', 'outline-1', 'outline-blue-300');
                                                 }}
                                                 onDrop={(e) => {
                                                     e.preventDefault();
+                                                    (e.currentTarget as HTMLElement).classList.remove('bg-muted/30', 'outline', 'outline-1', 'outline-blue-300');
                                                     const data = e.dataTransfer.getData('text/plain');
                                                     const minutes = idx * (60 / slotsPerHour);
                                                     const dt = new Date(day);

@@ -244,7 +244,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
   };
 
   return (
-    <div className="h-full flex flex-col py-4">
+    <div className="h-full flex flex-col py-4 bg-sidebar">
       <div className="flex items-center mb-4 flex-shrink-0 px-4">
         <CalendarHeader
           title={getTitle()}

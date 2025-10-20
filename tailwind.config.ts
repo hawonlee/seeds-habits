@@ -85,6 +85,7 @@ export default {
 				'side-panel-bg': 'hsl(var(--side-panel-bg))',
 				'diary-card-bg': 'hsl(var(--diary-card-bg))',
 				border: 'hsl(var(--border))',
+				bordermuted: 'hsl(var(--border-muted))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',

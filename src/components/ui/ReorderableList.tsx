@@ -41,8 +41,24 @@ export function ReorderableList<T>({
   const ids = items.map(getId);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
+  // Custom PointerSensor that ignores calendar drag handles so native HTML5 DnD can be used
+  class CalendarAwarePointerSensor extends PointerSensor {
+    static activators = [
+      {
+        eventName: 'onPointerDown',
+        handler: ({ nativeEvent }: { nativeEvent: PointerEvent }) => {
+          const target = nativeEvent.target as HTMLElement | null;
+          if (!target) return true;
+          // Modifier-based activation: only activate list reordering if Option/Alt or Meta is held
+          const allowReorder = nativeEvent.altKey || nativeEvent.metaKey || nativeEvent.ctrlKey;
+          return allowReorder;
+        },
+      },
+    ];
+  }
+
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(CalendarAwarePointerSensor as unknown as typeof PointerSensor, {
       activationConstraint: { distance: 8 },
     })
   );

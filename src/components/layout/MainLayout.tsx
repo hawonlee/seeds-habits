@@ -21,6 +21,7 @@ interface MainLayoutProps {
   onToggleCalendarPanel: () => void;
   isMainCollapsed: boolean;
   onToggleMainCollapsed: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -35,7 +36,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onToggleCalendarPanel,
   isMainCollapsed,
   onToggleMainCollapsed,
-}) => {
+  onOpenSettings,
+}: MainLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
@@ -75,7 +77,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                   profile={profile}
                   displayName={profile?.name || user?.email || 'User'}
                   userInitials={(profile?.name || user?.email || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                  onOpenSettings={onTogglePanel}
+                  onOpenSettings={onOpenSettings || onTogglePanel}
                   onSignOut={signOut}
                 />
               </div>

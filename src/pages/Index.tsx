@@ -377,7 +377,7 @@ const Index = () => {
         {/* Habit Dashboard - resizable panels */}
         <div className="h-full flex">
           {mainCollapsed && (
-            <div className="w-12 shrink-0 h-full py-6 px-1 flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground select-none bg-background ">
+            <div className="w-12 shrink-0 h-full py-6 px-1 flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground select-none bg-background">
               <Button
                 size="text"
                 variant="text"
@@ -470,6 +470,7 @@ const Index = () => {
                     onToggleMainCollapsed={() => {
                       if (mainCollapsed) mainPanelRef.current?.expand(); else mainPanelRef.current?.collapse();
                     }}
+                    onOpenSettings={() => setShowUserSettings(true)}
                   >
                     {showDiary ? (
                       <DiaryView />

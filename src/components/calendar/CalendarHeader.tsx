@@ -22,7 +22,7 @@ export const CalendarHeader = ({
   return (
     <div className="flex items-center justify-between w-full h-10">
       {/* Left side - Title */}
-      <h2 className="text-sm font-medium text-neutral-900">
+      <h2 className="text-sm font-medium text-foreground">
         {title}
       </h2>
       
