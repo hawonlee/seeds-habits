@@ -35,12 +35,13 @@ interface UnifiedCalendarProps {
   onHabitDrop?: (habitId: string, date: Date) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
-  onTaskDrop?: (taskId: string, date: Date) => void;
+  onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
+  onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
 }
 
-export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onDiaryEntryClick }: UnifiedCalendarProps) => {
+export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick }: UnifiedCalendarProps) => {
   // Get saved view mode from localStorage, default to 'month'
   const getInitialViewMode = (): 'month' | 'week' | 'day' => {
     const saved = localStorage.getItem('calendar-view-mode');
@@ -212,6 +213,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onTaskToggleComplete={onTaskToggleComplete}
             onTaskDrop={onTaskDrop}
             onTaskDelete={onTaskDelete}
+            onCalendarItemDelete={onCalendarItemDelete}
             onDiaryEntryClick={onDiaryEntryClick}
           />
         );
@@ -235,6 +237,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onTaskToggleComplete={onTaskToggleComplete}
             onTaskDrop={onTaskDrop}
             onTaskDelete={onTaskDelete}
+            onCalendarItemDelete={onCalendarItemDelete}
             onDiaryEntryClick={onDiaryEntryClick}
           />
         );
@@ -244,7 +247,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
   };
 
   return (
-    <div className="h-full flex flex-col py-4 bg-sidebar">
+    <div className="h-full flex flex-col pt-4 bg-sidebar">
       <div className="flex items-center mb-4 flex-shrink-0 px-4">
         <CalendarHeader
           title={getTitle()}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,9 +40,8 @@ export const TasksView: React.FC = () => {
   const [newListDescription, setNewListDescription] = useState('');
   const [newListColor, setNewListColor] = useState(COLOR_OPTIONS[3].value); // Blue
 
-  // Width observer must be declared before any early returns
-  const { ref, width } = useContainerWidth<HTMLDivElement>();
-  const cols = width < 640 ? 1 : width < 920 ? 2 : 3;
+  // CSS-only responsive columns to avoid timing issues on first navigation
+  // (DiaryView also uses measured width, but here we rely on CSS for robustness)
 
   const handleCreateTaskList = () => {
     setIsCreatingList(true);
@@ -187,8 +186,8 @@ export const TasksView: React.FC = () => {
   }));
 
   return (
-    <div ref={ref} className="h-full flex flex-col">
-      <div className="flex items-center justify-between h-10 mb-4 flex-shrink-0">
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-start h-10 mb-4 flex-shrink-0">
         <h1 className="text-sm font-medium">Tasks</h1>
         <DropdownMenu open={isCreatingList} onOpenChange={setIsCreatingList}>
           <DropdownMenuTrigger asChild>
@@ -279,12 +278,14 @@ export const TasksView: React.FC = () => {
             <h3 className="text-sm mb-2 text-muted-foreground">Create your first task list</h3>
         </div>
       ) : (
-        <div className={`grid gap-6 pb-4 items-stretch`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        <div className={`grid gap-6 pb-4 items-stretch`} style={{ gridTemplateColumns: `repeat(auto-fill, minmax(340px, 1fr))` }}>
           {taskLists.map((list) => (
             <TaskListCard
               key={list.id}
               taskList={list}
-              tasks={getTasksByList(list.id)}
+              tasks={(list.hide_completed
+                ? getTasksByList(list.id).filter(t => !t.completed)
+                : getTasksByList(list.id))}
               onAddTask={handleAddTask}
               onEditTask={handleEditTask}
               onUpdateTask={handleUpdateTask}

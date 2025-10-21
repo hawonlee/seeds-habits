@@ -229,7 +229,7 @@ All colors MUST be HSL.
     --button-tertiary-bg: 0 0% 25%;
     --button-tertiary-text: 0 0% 90%;
     --button-tertiary-hover: 0 0% 35%;
-    --button-ghost-hover: 0 0% 20%;
+    --button-ghost-hover: 0 0% 10%;
     --progress-track: 0 0% 20%;
     --side-panel-bg: 0 0% 6%;
     --diary-card-bg: 0 0% 3%;

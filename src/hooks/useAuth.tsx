@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithProvider: (provider: 'google' | 'github') => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
 }
 
@@ -103,6 +104,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
+  const signInWithProvider = async (provider: 'google' | 'github') => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    setLoading(false);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+
+    return { error };
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -110,6 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       loading,
       signUp,
       signIn,
+      signInWithProvider,
       signOut,
     }}>
       {children}

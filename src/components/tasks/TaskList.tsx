@@ -18,6 +18,7 @@ import { ReorderableList } from '@/components/ui/ReorderableList';
 import type { TaskList as TaskListType, Task } from '@/hooks/useTasks';
 import { COLOR_OPTIONS, findColorOptionByValue } from '@/lib/colorOptions';
 import { DragOverlay } from '@dnd-kit/core';
+import { Switch } from '@/components/ui/switch';
 
 interface TaskListProps {
   taskList: TaskListType;
@@ -31,6 +32,7 @@ interface TaskListProps {
   onDeleteList: (listId: string) => void;
   onUpdateList: (listId: string, updates: Partial<TaskListType>) => void;
   onReorderTasks: (listId: string, taskIds: string[]) => void;
+  // using DB-backed hide_completed; no local storage props
 }
 
 // Using ReorderableList for sorting behavior
@@ -117,7 +119,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
               <Ellipsis className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64 p-4">
+          <DropdownMenuContent align="end" className="w-64 p-4" onCloseAutoFocus={(e) => e.preventDefault()}>
             <div className="space-y-4">
               {/* Inline editable name with delete button */}
               <div className="flex items-center gap-2">
@@ -156,25 +158,46 @@ export const TaskListCard: React.FC<TaskListProps> = ({
                         flex items-center justify-center p-2 rounded-md transition-colors
                         hover:opacity-80
                         ${taskList.color === color.value
-                          ? 'ring-2 ring-offset-1 ring-primary'
+                          ? 'ring-2 ring-offset-1 ring-bordermuted'
                           : ''
                         }
                       `}
                     >
                       <div
-                        className="h-3 w-3 rounded-full"
+                        className="h-4 w-4 rounded-sm"
                         style={{ backgroundColor: findColorOptionByValue(color.value)?.bgHex || color.value }}
                       />
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Hide completed toggle (DB-backed) */}
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor={`hide-completed-${taskList.id}`}
+                  className="text-xs font-normal"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onUpdateList(taskList.id, { hide_completed: !taskList.hide_completed });
+                  }}
+                >
+                  Hide completed
+                </Label>
+                <Switch
+                  id={`hide-completed-${taskList.id}`}
+                  checked={!!taskList.hide_completed}
+                  onCheckedChange={(checked) => onUpdateList(taskList.id, { hide_completed: checked })}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <div className="flex-1 flex bg-habitbg flex-col  rounded-md p-1">
+      <div className="flex-1 flex bg-habitbg p-1 flex-col rounded-md">
         {/* <div className="pb-3">
           {totalTasks > 0 && (
             <div className="mt-3">
@@ -203,6 +226,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
             getId={(t) => t.id}
             onReorder={handleReorder}
             className="space-y-0 overflow-y-auto"
+            externalDragType="task"
             renderItem={(task) => (
               <TaskItem
                 task={task}

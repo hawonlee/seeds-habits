@@ -64,7 +64,7 @@ export const CalendarItem: React.FC<CalendarItemProps> = ({
       {children}
       {showDeleteButton && onDelete && (
         <button
-          className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-1 py-0.5 rounded hover:bg-red-100 hover:text-red-600 text-xs font-bold"
+          className="opacity-0 group-hover:opacity-60 transition-opacity duration-200 rounded text-xs font-bold"
           onClick={handleDelete}
           aria-label="Delete"
           title="Delete"

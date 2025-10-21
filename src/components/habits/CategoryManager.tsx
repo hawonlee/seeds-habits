@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Trash2, Palette, LayoutGrid } from 'lucide-react';
+import { Plus, Edit2, Trash2, Palette, LayoutGrid, Settings2 } from 'lucide-react';
 import { Category, fetchCategories, getCategories, setCategoriesCache, addCacheChangeListener, refreshCategories } from '@/lib/categories';
 import { invalidateHabitsCacheForUser } from '@/hooks/useHabits';
 import { useAuth } from '@/hooks/useAuth';
@@ -76,7 +76,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         bgColor: palette ? palette.bgHex : '#FAFAFA',
         textColor: palette ? palette.textHex : '#262626'
       };
-      
+
       try {
         const result: any = await supabase
           .from('categories')
@@ -103,7 +103,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         await refreshCategories(user?.id);
         setNewCategory({ name: '', color: '#3B82F6' });
         onCategoryChange?.(getCategories());
-        
+
         // Removed success toast per request
       } catch (error) {
         console.error('Error adding category:', error);
@@ -132,7 +132,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         bgColor: palette ? palette.bgHex : '#FAFAFA',
         textColor: palette ? palette.textHex : '#262626'
       };
-      
+
       try {
         // @ts-ignore - Type instantiation is excessively deep
         const result: any = await supabase
@@ -161,7 +161,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         setEditingCategory(null);
         setNewCategory({ name: '', color: '#3B82F6' });
         onCategoryChange?.(getCategories());
-        
+
         // Removed success toast per request
       } catch (error) {
         console.error('Error updating category:', error);
@@ -182,7 +182,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         .update({ category: 'none' })
         .eq('category', categoryId)
         .eq('user_id', user?.id || '');
-      
+
       if (habitsUpdateResult.error) {
         toast({
           title: "Error",
@@ -198,7 +198,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
         .delete()
         .eq('id', categoryId)
         .eq('user_id', user?.id || '');
-      
+
       if (categoryDeleteResult.error) {
         toast({
           title: "Error",
@@ -210,14 +210,14 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
 
       // Force refresh all components using categories
       await refreshCategories(user?.id);
-      
+
       // Invalidate habits cache so affected habits refresh
       if (user?.id) {
         invalidateHabitsCacheForUser(user.id);
       }
-      
+
       onCategoryChange?.(getCategories());
-      
+
       // Removed success toast per request
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -237,13 +237,13 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <LayoutGrid className="h-4 w-4" />
+        <Button variant="ghosticon" size="icon" className="">
+          <Settings2 className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
 
-        
+
         <div className="space-y-6">
           {/* Existing Categories */}
           <div>
@@ -257,7 +257,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                 }}
               >
                 <PopoverTrigger asChild>
-                  <Button size="sm" variant="ghost" className="w-8 h-8">
+                  <Button size="icon" variant="ghosticon" className="">
                     <Plus className="h-3 w-3" />
                   </Button>
                 </PopoverTrigger>
@@ -279,7 +279,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                             key={color.value}
                             onClick={() => setNewCategory({ ...newCategory, color: color.value })}
                             className={`w-full h-10 rounded-md border-2 transition-all ${newCategory.color === color.value ? '' : 'border-transparent'}`}
-                            style={{ 
+                            style={{
                               backgroundColor: color.cssBg,
                               '--dark-bg': color.cssBg,
                               '--light-border': color.cssPrimary,
@@ -309,9 +309,9 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {categories.filter(category => category.id !== 'none').map(category => (
-                <div key={category.id} className="flex items-center justify-between bg-habitbghover p-3 rounded-lg">
+                <div key={category.id} className="flex items-center justify-between bg-habitbg/50 p-3 rounded-lg">
                   <Popover
                     open={openPopoverId === category.id}
                     onOpenChange={(open) => {
@@ -330,7 +330,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                           const cssVars = getCategoryCSSVariables(category.id);
                           return (
                             <>
-                              <div className="w-5 h-5 rounded-sm border" style={{ backgroundColor: cssVars.bg, borderColor: cssVars.primary }} />
+                              {/* <div className="w-5 h-5 rounded-sm border" style={{ backgroundColor: cssVars.bg, borderColor: cssVars.primary }} /> */}
                               <Badge categoryId={category.id} className="text-xs p-1 px-2">
                                 {category.name}
                               </Badge>
@@ -356,7 +356,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
                                 key={color.value}
                                 onClick={() => setNewCategory({ ...newCategory, color: color.value })}
                                 className={`w-full h-10 rounded-md border-2 transition-all ${newCategory.color === color.value ? '' : 'border-transparent'}`}
-                                style={{ 
+                                style={{
                                   backgroundColor: color.cssBg,
                                   '--dark-bg': color.cssBg,
                                   '--light-border': color.cssPrimary,
@@ -406,8 +406,8 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
             </div>
           </div>
 
-                    {/* Global Adoption Threshold */}
-                    <div className="">
+          {/* Global Adoption Threshold */}
+          <div className="">
             <h3 className="text-xs font-medium mb-2">Adoption Threshold</h3>
             <p className="text-xs text-muted-foreground mb-3">Number of days a habit must be completed to become adopted.</p>
             <div className="flex items-center gap-2">
@@ -427,7 +427,7 @@ export const CategoryManager = ({ onCategoryChange, adoptionThreshold, onChangeA
               <span className="text-xs text-muted-foreground">days</span>
             </div>
           </div>
-          
+
         </div>
       </DialogContent>
     </Dialog>

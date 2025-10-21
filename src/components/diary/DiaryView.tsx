@@ -264,7 +264,7 @@ export const DiaryView: React.FC = () => {
 
   return (
     <div ref={ref} className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 h-10 flex-shrink-0">
+      <div className="flex items-center justify-start mb-4 h-10 flex-shrink-0">
         <div>
           <h1 className="text-sm font-medium">Diary</h1>
         </div>

@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      task_lists: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          description: string | null
+          color: string
+          hide_completed: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          description?: string | null
+          color: string
+          hide_completed?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          description?: string | null
+          color?: string
+          hide_completed?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_lists_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
       habits: {
         Row: {
           id: string
@@ -277,6 +318,10 @@ export type Database = {
           item_type: 'habit' | 'task'
           item_id: string
           scheduled_date: string
+          start_minutes: number | null
+          end_minutes: number | null
+          completed: boolean
+          completed_at: string | null
           created_at: string
           updated_at: string
         }
@@ -286,6 +331,10 @@ export type Database = {
           item_type: 'habit' | 'task'
           item_id: string
           scheduled_date: string
+          start_minutes?: number | null
+          end_minutes?: number | null
+          completed?: boolean
+          completed_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -295,6 +344,10 @@ export type Database = {
           item_type?: 'habit' | 'task'
           item_id?: string
           scheduled_date?: string
+          start_minutes?: number | null
+          end_minutes?: number | null
+          completed?: boolean
+          completed_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -317,6 +370,8 @@ export type Database = {
           due_date: string | null
           notes: string | null
           task_list_id: string | null
+          priority: 'low' | 'medium' | 'high'
+          position: number
           created_at: string
           updated_at: string
         }
@@ -328,6 +383,8 @@ export type Database = {
           due_date?: string | null
           notes?: string | null
           task_list_id?: string | null
+          priority?: 'low' | 'medium' | 'high'
+          position?: number
           created_at?: string
           updated_at?: string
         }
@@ -339,6 +396,8 @@ export type Database = {
           due_date?: string | null
           notes?: string | null
           task_list_id?: string | null
+          priority?: 'low' | 'medium' | 'high'
+          position?: number
           created_at?: string
           updated_at?: string
         }

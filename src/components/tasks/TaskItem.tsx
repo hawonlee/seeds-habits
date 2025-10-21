@@ -67,11 +67,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({
         ref={cardRef}
         className="transition-all duration-200 hover:bg-button-ghost-hover/40 rounded-sm px-1 flex items-center cursor-pointer"
         onClick={handleCardClick}
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData('text/plain', `task:${task.id}`);
-          e.dataTransfer.effectAllowed = 'move';
-        }}
       >
         <div className="flex items-start gap-2 w-full">
           {/* Checkbox */}
@@ -84,7 +79,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           </div>
 
           {/* Drag handle for scheduling onto calendar (native HTML5 DnD) */}
-          <div
+          {/* <div
             data-prevent-click
             className="mt-1 h-4 w-3 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing select-none"
             title="Drag to calendar"
@@ -98,7 +93,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
             }}
           >
             ⋮
-          </div>
+          </div> */}
 
           {/* Task Content */}
           <div className="flex-1 min-w-0">

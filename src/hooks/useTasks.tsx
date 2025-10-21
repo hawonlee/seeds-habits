@@ -7,6 +7,7 @@ export interface TaskList {
   name: string;
   description?: string;
   color: string;
+  hide_completed?: boolean;
   created_at: string;
   updated_at: string;
   user_id: string;

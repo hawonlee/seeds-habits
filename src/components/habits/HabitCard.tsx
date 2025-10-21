@@ -362,7 +362,7 @@ export const HabitCard = ({
   return (
     <div className="relative" ref={cardRef}>
       <Card
-        className={`group relative bg-habitbg hover:bg-habitbghover transition-colors duration-200 ${draggable ? 'cursor-pointer' : ''}`}
+        className={`group relative bg-habitbg hover:bg-habitbghover transition-colors duration-200 ${draggable ? 'cursor-move' : ''}`}
         draggable={draggable}
         onDragStart={handleDragStart}
         onDragEnd={onDragEnd}

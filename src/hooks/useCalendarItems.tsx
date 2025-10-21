@@ -79,11 +79,15 @@ export const useCalendarItems = () => {
   };
 
   // Schedule a habit for a specific date
-  const scheduleHabit = async (habitId: string, date: Date): Promise<boolean> => {
+  const minutesFromMidnight = (d: Date) => d.getHours() * 60 + d.getMinutes();
+
+  const scheduleHabit = async (habitId: string, date: Date, options?: { isAllDay?: boolean }): Promise<boolean> => {
     if (!user) return false;
 
     try {
       const scheduledDate = formatDateForDB(date);
+      const isAllDay = options?.isAllDay === true;
+      const startMinutesValue = isAllDay ? null : minutesFromMidnight(date);
       
       const { data, error } = await supabase
         .from('calendar_items')
@@ -92,14 +96,14 @@ export const useCalendarItems = () => {
           item_type: 'habit',
           item_id: habitId,
           scheduled_date: scheduledDate,
+          start_minutes: startMinutesValue,
         })
         .select('*')
         .single();
 
       if (error) {
-        // If it's a unique constraint violation, the habit is already scheduled for this date
         if (error.code === '23505') {
-          console.log('Habit already scheduled for this date');
+          console.log('Habit already scheduled for this date/time');
           return false;
         }
         throw error;
@@ -119,11 +123,13 @@ export const useCalendarItems = () => {
   };
 
   // Schedule a task for a specific date
-  const scheduleTask = async (taskId: string, date: Date): Promise<boolean> => {
+  const scheduleTask = async (taskId: string, date: Date, options?: { isAllDay?: boolean }): Promise<boolean> => {
     if (!user) return false;
 
     try {
       const scheduledDate = formatDateForDB(date);
+      const isAllDay = options?.isAllDay === true;
+      const startMinutesValue = isAllDay ? null : minutesFromMidnight(date);
       
       const { data, error } = await supabase
         .from('calendar_items')
@@ -132,14 +138,16 @@ export const useCalendarItems = () => {
           item_type: 'task',
           item_id: taskId,
           scheduled_date: scheduledDate,
+          start_minutes: startMinutesValue,
+          completed: false,
         })
         .select('*')
         .single();
 
       if (error) {
-        // If it's a unique constraint violation, the task is already scheduled for this date
         if (error.code === '23505') {
-          console.log('Task already scheduled for this date');
+          // If conflict and we're not all-day, keep disallowing duplicates at exact time
+          console.log('Task already scheduled for this date/time');
           return false;
         }
         throw error;
@@ -158,20 +166,50 @@ export const useCalendarItems = () => {
     }
   };
 
+  // Toggle completion for a single occurrence
+  const toggleCalendarItemCompleted = async (itemId: string, completed: boolean) => {
+    if (!user) return false;
+    try {
+      const { data, error } = await supabase
+        .from('calendar_items')
+        .update({ completed, completed_at: completed ? new Date().toISOString() : null })
+        .eq('id', itemId)
+        .eq('user_id', user.id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      setCalendarItems(prev => prev.map(ci => (ci.id === itemId ? { ...ci, ...data } : ci)));
+      return true;
+    } catch (err) {
+      console.error('Error toggling calendar item completion:', err);
+      return false;
+    }
+  };
+
   // Unschedule an item from a specific date
   const unscheduleItem = async (itemType: 'habit' | 'task', itemId: string, date: Date): Promise<boolean> => {
     if (!user) return false;
 
     try {
       const scheduledDate = formatDateForDB(date);
+      const startMinutes = minutesFromMidnight(date);
       
-      const { error } = await supabase
+      // For all-day entries, start_minutes is NULL. For timed entries it equals minutesFromMidnight(date).
+      let deleteQuery = supabase
         .from('calendar_items')
         .delete()
         .eq('user_id', user.id)
         .eq('item_type', itemType)
         .eq('item_id', itemId)
         .eq('scheduled_date', scheduledDate);
+
+      if (startMinutes === 0) {
+        deleteQuery = deleteQuery.is('start_minutes', null);
+      } else {
+        deleteQuery = deleteQuery.eq('start_minutes', startMinutes);
+      }
+
+      const { error } = await deleteQuery;
 
       if (error) throw error;
 
@@ -192,6 +230,24 @@ export const useCalendarItems = () => {
     }
   };
 
+  // Delete a specific calendar item by its id (single occurrence)
+  const deleteCalendarItemById = async (calendarItemId: string): Promise<boolean> => {
+    if (!user) return false;
+    try {
+      const { error } = await supabase
+        .from('calendar_items')
+        .delete()
+        .eq('id', calendarItemId)
+        .eq('user_id', user.id);
+      if (error) throw error;
+      setCalendarItems(prev => prev.filter(ci => ci.id !== calendarItemId));
+      return true;
+    } catch (err) {
+      console.error('Error deleting calendar item by id:', err);
+      return false;
+    }
+  };
+
   // Move an item to a different date
   const moveItem = async (itemType: 'habit' | 'task', itemId: string, fromDate: Date, toDate: Date): Promise<boolean> => {
     if (!user) return false;
@@ -199,14 +255,16 @@ export const useCalendarItems = () => {
     try {
       const fromDateStr = formatDateForDB(fromDate);
       const toDateStr = formatDateForDB(toDate);
+      const toStartMinutes = minutesFromMidnight(toDate);
       
       const { data, error } = await supabase
         .from('calendar_items')
-        .update({ scheduled_date: toDateStr })
+        .update({ scheduled_date: toDateStr, start_minutes: toStartMinutes })
         .eq('user_id', user.id)
         .eq('item_type', itemType)
         .eq('item_id', itemId)
         .eq('scheduled_date', fromDateStr)
+        .eq('start_minutes', minutesFromMidnight(fromDate))
         .select('*')
         .single();
 
@@ -275,5 +333,7 @@ export const useCalendarItems = () => {
     getItemsForDateRange,
     isItemScheduled,
     refreshCalendarItems: fetchCalendarItems,
+    toggleCalendarItemCompleted,
+    deleteCalendarItemById,
   };
 };

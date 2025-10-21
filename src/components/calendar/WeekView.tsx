@@ -35,13 +35,15 @@ interface WeekViewProps {
   onHabitDrop?: (habitId: string, date: Date) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
-  onTaskDrop?: (taskId: string, date: Date) => void;
+  onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
+  onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
 }
 
-export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onDiaryEntryClick }: WeekViewProps) => {
+export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick }: WeekViewProps) => {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [expandAllDay, setExpandAllDay] = useState<boolean>(false);
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletionsContext();
 
   // Helper functions for scheduled items
@@ -57,10 +59,13 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
     return calendarItems.filter(item => item.scheduled_date === scheduledDate);
   };
 
-  const getScheduledTasksFromCalendarItems = (date: Date): string[] => {
+  const getScheduledCalendarTaskItems = (date: Date): CalendarItemWithDetails[] => {
     return getScheduledItemsForDate(date)
-      .filter(item => item.item_type === 'task')
-      .map(item => item.item_id);
+      .filter(item => item.item_type === 'task');
+  };
+
+  const getTimedCalendarTaskItems = (date: Date): CalendarItemWithDetails[] => {
+    return getScheduledCalendarTaskItems(date).filter(ci => ci.start_minutes !== null && ci.start_minutes !== undefined);
   };
 
   const getUntimedForDate = (date: Date) => {
@@ -69,12 +74,17 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
     const habitsForDay = getHabitsForDate(date);
     // Tasks: due that day or scheduled via calendar item
     const dueTasks = (tasks || []).filter(task => task.due_date && new Date(task.due_date).toISOString().split('T')[0] === dateString);
-    const scheduledTaskIds = getScheduledTasksFromCalendarItems(date);
-    const scheduledTasks = (tasks || []).filter(task => scheduledTaskIds.includes(task.id));
-    const allTasks = [...dueTasks];
-    scheduledTasks.forEach(t => { if (!allTasks.some(x => x.id === t.id)) allTasks.push(t); });
+    const dueEntries = dueTasks.map(t => ({ task: t, calendarItemId: undefined as string | undefined }));
+    const scheduledTaskItems = getScheduledCalendarTaskItems(date).filter(ci => ci.start_minutes == null);
+    const scheduledEntries = scheduledTaskItems
+      .map(ci => {
+        const t = (tasks || []).find(task => task.id === ci.item_id);
+        return t ? { task: t, calendarItemId: ci.id as string | undefined } : null;
+      })
+      .filter(Boolean) as Array<{ task: Task; calendarItemId?: string }>; 
+    const taskEntries = [...dueEntries, ...scheduledEntries];
     const diariesForDay = getDiaryEntriesForDate(date);
-    return { habits: habitsForDay, tasks: allTasks, diaries: diariesForDay };
+    return { habits: habitsForDay, taskEntries, diaries: diariesForDay } as any;
   };
 
   const getScheduledHabitsFromCalendarItems = (date: Date): string[] => {
@@ -173,30 +183,7 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
     return habits.filter(habit => isHabitCompletedOnDate(habit.id, date));
   };
 
-  const getTasksForDate = (date: Date) => {
-    if (!tasks) return [];
-    const dateString = date.toISOString().split('T')[0];
-
-    // Get tasks that are due on this date
-    const dueTasks = tasks.filter(task =>
-      task.due_date &&
-      new Date(task.due_date).toISOString().split('T')[0] === dateString
-    );
-
-    // Get tasks that are scheduled for this date via calendar items
-    const scheduledTaskIds = getScheduledTasksFromCalendarItems(date);
-    const scheduledTasks = tasks.filter(task => scheduledTaskIds.includes(task.id));
-
-    // Combine both, avoiding duplicates
-    const allTasks = [...dueTasks];
-    scheduledTasks.forEach(scheduledTask => {
-      if (!allTasks.some(task => task.id === scheduledTask.id)) {
-        allTasks.push(scheduledTask);
-      }
-    });
-
-    return allTasks;
-  };
+  // removed old getTasksForDate (not used)
 
   const handleHabitCheckIn = async (habit: Habit, date: Date, isCompleted: boolean) => {
     // Use the database-backed completion system
@@ -268,10 +255,27 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
     setSelectedDay(date);
   };
 
+  // Compute a unified all-day height across the week when expanded
+  const [untimedHeight, setUntimedHeight] = useState<number>(108);
+  const collapsedUntimedHeight = 108;
+  const computeExpandedUntimedHeight = () => {
+    const perRow = 24; // approx item height (20) + gap (4)
+    const verticalPadding = 16; // py-2 (top+bottom)
+    let maxCount = 0;
+    weekDates.forEach((d) => {
+      const u = getUntimedForDate(d);
+      const count = (u.habits?.length || 0) + (u.tasks?.length || 0) + (u.diaries?.length || 0);
+      if (count > maxCount) maxCount = count;
+    });
+    if (maxCount <= 0) return collapsedUntimedHeight;
+    return verticalPadding + perRow * maxCount;
+  };
+  const untimedAreaHeight = expandAllDay ? Math.max(untimedHeight, computeExpandedUntimedHeight()) : untimedHeight;
+
   return (
     <div className="focus:outline-none flex flex-col h-full">
       {/* Day headers above the week */}
-      <div className="grid grid-cols-7 gap-4 mb-4 px-1 ml-[56px]">
+      <div className="grid grid-cols-7 gap-4 px-1 ml-[56px]">
         {weekDates.map((date, index) => {
           const isToday = date.toDateString() === new Date().toDateString();
           const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
@@ -300,21 +304,31 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
         })}
       </div>
 
+      {/* All-day toggle */}
+      <div className="flex items-center justify-end pr-3 mb-2">
+        <button
+          className="text-xxs text-muted-foreground hover:text-foreground transition-colors"
+          onClick={() => setExpandAllDay(v => !v)}
+        >
+          {expandAllDay ? 'Collapse all‑day' : 'Expand all‑day'}
+        </button>
+      </div>
+
 
 
       {/* Time grid for the week */}
-      <div className="">
+      <div className="flex-1 min-h-0">
         <TimeGrid
           mode="week"
           currentDate={currentDate}
           startHour={0}
           endHour={24}
           stepMinutes={30}
-          maxHeight={670}
-          untimedAreaHeight={108}
+          untimedAreaHeight={untimedAreaHeight}
+          resizableUntimed
+          onResizeUntimed={(h) => setUntimedHeight(h)}
           renderUntimed={(day) => {
-            const { habits: habitsForDay, tasks: tasksForDay, diaries: diariesForDay } = getUntimedForDate(day);
-            const scheduledTaskIds = getScheduledTasksFromCalendarItems(day);
+            const { habits: habitsForDay, taskEntries, diaries: diariesForDay } = getUntimedForDate(day) as any;
             const scheduledHabitIds = getScheduledHabitsForDate(day);
             return (
               <div className="flex flex-col gap-1">
@@ -329,11 +343,12 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
                     onUnschedule={onHabitUnschedule}
                   />
                 ))}
-                {tasksForDay.map(task => {
+                {taskEntries.map((entry: any, idx: number) => {
+                  const task = entry.task as Task;
                   const taskList = taskLists?.find(list => list.id === task.task_list_id);
                   return (
                     <TaskCalendarItem
-                      key={`untimed-t-${task.id}`}
+                      key={`untimed-t-${task.id}-${idx}`}
                       task={task}
                       date={day}
                       taskList={taskList}
@@ -341,7 +356,9 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
                       onUnschedule={(taskId, taskDate) => {
                         if (onTaskDelete) onTaskDelete(taskId, taskDate);
                       }}
-                      isScheduled={scheduledTaskIds.includes(task.id)}
+                      calendarItemId={entry.calendarItemId}
+                      onDeleteCalendarItem={onCalendarItemDelete}
+                      isScheduled={Boolean(entry.calendarItemId)}
                     />
                   );
                 })}
@@ -356,14 +373,46 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
               </div>
             );
           }}
+          renderTimed={(day, ctx) => {
+            const items = getTimedCalendarTaskItems(day);
+            const hoursCount = ctx.endHour - ctx.startHour;
+            const totalHeight = ctx.hourRowHeight * hoursCount;
+            const pxPerMinute = totalHeight / (hoursCount * 60);
+            return (
+              <>
+                {items.map((ci) => {
+                  const t = (tasks || []).find(task => task.id === ci.item_id);
+                  if (!t) return null;
+                  const startMin = Math.max(0, (ci.start_minutes || 0) - ctx.startHour * 60);
+                  const endMin = Math.min(hoursCount * 60, (ci.end_minutes ?? (ci.start_minutes || 0) + (ctx.slotsPerHour === 2 ? 30 : 60)) - ctx.startHour * 60);
+                  const top = startMin * pxPerMinute;
+                  const height = Math.max(20, (endMin - startMin) * pxPerMinute);
+                  return (
+                    <div key={`timed-ci-${ci.id}`} className="absolute left-0 right-0 px-1" style={{ top, height }}>
+                      <TaskCalendarItem
+                        task={t}
+                        date={day}
+                        taskList={taskLists?.find(l => l.id === t.task_list_id)}
+                        onToggleComplete={onTaskToggleComplete || (() => {})}
+                        onUnschedule={(taskId, taskDate) => { if (onTaskDelete) onTaskDelete(taskId, taskDate); }}
+                        calendarItemId={ci.id}
+                        onDeleteCalendarItem={onCalendarItemDelete}
+                        isScheduled={true}
+                      />
+                    </div>
+                  );
+                })}
+              </>
+            );
+          }}
           onSlotClick={(dt) => {
             // Placeholder: later we will open a scheduler for tasks/habits with time ranges
             console.log('Clicked time slot:', dt.toString());
           }}
-          onDropTask={(taskId, dateTime, isAllDay) => {
-            if (onTaskDrop) onTaskDrop(taskId, dateTime);
+        onDropTask={(taskId, dateTime, isAllDay) => {
+            if (onTaskDrop) onTaskDrop(taskId, dateTime, isAllDay);
           }}
-          onDropHabit={(habitId, dateTime, isAllDay) => {
+        onDropHabit={(habitId, dateTime, isAllDay) => {
             if (onHabitDrop) onHabitDrop(habitId, dateTime);
           }}
         />

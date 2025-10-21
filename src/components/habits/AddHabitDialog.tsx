@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { FALLBACK_CATEGORIES, fetchCategories, getCategories, resolveCategoryBgColor, type Category, addCacheChangeListener, refreshCategories } from "@/lib/categories";
+import { CategoryEditButton } from '@/components/habits/CategoryEditButton';
 import { createEmptyCustomDays } from "@/lib/frequency";
 import type { HabitTargetUnit } from "@/hooks/useHabits";
 import { useAuth } from "@/hooks/useAuth";
@@ -218,16 +219,20 @@ export const AddHabitDialog = ({
                   <>
                     {categories.map(category => (
                       <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center gap-2">
-                          {category.id === 'none' ? (
-                            <div className="w-3 h-3 rounded-full border border-neutral-300 bg-transparent" />
-                          ) : (
-                            <div
-                              className="w-3 h-3 rounded-full border"
-                              style={{ backgroundColor: category.bgColor ? resolveCategoryBgColor(category.id) : 'transparent', borderColor: category.bgColor ? resolveCategoryBgColor(category.id) : 'transparent' }}
-                            />
-                          )}
-                          <span>{category.name}</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            {category.id === 'none' ? (
+                              <div className="w-3 h-3 rounded-full border border-neutral-300 bg-transparent" />
+                            ) : (
+                              <div
+                                className="w-3 h-3 rounded-full border"
+                                style={{ backgroundColor: category.bgColor ? resolveCategoryBgColor(category.id) : 'transparent', borderColor: category.bgColor ? resolveCategoryBgColor(category.id) : 'transparent' }}
+                              />
+                            )}
+                            <span>{category.name}</span>
+                          </div>
+                          {/* Inline edit */}
+                          {/* <CategoryEditButton category={category} onUpdated={() => setCategories(getCategories())} /> */}
                         </div>
                       </SelectItem>
                     ))}

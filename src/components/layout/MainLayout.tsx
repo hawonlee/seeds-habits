@@ -66,10 +66,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     <div className="h-full flex bg-background flex-col">
       {/* Header */}
       <div className="pt-6 px-8 w-full flex-shrink-0 flex items-center">
-        <div className="flex w-full items-center justify-between gap-2">
+        <div className="flex w-full items-center justify-start gap-2">
 
-          <div className="flex items-center gap-2">
-            {/* User dropdown anchored bottom-left of the main panel when expanded */}
+          {/* <div className="flex items-center gap-2">
             {!isMainCollapsed && (
               <div className="">
                 <UserDropdown
@@ -82,19 +81,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 />
               </div>
             )}
-            {/* <ThemeToggle /> */}
-            {/* <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/knowledge')}
-              className="gap-2"
-            >
-              <Brain className="h-4 w-4" />
-              <span className="hidden sm:inline">Knowledge</span>
-            </Button> */}
-          </div>
+          </div> */}
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full justify-between items-center gap-2">
             <SegmentedToggle
               options={[
                 { value: 'list', label: 'Habits' },
@@ -106,10 +95,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             />
 
             <Button
-              variant="text"
-              size="text"
+              variant="ghosticon"
+              size="icon"
               onClick={onToggleCalendarPanel}
-              className="h-8 px-2 text-xs gap-1"
+              className="text-xs gap-1"
               title={isCalendarPanelCollapsed ? 'Show calendar' : 'Hide calendar'}
             >
               <CalendarIcon className="h-4 w-4" />

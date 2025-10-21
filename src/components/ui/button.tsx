@@ -23,6 +23,7 @@ const buttonVariants = cva(
         tertiary:
           "bg-button-tertiary-bg rounded-full border-none text-button-tertiary-text hover:bg-button-tertiary-hover",
         ghost: "hover:bg-button-ghost-hover",
+        ghosticon: "hover:bg-button-ghost-hover text-muted-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         text: "text-muted-foreground hover:text-foreground",
       },
@@ -31,7 +32,7 @@ const buttonVariants = cva(
         sm: "h-7 px-3",
         lg: "h-11 px-8",
         skinny: "px-5 py-2",
-        icon: "h-8 w-8",
+        icon: "h-6 w-6",
         smallicon: "h-8 w-8",
         frequency: "p-2",
         text: ""

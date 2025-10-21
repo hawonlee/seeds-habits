@@ -91,18 +91,19 @@ export const CurrentHabitsList = ({
   return (
     <div ref={ref} className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <h2 className="text-sm font-medium h-10 flex items-center">Current Habits</h2>
-        <div>
-          <CategoryManager adoptionThreshold={adoptionThreshold} onChangeAdoptionThreshold={onChangeAdoptionThreshold} />
+        <div className="flex items-center justify-start gap-2">
+          <h2 className="text-sm font-medium h-10 flex items-center">Current Habits</h2>
           <Button
-            size="sm"
-            variant="ghost"
+            size="icon"
+            variant="ghosticon"
             onClick={onAddHabit}
-            className="h-8 w-8 p-0"
           >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
+
+        <CategoryManager adoptionThreshold={adoptionThreshold} onChangeAdoptionThreshold={onChangeAdoptionThreshold} />
+
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
@@ -188,6 +189,7 @@ export const CurrentHabitsList = ({
             getId={(h) => h.id}
             onReorder={handleReorder}
             className="flex flex-col gap-2"
+            externalDragType="habit"
             renderItem={(habit) => (
               <HabitCard
                 habit={habit}

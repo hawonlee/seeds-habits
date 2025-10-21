@@ -86,24 +86,22 @@ const DayCell = ({
       <PopoverTrigger asChild>
         <div
           className={`
-            max-h-38 min-h-28 cursor-pointer transition-colors relative
-            ${isCurrentMonth ? '' : 'opacity-50'}
-            ${index % 7 === 6 ? 'border-r-0' : ''}
-            ${index >= 35 ? 'border-b-0' : ''}
+            h-full cursor-pointer transition-colors relative
           `}
+          id={`calendar-${dateKey}`}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
         >
-          <div className="p-[1px] h-full">
-            <div className="calendar-cell-inner h-full bg-habitbg rounded-md p-2 flex flex-col">
+          <div className="h-full">
+            <div className="calendar-cell-inner h-full border-r border-t flex flex-col p-2">
               {/* Date number */}
               <div className="flex items-center justify-end mb-1">
                 <div className={`
                   text-xs font-medium p-1
                   ${isToday ? 'text-white bg-red-600 rounded-full w-6 h-6 flex items-center justify-center' : ''}
                   ${!isToday && isCurrentMonth ? 'text-foreground' : ''}
-                  ${!isToday && !isCurrentMonth ? 'text-muted-foreground' : ''}
+                  ${!isToday && !isCurrentMonth ? 'text-muted-foreground/50' : ''}
                 `}>
                   {date.getDate()}
                 </div>
@@ -486,9 +484,9 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
   return (
-    <div className="w-full focus:outline-none">
+    <div className="w-full h-full focus:outline-none flex flex-col">
       {/* Day headers above the table */}
-      <div className="grid grid-cols-7 mb-2 px-1">
+      <div className="grid grid-cols-7 mb-2 px-1 flex-shrink-0">
         {dayNames.map(day => (
           <div key={day} className="text-center text-xs font-normal text-muted-foreground">
             {day}
@@ -496,9 +494,12 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
         ))}
       </div>
       
-      {/* Scrollable calendar container */}
-      <div className="h-[680px] overflow-y-auto overflow-x-hidden scrollbar-hide focus:outline-none px-4">
-        <div className="grid grid-cols-7">
+      {/* Calendar grid fills remaining height */}
+      <div className="flex-1 min-h-0 overflow-hidden focus:outline-none">
+        <div
+          className="grid grid-cols-7 border-r border-b border-border h-full"
+          style={{ gridTemplateRows: `repeat(${Math.ceil(days.length / 7)}, minmax(0, 1fr))` }}
+        >
         {/* Calendar days */}
         {days.map((date, index) => {
           const habitsForDay = getHabitsForDate(date);
@@ -530,16 +531,29 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
             e.preventDefault();
             e.currentTarget.classList.remove('bg-future-bg', 'border-blue-300');
             const data = e.dataTransfer.getData('text/plain');
-            
+            // Determine target date from drop zone id when available
+            const targetId = (e.currentTarget as HTMLElement).id || '';
+            let targetDate = date;
+            const match = targetId.match(/^calendar-(\d{4}-\d{2}-\d{2})$/);
+            if (match) {
+              const [yStr, mStr, dStr] = match[1].split('-');
+              const yr = parseInt(yStr, 10);
+              const mo = parseInt(mStr, 10) - 1;
+              const dy = parseInt(dStr, 10);
+              const d = new Date(yr, mo, dy);
+              d.setHours(12, 0, 0, 0);
+              targetDate = d;
+            }
+
             if (data.startsWith('habit:')) {
               const habitId = data.replace('habit:', '');
               if (onHabitDrop) {
-                onHabitDrop(habitId, date);
+                onHabitDrop(habitId, targetDate);
               }
             } else if (data.startsWith('task:')) {
               const taskId = data.replace('task:', '');
               if (onTaskDrop) {
-                onTaskDrop(taskId, date);
+                onTaskDrop(taskId, targetDate);
               }
             }
           };

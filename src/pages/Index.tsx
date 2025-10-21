@@ -48,7 +48,7 @@ const Index = () => {
   const { profile, loading: profileLoading } = useProfile();
   const { habits, loading: habitsLoading, hasLoaded, addHabit, updateHabit, deleteHabit, checkInHabit, undoCheckIn, moveHabitPhase, reorderHabits, refreshHabits } = useHabits();
   const { scheduleHabit, unscheduleHabit, schedules, isHabitScheduledOnDate, getScheduledHabitsForDate } = useHabitSchedules();
-  const { calendarItems, scheduleHabit: scheduleHabitToCalendar, scheduleTask: scheduleTaskToCalendar, unscheduleItem, moveItem } = useCalendarItems();
+  const { calendarItems, scheduleHabit: scheduleHabitToCalendar, scheduleTask: scheduleTaskToCalendar, unscheduleItem, moveItem, deleteCalendarItemById } = useCalendarItems();
   const { diaryEntries } = useDiaryEntries();
   const { tasks, taskLists, updateTask, deleteTask, loading: tasksLoading } = useTasks();
   const navigate = useNavigate();
@@ -78,22 +78,22 @@ const Index = () => {
       setIsCalendarPanelCollapsed(false);
       setShowDiary(false);
       setShowTasks(false);
-      setLayout([0, 100]);
+      // Do not force panel sizes here; preserve current layout
     } else if (location.pathname === '/diary') {
       setShowCalendar(false);
       setShowDiary(true);
       setShowTasks(false);
-      setLayout([55, 45]);
+      // Preserve current panel states (calendar remains open if it was open)
     } else if (location.pathname === '/tasks') {
       setShowCalendar(false);
       setShowDiary(false);
       setShowTasks(true);
-      setLayout([55, 45]);
+      // Preserve current panel states (calendar remains open if it was open)
     } else {
       setShowCalendar(false);
       setShowDiary(false);
       setShowTasks(false);
-      setLayout([55, 45]);
+      // Keep current layout
     }
   }, [location.pathname]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -253,9 +253,9 @@ const Index = () => {
     setDraggedHabit(habit);
   };
 
-  const handleHabitDrop = async (habitId: string, date: Date) => {
-    // When a habit is dropped on a calendar day, schedule it for that specific date
-    const success = await scheduleHabitToCalendar(habitId, date);
+  const handleHabitDrop = async (habitId: string, date: Date, isAllDay?: boolean) => {
+    // When a habit is dropped on a calendar day or time grid, schedule accordingly
+    const success = await scheduleHabitToCalendar(habitId, date, { isAllDay });
 
     setDraggedHabit(null);
   };
@@ -281,9 +281,9 @@ const Index = () => {
     }
   };
 
-  const handleTaskDrop = async (taskId: string, date: Date) => {
+  const handleTaskDrop = async (taskId: string, date: Date, isAllDay?: boolean) => {
     // When a task is dropped on a calendar day, schedule it for that specific date
-    const success = await scheduleTaskToCalendar(taskId, date);
+    const success = await scheduleTaskToCalendar(taskId, date, { isAllDay });
     if (success) {
       console.log(`Task ${taskId} scheduled for ${date.toDateString()}`);
     } else {
@@ -302,6 +302,14 @@ const Index = () => {
       }
     } catch (error) {
       console.error(`Failed to unschedule task ${taskId}:`, error);
+    }
+  };
+
+  const handleCalendarItemDelete = async (calendarItemId: string) => {
+    try {
+      await deleteCalendarItemById(calendarItemId);
+    } catch (error) {
+      console.error(`Failed to delete calendar item ${calendarItemId}:`, error);
     }
   };
 
@@ -561,6 +569,7 @@ const Index = () => {
                   onTaskToggleComplete={handleTaskToggleComplete}
                   onTaskDrop={handleTaskDrop}
                   onTaskDelete={handleTaskDelete}
+                  onCalendarItemDelete={handleCalendarItemDelete}
                   onDiaryEntryClick={handleDiaryEntryClick}
                 />
               </div>

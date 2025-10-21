@@ -12,6 +12,8 @@ interface TaskCalendarItemProps {
   onUnschedule?: (taskId: string, date: Date) => void;
   onClick?: (task: Task) => void;
   isScheduled?: boolean;
+  calendarItemId?: string;
+  onDeleteCalendarItem?: (calendarItemId: string) => void;
 }
 
 export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
@@ -21,7 +23,9 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   onToggleComplete,
   onUnschedule,
   onClick,
-  isScheduled = false
+  isScheduled = false,
+  calendarItemId,
+  onDeleteCalendarItem
 }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -32,7 +36,9 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onUnschedule) {
+    if (calendarItemId && onDeleteCalendarItem) {
+      onDeleteCalendarItem(calendarItemId);
+    } else if (onUnschedule) {
       onUnschedule(task.id, date);
     }
   };

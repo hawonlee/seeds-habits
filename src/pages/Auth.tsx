@@ -15,7 +15,7 @@ const Auth = () => {
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { user, signUp, signIn, loading } = useAuth();
+  const { user, signUp, signIn, signInWithProvider, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,6 +42,12 @@ const Auth = () => {
     setIsLoading(false);
   };
 
+  const handleOAuth = async (provider: 'google' | 'github') => {
+    setIsLoading(true);
+    await signInWithProvider(provider);
+    setIsLoading(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -65,6 +71,27 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="signin">
+              <div className="space-y-3 mb-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => handleOAuth('google')}
+                >
+                  Continue with Google
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => handleOAuth('github')}
+                >
+                  Continue with GitHub
+                </Button>
+                <div className="text-center text-xs text-muted-foreground">or</div>
+              </div>
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs" htmlFor="signin-email">Email</Label>
@@ -118,6 +145,27 @@ const Auth = () => {
             </TabsContent>
             
             <TabsContent value="signup">
+              <div className="space-y-3 mb-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => handleOAuth('google')}
+                >
+                  Continue with Google
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => handleOAuth('github')}
+                >
+                  Continue with GitHub
+                </Button>
+                <div className="text-center text-xs text-muted-foreground">or</div>
+              </div>
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs" htmlFor="signup-name">Name</Label>
