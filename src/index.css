@@ -94,22 +94,22 @@ All colors MUST be HSL.
     --plus-button-text-dark: 0 0% 20%;
 
     --category-1-primary: 0 25% 35%;
-    --category-1-intermediary: 0 25% 62.5%;
+    --category-1-intermediary: 0 25% 45%;
     --category-1-bg: 0 25% 90%;
     --category-2-primary: 50 30% 35%;
-    --category-2-intermediary: 50 30% 62.5%;
+    --category-2-intermediary: 50 30% 45%;
     --category-2-bg: 50 30% 90%;
     --category-3-primary: 100 25% 35%;
-    --category-3-intermediary: 100 25% 62.5%;
+    --category-3-intermediary: 100 25% 45%;
     --category-3-bg: 100 25% 90%;
     --category-4-primary: 200 25% 35%;
-    --category-4-intermediary: 200 25% 62.5%;
+    --category-4-intermediary: 200 25% 45%;
     --category-4-bg: 200 25% 90%;
     --category-5-primary: 280 25% 35%;
-    --category-5-intermediary: 280 25% 62.5%;
+    --category-5-intermediary: 280 25% 45%;
     --category-5-bg: 280 25% 90%;
     --category-6-primary: 0 0% 30%;
-    --category-6-intermediary: 0 0% 58.5%;
+    --category-6-intermediary: 0 0% 45%;
     --category-6-bg: 0 0% 87%;
 
     --button-outline-border: 0 0% 80%;
@@ -198,22 +198,22 @@ All colors MUST be HSL.
     --plus-button-text-dark: 0 0% 20%;
 
     --category-1-primary: 0 25% 60%;
-    --category-1-intermediary: 0 25% 40%;
+    --category-1-intermediary: 0 25% 50%;
     --category-1-bg: 0 25% 20%;
     --category-2-primary: 50 30% 60%;
-    --category-2-intermediary: 50 30% 40%;
+    --category-2-intermediary: 50 30% 50%;
     --category-2-bg: 50 30% 20%;
     --category-3-primary: 100 25% 60%;
-    --category-3-intermediary: 100 25% 40%;
+    --category-3-intermediary: 100 25% 50%;
     --category-3-bg: 100 25% 20%;
     --category-4-primary: 200 25% 60%;
-    --category-4-intermediary: 200 25% 40%;
+    --category-4-intermediary: 200 25% 50%;
     --category-4-bg: 200 25% 20%;
     --category-5-primary: 280 25% 60%;
-    --category-5-intermediary: 280 25% 40%;
+    --category-5-intermediary: 280 25% 50%;
     --category-5-bg: 280 25% 20%;
     --category-6-primary: 0 0% 60%;
-    --category-6-intermediary: 0 0% 40%;
+    --category-6-intermediary: 0 0% 50%;
     --category-6-bg: 0 0% 20%;
 
     --button-outline-border: 0 0% 40%;

@@ -150,9 +150,9 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
 
   const getFilteredData = () => {
     return {
-      habits: filter.habits ? habits : [],
+      habits: habits, // Always pass all habits - needed for scheduled habits from calendar_items
       schedules: filter.habits ? schedules : [],
-      calendarItems: filter.habits || filter.tasks ? calendarItems : [],
+      calendarItems: calendarItems, // Always pass all calendar items - let views filter internally
       diaryEntries: filter.diaries ? diaryEntries : [],
       tasks: filter.tasks ? tasks : [],
       taskLists: filter.tasks ? taskLists : []
@@ -191,6 +191,9 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onTaskDrop={onTaskDrop}
             onTaskDelete={onTaskDelete}
             onDiaryEntryClick={onDiaryEntryClick}
+            showHabits={filter.habits}
+            showTasks={filter.tasks}
+            showDiaries={filter.diaries}
           />
         );
       case 'week':
@@ -215,6 +218,9 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onTaskDelete={onTaskDelete}
             onCalendarItemDelete={onCalendarItemDelete}
             onDiaryEntryClick={onDiaryEntryClick}
+            showHabits={filter.habits}
+            showTasks={filter.tasks}
+            showDiaries={filter.diaries}
           />
         );
       case 'day':
@@ -239,6 +245,9 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onTaskDelete={onTaskDelete}
             onCalendarItemDelete={onCalendarItemDelete}
             onDiaryEntryClick={onDiaryEntryClick}
+            showHabits={filter.habits}
+            showTasks={filter.tasks}
+            showDiaries={filter.diaries}
           />
         );
       default:

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Task, TaskList } from '@/hooks/useTasks';
-import { getIntermediaryColorFromHex } from '@/lib/categories';
-import { CalendarItem } from './CalendarItem';
+import { getCategoryCSSVariables, getIntermediaryColorFromHex } from '@/lib/categories';
+import { findColorOptionByValue } from '@/lib/colorOptions';
+import { CalendarDeleteButton } from './CalendarDeleteButton';
 
 interface TaskCalendarItemProps {
   task: Task;
@@ -14,6 +15,7 @@ interface TaskCalendarItemProps {
   isScheduled?: boolean;
   calendarItemId?: string;
   onDeleteCalendarItem?: (calendarItemId: string) => void;
+  isTimed?: boolean;
 }
 
 export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
@@ -25,7 +27,8 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   onClick,
   isScheduled = false,
   calendarItemId,
-  onDeleteCalendarItem
+  onDeleteCalendarItem,
+  isTimed = false
 }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -46,28 +49,34 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !task.completed;
   const isDueToday = task.due_date && new Date(task.due_date).toDateString() === date.toDateString();
   
-  // Get the intermediary color for the task list
+  // Colors
   const textColor = taskList ? getIntermediaryColorFromHex(taskList.color) : 'hsl(var(--category-6-intermediary))';
+  const cssVars = taskList ? getCategoryCSSVariables(taskList.color) : undefined;
+  const textColor1 = cssVars ? cssVars.primary : 'hsl(var(--category-6-primary))';
+  const bgColor = taskList ? (findColorOptionByValue(taskList.color)?.bgHex || taskList.color) : undefined;
 
   return (
-    <CalendarItem
-      variant="interactive"
-      className={`${task.completed ? 'opacity-60' : ''} group`}
+    <div
+      className={`relative  rounded group hover:bg-muted transition-colors ${isTimed ? 'h-full' : ''}`}
       style={{ color: textColor }}
       onClick={handleClick}
-      showDeleteButton={isScheduled}
-      onDelete={handleDelete}
     >
-      <Checkbox
-        checked={task.completed}
-        onCheckedChange={() => onToggleComplete(task.id)}
-        onClick={(e) => e.stopPropagation()}
-        className="h-3.5 w-3.5 mt-0"
-        customColor={textColor}
-      />
-      <span className="truncate flex-1">
-        {task.title}
-      </span>
-    </CalendarItem>
+      {isTimed && (
+        <div className="absolute inset-0 rounded" style={{ backgroundColor: bgColor, opacity: 0.35, pointerEvents: 'none' }} />
+      )}
+      <div className="relative flex items-start gap-1.5 p-1">
+        <Checkbox
+          checked={task.completed}
+          onCheckedChange={() => onToggleComplete(task.id)}
+          onClick={(e) => e.stopPropagation()}
+          className="h-3.5 w-3.5 mt-0"
+          customColor={textColor}
+        />
+        <span className="truncate flex-1 text-[10px]">{task.title}</span>
+        {isScheduled && (
+          <CalendarDeleteButton onClick={handleDelete} />
+        )}
+      </div>
+    </div>
   );
 };

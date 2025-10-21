@@ -261,10 +261,17 @@ const Index = () => {
   };
 
   const handleHabitUnschedule = async (habitId: string, date: Date) => {
-    // When a scheduled habit is right-clicked, unschedule it from that date
-    const success = await unscheduleHabit(habitId, date);
-    if (success) {
-      console.log(`Habit ${habitId} unscheduled from ${date.toDateString()}`);
+    // Try to unschedule from calendar_items first (for dragged habits)
+    const calendarSuccess = await unscheduleItem('habit', habitId, date);
+    if (calendarSuccess) {
+      console.log(`Habit ${habitId} unscheduled from calendar_items for ${date.toDateString()}`);
+      return;
+    }
+    
+    // If not found in calendar_items, try habit_schedules (for frequency-based scheduling)
+    const scheduleSuccess = await unscheduleHabit(habitId, date);
+    if (scheduleSuccess) {
+      console.log(`Habit ${habitId} unscheduled from habit_schedules for ${date.toDateString()}`);
     } else {
       console.log(`Failed to unschedule habit ${habitId} from ${date.toDateString()}`);
     }

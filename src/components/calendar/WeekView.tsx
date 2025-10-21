@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarHabitItem } from "@/components/calendar/CalendarHabitItem";
 import { CalendarDiaryItem } from "@/components/calendar/CalendarDiaryItem";
-import { TaskCalendarItem } from "@/components/calendar/TaskCalendarItem";
+import { TaskCalendarItem } from "@/components/calendar/CalendarTaskItem";
 import { Calendar as CalendarIcon, CheckCircle, Circle, RotateCcw } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { Task, TaskList } from "@/hooks/useTasks";
@@ -14,6 +14,7 @@ import { useHabitCompletionsContext } from "@/components/HabitCompletionsProvide
 import { HabitSchedule } from "@/hooks/useHabitSchedules";
 import { CalendarItemWithDetails } from "@/hooks/useCalendarItems";
 import React from "react";
+import { findColorOptionByValue } from '@/lib/colorOptions';
 import { shouldHabitBeScheduledOnDate } from "./calendarFrequency";
 import { TimeGrid } from "./TimeGrid";
 import type { Database } from "@/integrations/supabase/types";
@@ -32,16 +33,19 @@ interface WeekViewProps {
   calendarViewMode: 'month' | 'week' | 'day';
   onViewModeChange: (mode: 'month' | 'week' | 'day') => void;
   currentDate: Date;
-  onHabitDrop?: (habitId: string, date: Date) => void;
+  onHabitDrop?: (habitId: string, date: Date, isAllDay?: boolean) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
   onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
   onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
+  showHabits?: boolean;
+  showTasks?: boolean;
+  showDiaries?: boolean;
 }
 
-export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick }: WeekViewProps) => {
+export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: WeekViewProps) => {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [expandAllDay, setExpandAllDay] = useState<boolean>(false);
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletionsContext();
@@ -68,23 +72,49 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
     return getScheduledCalendarTaskItems(date).filter(ci => ci.start_minutes !== null && ci.start_minutes !== undefined);
   };
 
+  const getTimedCalendarHabitItems = (date: Date): CalendarItemWithDetails[] => {
+    return getScheduledItemsForDate(date)
+      .filter(item => item.item_type === 'habit' && item.start_minutes !== null && item.start_minutes !== undefined);
+  };
+
   const getUntimedForDate = (date: Date) => {
     const dateString = date.toISOString().split('T')[0];
-    // Habits: scheduled or frequency-based for the day
-    const habitsForDay = getHabitsForDate(date);
-    // Tasks: due that day or scheduled via calendar item
-    const dueTasks = (tasks || []).filter(task => task.due_date && new Date(task.due_date).toISOString().split('T')[0] === dateString);
-    const dueEntries = dueTasks.map(t => ({ task: t, calendarItemId: undefined as string | undefined }));
-    const scheduledTaskItems = getScheduledCalendarTaskItems(date).filter(ci => ci.start_minutes == null);
-    const scheduledEntries = scheduledTaskItems
-      .map(ci => {
-        const t = (tasks || []).find(task => task.id === ci.item_id);
-        return t ? { task: t, calendarItemId: ci.id as string | undefined } : null;
-      })
-      .filter(Boolean) as Array<{ task: Task; calendarItemId?: string }>; 
-    const taskEntries = [...dueEntries, ...scheduledEntries];
-    const diariesForDay = getDiaryEntriesForDate(date);
-    return { habits: habitsForDay, taskEntries, diaries: diariesForDay } as any;
+    
+    // Get scheduled habits from calendar_items (only untimed/all-day ones)
+    const scheduledHabitIds = getScheduledItemsForDate(date)
+      .filter(item => item.item_type === 'habit' && item.start_minutes == null)
+      .map(item => item.item_id);
+    const scheduledHabits = habits.filter(habit => scheduledHabitIds.includes(habit.id));
+    
+    // Get frequency-based habits (only show if showHabits is true)
+    const frequencyHabits = showHabits ? getHabitsForDate(date) : [];
+    
+    // Combine habits: scheduled habits + frequency habits (remove duplicates)
+    const allHabitsForDay = [...scheduledHabits];
+    frequencyHabits.forEach(habit => {
+      if (!scheduledHabits.some(sh => sh.id === habit.id)) {
+        allHabitsForDay.push(habit);
+      }
+    });
+    
+    // Tasks: due that day or scheduled via calendar item (only show if showTasks is true)
+    const taskEntries = showTasks ? (() => {
+      const dueTasks = (tasks || []).filter(task => task.due_date && new Date(task.due_date).toISOString().split('T')[0] === dateString);
+      const dueEntries = dueTasks.map(t => ({ task: t, calendarItemId: undefined as string | undefined }));
+      const scheduledTaskItems = getScheduledCalendarTaskItems(date).filter(ci => ci.start_minutes == null);
+      const scheduledEntries = scheduledTaskItems
+        .map(ci => {
+          const t = (tasks || []).find(task => task.id === ci.item_id);
+          return t ? { task: t, calendarItemId: ci.id as string | undefined } : null;
+        })
+        .filter(Boolean) as Array<{ task: Task; calendarItemId?: string }>; 
+      return [...dueEntries, ...scheduledEntries];
+    })() : [];
+    
+    // Diary entries (only show if showDiaries is true)
+    const diariesForDay = showDiaries ? getDiaryEntriesForDate(date) : [];
+    
+    return { habits: allHabitsForDay, taskEntries, diaries: diariesForDay } as any;
   };
 
   const getScheduledHabitsFromCalendarItems = (date: Date): string[] => {
@@ -332,17 +362,25 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
             const scheduledHabitIds = getScheduledHabitsForDate(day);
             return (
               <div className="flex flex-col gap-1">
-                {habitsForDay.map(habit => (
-                  <CalendarHabitItem
-                    key={`untimed-h-${habit.id}`}
-                    habit={habit}
-                    date={day}
-                    isCompleted={isHabitCompletedOnDate(habit.id, day)}
-                    onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
-                    isScheduled={scheduledHabitIds.includes(habit.id)}
-                    onUnschedule={onHabitUnschedule}
-                  />
-                ))}
+                {habitsForDay.map(habit => {
+                  // Find the calendar item ID for this habit if it's scheduled
+                  const calendarItem = getScheduledItemsForDate(day)
+                    .find(item => item.item_type === 'habit' && item.item_id === habit.id && item.start_minutes == null);
+                  
+                  return (
+                    <CalendarHabitItem
+                      key={`untimed-h-${habit.id}`}
+                      habit={habit}
+                      date={day}
+                      isCompleted={isHabitCompletedOnDate(habit.id, day)}
+                      onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
+                      isScheduled={scheduledHabitIds.includes(habit.id)}
+                      onUnschedule={onHabitUnschedule}
+                      calendarItemId={calendarItem?.id}
+                      onDeleteCalendarItem={onCalendarItemDelete}
+                    />
+                  );
+                })}
                 {taskEntries.map((entry: any, idx: number) => {
                   const task = entry.task as Task;
                   const taskList = taskLists?.find(list => list.id === task.task_list_id);
@@ -374,30 +412,58 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
             );
           }}
           renderTimed={(day, ctx) => {
-            const items = getTimedCalendarTaskItems(day);
+            const taskItems = getTimedCalendarTaskItems(day);
+            const habitItems = getTimedCalendarHabitItems(day);
             const hoursCount = ctx.endHour - ctx.startHour;
             const totalHeight = ctx.hourRowHeight * hoursCount;
             const pxPerMinute = totalHeight / (hoursCount * 60);
             return (
               <>
-                {items.map((ci) => {
+                {/* Render timed tasks */}
+                {taskItems.map((ci) => {
                   const t = (tasks || []).find(task => task.id === ci.item_id);
                   if (!t) return null;
                   const startMin = Math.max(0, (ci.start_minutes || 0) - ctx.startHour * 60);
                   const endMin = Math.min(hoursCount * 60, (ci.end_minutes ?? (ci.start_minutes || 0) + (ctx.slotsPerHour === 2 ? 30 : 60)) - ctx.startHour * 60);
                   const top = startMin * pxPerMinute;
                   const height = Math.max(20, (endMin - startMin) * pxPerMinute);
+                  const list = taskLists?.find(l => l.id === t.task_list_id);
                   return (
-                    <div key={`timed-ci-${ci.id}`} className="absolute left-0 right-0 px-1 pointer-events-auto" style={{ top, height }}>
+                    <div key={`timed-task-${ci.id}`} className="absolute left-0 right-0 pointer-events-auto rounded mx-[1px] mt-[2px]" style={{ top, height: Math.max(16, height - 2) }}>
                       <TaskCalendarItem
                         task={t}
                         date={day}
-                        taskList={taskLists?.find(l => l.id === t.task_list_id)}
+                        taskList={list}
                         onToggleComplete={onTaskToggleComplete || (() => {})}
                         onUnschedule={(taskId, taskDate) => { if (onTaskDelete) onTaskDelete(taskId, taskDate); }}
                         calendarItemId={ci.id}
                         onDeleteCalendarItem={onCalendarItemDelete}
                         isScheduled={true}
+                        isTimed
+                      />
+                    </div>
+                  );
+                })}
+                {/* Render timed habits */}
+                {habitItems.map((ci) => {
+                  const h = (habits || []).find(habit => habit.id === ci.item_id);
+                  if (!h) return null;
+                  const startMin = Math.max(0, (ci.start_minutes || 0) - ctx.startHour * 60);
+                  const endMin = Math.min(hoursCount * 60, (ci.end_minutes ?? (ci.start_minutes || 0) + (ctx.slotsPerHour === 2 ? 30 : 60)) - ctx.startHour * 60);
+                  const top = startMin * pxPerMinute;
+                  const height = Math.max(20, (endMin - startMin) * pxPerMinute);
+                  return (
+                    <div key={`timed-habit-${ci.id}`} className="absolute left-0 right-0 pointer-events-auto rounded mx-[1px] mt-[2px]" style={{ top, height: Math.max(16, height - 2) }}>
+                      <CalendarHabitItem
+                        habit={h}
+                        date={day}
+                        isCompleted={isHabitCompletedOnDate(h.id, day)}
+                        onToggle={(habit, d, isDone) => handleHabitCheckIn(habit, d, isDone)}
+                        isScheduled={true}
+                        onUnschedule={onHabitUnschedule}
+                        isTimed={true}
+                        calendarItemId={ci.id}
+                        onDeleteCalendarItem={onCalendarItemDelete}
                       />
                     </div>
                   );
@@ -413,7 +479,7 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
             if (onTaskDrop) onTaskDrop(taskId, dateTime, isAllDay);
           }}
         onDropHabit={(habitId, dateTime, isAllDay) => {
-            if (onHabitDrop) onHabitDrop(habitId, dateTime);
+            if (onHabitDrop) onHabitDrop(habitId, dateTime, isAllDay);
           }}
         />
       </div>

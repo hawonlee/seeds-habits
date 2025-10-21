@@ -2,7 +2,7 @@ import { BookOpen } from "lucide-react";
 import { getCategoryCSSVariables } from "@/lib/categories";
 import React from "react";
 import type { Database } from "@/integrations/supabase/types";
-import { CalendarItem } from "./CalendarItem";
+import { CalendarDeleteButton } from "./CalendarDeleteButton";
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
@@ -27,8 +27,8 @@ export const CalendarDiaryItem: React.FC<CalendarDiaryItemProps> = ({
   const cssVars = getCategoryCSSVariables(entry.category);
 
   return (
-    <CalendarItem
-      variant="clickable"
+    <div
+      className="text-xxs px-1 rounded flex items-center gap-1.5 truncate h-5 cursor-pointer hover:bg-muted/50 transition-colors"
       title={`${entry.title} - Click to view`}
       onClick={handleClick}
       style={{
@@ -37,8 +37,8 @@ export const CalendarDiaryItem: React.FC<CalendarDiaryItemProps> = ({
       }}
     >
       <BookOpen className="h-3.5 w-3.5 flex-shrink-0" />
-      <span className="truncate flex-1">{entry.title}</span>
-    </CalendarItem>
+      <span className="truncate flex-1 text-[10px]">{entry.title}</span>
+    </div>
   );
 };
 

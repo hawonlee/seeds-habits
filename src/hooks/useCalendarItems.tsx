@@ -50,6 +50,14 @@ export const useCalendarItems = () => {
 
       const { data: calendarItemsData, error } = await query.order('scheduled_date', { ascending: true });
 
+      // Debug: verify fetched calendar items and type distribution
+      try {
+        const total = calendarItemsData?.length || 0;
+        const tasksCount = (calendarItemsData || []).filter(i => i.item_type === 'task').length;
+        const habitsCount = (calendarItemsData || []).filter(i => i.item_type === 'habit').length;
+        console.log('[calendar_items] fetched:', { total, tasksCount, habitsCount, sample: calendarItemsData?.slice(0, 5) });
+      } catch {}
+
       if (error) throw error;
       
       // Fetch related habit and task data separately
@@ -69,6 +77,12 @@ export const useCalendarItems = () => {
         habit: item.item_type === 'habit' ? habitsMap.get(item.item_id) : undefined,
         task: item.item_type === 'task' ? tasksMap.get(item.item_id) : undefined,
       }));
+
+      // Debug: verify mapping enrichment
+      try {
+        const sample = itemsWithDetails.slice(0, 5);
+        console.log('[calendar_items] mapped with details (sample):', sample);
+      } catch {}
       
       setCalendarItems(itemsWithDetails);
     } catch (err) {

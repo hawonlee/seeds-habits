@@ -1,7 +1,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarHabitItem } from "@/components/calendar/CalendarHabitItem";
 import { CalendarDiaryItem } from "@/components/calendar/CalendarDiaryItem";
-import { TaskCalendarItem } from "@/components/calendar/TaskCalendarItem";
+import { TaskCalendarItem } from "@/components/calendar/CalendarTaskItem";
 import { Habit } from "@/hooks/useHabits";
 import { Task, TaskList } from "@/hooks/useTasks";
 import { getCategoryCSSClasses } from "@/lib/categories";
@@ -30,16 +30,20 @@ interface MonthViewProps {
   calendarViewMode: 'month' | 'week' | 'day';
   onViewModeChange: (mode: 'month' | 'week' | 'day') => void;
   currentDate: Date;
-  onHabitDrop?: (habitId: string, date: Date) => void;
+  onHabitDrop?: (habitId: string, date: Date, isAllDay?: boolean) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
-  onTaskDrop?: (taskId: string, date: Date) => void;
+  onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
+  onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
+  showHabits?: boolean;
+  showTasks?: boolean;
+  showDiaries?: boolean;
 }
 
 // Component to handle overflow detection for day cells
-const DayCell = ({ 
+  const DayCell = ({ 
   date, 
   habitsForDay, 
   tasksForDay, 
@@ -51,6 +55,7 @@ const DayCell = ({
   onTaskToggleComplete, 
   onTaskDrop,
   onTaskDelete,
+  onCalendarItemDelete,
   onDiaryEntryClick, 
   taskLists,
   isToday,
@@ -64,7 +69,13 @@ const DayCell = ({
   onDayClick,
   getDetailedHabitsForDate,
   getWeekStartDate,
-  getScheduledTasksFromCalendarItems
+    getScheduledTasksFromCalendarItems,
+    getScheduledHabitsFromCalendarItems,
+    getScheduledItemsForDate,
+    allHabits,
+    showHabits,
+    showTasks,
+    showDiaries
 }: any) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +105,7 @@ const DayCell = ({
           onDrop={onDrop}
         >
           <div className="h-full">
-            <div className="calendar-cell-inner h-full border-r border-t flex flex-col p-2">
+            <div className="calendar-cell-inner h-full border-r border-t flex flex-col py-2 px-1">
               {/* Date number */}
               <div className="flex items-center justify-end mb-1">
                 <div className={`
@@ -108,14 +119,30 @@ const DayCell = ({
               </div>
 
               {/* Content with max 4 items limit */}
-              <div ref={contentRef} className="flex-1 flex flex-col gap-1 overflow-hidden">
+              <div ref={contentRef} className="flex-1 flex flex-col overflow-hidden">
                 {/* Combine all items and limit to 4 */}
                 {(() => {
-                  const allItems = [
-                    ...habitsForDay.map(habit => ({ type: 'habit', data: habit })),
-                    ...tasksForDay.map(task => ({ type: 'task', data: task })),
-                    ...diaryEntriesForDay.map(entry => ({ type: 'diary', data: entry }))
+                  // Build items similarly to tasks: include scheduled habits from calendar_items
+                  const scheduledHabitIds = getScheduledHabitsFromCalendarItems(date);
+                  const scheduledHabits = (allHabits || []).filter((h: any) => scheduledHabitIds.includes(h.id));
+
+                  // Combine all habits: scheduled habits from calendar_items + planned habits for this date
+                  const allHabitsForDay = [
+                    ...scheduledHabits.map((habit: any) => ({ type: 'habit', data: habit })),
+                    ...(showHabits ? habitsForDay.map((habit: any) => ({ type: 'habit', data: habit })) : [])
                   ];
+                  
+                  // Remove duplicates (in case a habit is both scheduled and planned)
+                  const uniqueHabits = allHabitsForDay.filter((item, index, self) => 
+                    index === self.findIndex(t => t.data.id === item.data.id)
+                  );
+
+                  const allItems = [
+                    ...uniqueHabits,
+                    ...(showTasks ? tasksForDay.map(task => ({ type: 'task', data: task })) : []),
+                    ...(showDiaries ? diaryEntriesForDay.map(entry => ({ type: 'diary', data: entry })) : [])
+                  ];
+
                   
                   const visibleItems = allItems.slice(0, 4);
                   const overflowCount = Math.max(0, allItems.length - 4);
@@ -123,16 +150,25 @@ const DayCell = ({
                   return (
                     <>
                       {visibleItems.map((item, index) => {
+                        
                         if (item.type === 'habit') {
+                          const isScheduledHabit = scheduledHabitIds.includes(item.data.id);
+                          
+                          // Find the calendar item ID for this habit if it's scheduled
+                          const calendarItem = getScheduledItemsForDate(date)
+                            .find(calendarItem => calendarItem.item_type === 'habit' && calendarItem.item_id === item.data.id && calendarItem.start_minutes == null);
+                          
                           return (
                             <CalendarHabitItem
-                              key={item.data.id}
+                              key={`habit-${item.data.id}-${dateKey}`}
                               habit={item.data}
                               date={date}
                               isCompleted={isHabitCompletedOnDate(item.data.id, date)}
                               onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
-                              isScheduled={isHabitScheduledOnDate(item.data.id, date)}
+                              isScheduled={isScheduledHabit}
                               onUnschedule={onHabitUnschedule}
+                              calendarItemId={calendarItem?.id}
+                              onDeleteCalendarItem={onCalendarItemDelete}
                             />
                           );
                         } else if (item.type === 'task') {
@@ -284,9 +320,10 @@ const DayCell = ({
   );
 };
 
-export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onDiaryEntryClick }: MonthViewProps) => {
+export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: MonthViewProps) => {
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletionsContext();
   const [openDateKey, setOpenDateKey] = React.useState<string | null>(null);
+  
   
   // Helper functions for scheduled habits
   const formatDateForDB = (date: Date): string => {
@@ -415,9 +452,9 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
     };
     
     // Get habits that are specifically assigned to this day
-    // Get habits scheduled for this specific date (from both old schedules and new calendar_items)
+    // Include any scheduled habits regardless of phase (future/current/adopted)
     const scheduledHabitIds = [...getScheduledHabitsForDate(date), ...getScheduledHabitsFromCalendarItems(date)];
-    const scheduledHabits = activeHabits.filter(habit => 
+    const scheduledHabits = habits.filter(habit => 
       scheduledHabitIds.includes(habit.id) && isHabitActiveOnDate(habit, date)
     );
     
@@ -548,12 +585,12 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
             if (data.startsWith('habit:')) {
               const habitId = data.replace('habit:', '');
               if (onHabitDrop) {
-                onHabitDrop(habitId, targetDate);
+                onHabitDrop(habitId, targetDate, true); // MonthView only has all-day drops
               }
             } else if (data.startsWith('task:')) {
               const taskId = data.replace('task:', '');
               if (onTaskDrop) {
-                onTaskDrop(taskId, targetDate);
+                onTaskDrop(taskId, targetDate, true); // MonthView only has all-day drops
               }
             }
           };
@@ -572,6 +609,7 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
               onTaskToggleComplete={onTaskToggleComplete}
               onTaskDrop={onTaskDrop}
               onTaskDelete={onTaskDelete}
+              onCalendarItemDelete={onCalendarItemDelete}
               onDiaryEntryClick={onDiaryEntryClick}
               taskLists={taskLists}
               isToday={isToday}
@@ -586,6 +624,12 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
               getDetailedHabitsForDate={getDetailedHabitsForDate}
               getWeekStartDate={getWeekStartDate}
               getScheduledTasksFromCalendarItems={getScheduledTasksFromCalendarItems}
+              getScheduledHabitsFromCalendarItems={getScheduledHabitsFromCalendarItems}
+              getScheduledItemsForDate={getScheduledItemsForDate}
+              allHabits={habits}
+              showHabits={showHabits}
+              showTasks={showTasks}
+              showDiaries={showDiaries}
             />
           );
         })}
