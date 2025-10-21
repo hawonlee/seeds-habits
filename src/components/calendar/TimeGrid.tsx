@@ -253,7 +253,7 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                                     </div>
                                 ))}
                                 {renderTimed && (
-                                    <div className="absolute inset-0">
+                                    <div className="absolute inset-0 pointer-events-none">
                                         {renderTimed(day, { hourRowHeight, slotsPerHour, startHour, endHour })}
                                     </div>
                                 )}
@@ -307,5 +307,4 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
 };
 
 export default TimeGrid;
-
 

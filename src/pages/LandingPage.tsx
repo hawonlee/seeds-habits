@@ -26,8 +26,8 @@ export const LandingPage = () => {
         </div> */}
 
 
-      <div className="space-y-6">
-        <div className="w-full h-32 blur-xl hover:blur-lg transition-all duration-300 rounded-md overflow-hidden relative">
+      <div className="relative space-y-6">
+        <div className="w-full z-10 h-32 blur-xl hover:blur-lg backdrop-blur-md transition-all duration-300 rounded-md overflow-hidden relative">
           <div
             className="absolute inset-0 w-full h-full animate-gradient-scroll"
             style={{
@@ -49,13 +49,14 @@ export const LandingPage = () => {
           </style>
         </div>
 
-      <p className="text-sm text-muted-foreground pt-4"> Grow your routine, one seed at a time </p>
-      <div className="flex gap-3 items-center justify-center">
-        <Button variant="tertiary" size="skinny" className="" onClick={() => navigate('/auth')}>Get Started <MoveRight strokeWidth={1.8} className="w-4 h-4" /></Button>
-      </div>
-    </div>
 
-      
+        <p className="text-sm text-muted-foreground pt-4"> Grow your routine, one seed at a time </p>
+        <div className="flex gap-3 items-center justify-center">
+          <Button variant="tertiary" size="skinny" className="" onClick={() => navigate('/auth')}>Get Started <MoveRight strokeWidth={1.8} className="w-4 h-4" /></Button>
+        </div>
+      </div>
+
+
     </div >
   );
 };

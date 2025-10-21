@@ -388,7 +388,7 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
                   const top = startMin * pxPerMinute;
                   const height = Math.max(20, (endMin - startMin) * pxPerMinute);
                   return (
-                    <div key={`timed-ci-${ci.id}`} className="absolute left-0 right-0 px-1" style={{ top, height }}>
+                    <div key={`timed-ci-${ci.id}`} className="absolute left-0 right-0 px-1 pointer-events-auto" style={{ top, height }}>
                       <TaskCalendarItem
                         task={t}
                         date={day}
