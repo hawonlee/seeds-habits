@@ -19,9 +19,9 @@ const buttonVariants = cva(
         nooutline:
           "bg-muted hover:text-accent-foreground",
         secondary:
-          "bg-button-secondary-bg rounded-full border-none text-button-secondary-text hover:bg-button-secondary-hover",
+          "rounded-md border text-button-secondary-text hover:bg-button-secondary-hover/15",
         tertiary:
-          "bg-button-tertiary-bg rounded-full border-none text-button-tertiary-text hover:bg-button-tertiary-hover",
+          "bg-button-tertiary-bg/50 rounded-md border-none text-button-tertiary-text hover:bg-button-tertiary-hover/50",
         ghost: "hover:bg-button-ghost-hover",
         ghosticon: "hover:bg-button-ghost-hover text-muted-foreground",
         link: "text-primary underline-offset-4 hover:underline",
