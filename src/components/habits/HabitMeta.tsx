@@ -46,7 +46,7 @@ export const HabitMeta: React.FC<HabitMetaProps> = ({ habit, useCardTitle = fals
 
             <span className="flex items-center gap-1">
               <MoveUpRight className={iconSize} />
-              {computedTotalCompletions} total
+              {computedTotalCompletions} 
             </span>
             <span className="flex items-center gap-1">
               <Repeat className={iconSize} />

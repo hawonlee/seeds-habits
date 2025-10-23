@@ -272,7 +272,7 @@ export const DiaryView: React.FC<DiaryViewProps> = ({ onToggleCalendar, isCalend
       <div className="flex items-center justify-between mb-2 h-10 flex-shrink-0">
         <div className="flex items-center gap-2">
           <h1 className="text-sm font-medium">Diary</h1>
-          <Button variant="ghost" size="smallicon" onClick={handleCreateNewEntry}>
+          <Button variant="ghosticon" size="icon" onClick={handleCreateNewEntry}>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -300,14 +300,12 @@ export const DiaryView: React.FC<DiaryViewProps> = ({ onToggleCalendar, isCalend
           <div className="flex w-full overflow-x-hidden">
             <div className="flex-1 min-w-0 pr-4">
               {entriesForList.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <CardContent>
+                <div className="text-start">
                     <h3 className="text-sm font-semibold mb-10">No diary entries yet</h3>
-                    <Button variant="default" onClick={handleCreateNewEntry}>
+                    {/* <Button variant="default" onClick={handleCreateNewEntry}>
                       Create First Entry
-                    </Button>
-                  </CardContent>
-                </Card>
+                    </Button> */}
+                </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 auto-rows-min">
                   {(() => {
@@ -367,14 +365,12 @@ export const DiaryView: React.FC<DiaryViewProps> = ({ onToggleCalendar, isCalend
         ) : (
           <div>
             {entriesForList.length === 0 ? (
-              <Card className="p-8 text-center">
-                <CardContent>
-                  <h3 className="text-sm font-semibold mb-10">No diary entries yet</h3>
-                  <Button variant="default" onClick={handleCreateNewEntry}>
-                    Create First Entry
-                  </Button>
-                </CardContent>
-              </Card>
+                <div className="text-start">
+                  <h3 className="text-sm text-muted-foreground mb-10">No diary entries yet</h3>
+                    {/* <Button variant="default" onClick={handleCreateNewEntry}>
+                      Create First Entry
+                    </Button> */}
+                </div>
             ) : (
               <div className="grid gap-4 auto-rows-min" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
                 {(() => {

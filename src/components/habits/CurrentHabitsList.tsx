@@ -90,7 +90,7 @@ export const CurrentHabitsList = ({
 
   const handleReorder = (ids: string[]) => onReorderHabits?.(ids);
   const { ref, width } = useContainerWidth<HTMLDivElement>();
-  const isNarrow = width > 0 && width < 720; // threshold for compacting
+  const isNarrow = width > 0 && width < 630; // threshold for compacting
 
   return (
     <div ref={ref} className="h-full flex flex-col">
