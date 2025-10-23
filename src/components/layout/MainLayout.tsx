@@ -4,7 +4,7 @@ import { SegmentedToggle } from '@/components/ui/segmented-toggle';
 import { ExternalPanelToggle } from '@/components/ui/external-panel-toggle';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { Brain, Calendar as CalendarIcon } from 'lucide-react';
+import { Brain, Calendar as CalendarIcon, PanelLeft } from 'lucide-react';
 import { UserDropdown } from '@/components/layout/UserDropdown';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -65,8 +65,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   return (
     <div className="h-full flex bg-background flex-col">
       {/* Header */}
-      <div className="pt-6 px-8 w-full flex-shrink-0 flex items-center">
-        <div className="flex w-full items-center justify-start gap-2">
+      {/* <div className="pt-6 pl-4 pr-8 w-full flex-shrink-0 flex items-center">
+        <div className="flex w-full items-center justify-start gap-2"> */}
 
           {/* <div className="flex items-center gap-2">
             {!isMainCollapsed && (
@@ -83,7 +83,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             )}
           </div> */}
 
-          <div className="flex w-full justify-between items-center gap-2">
+          {/* <div className="flex w-full justify-between items-center gap-2">
             <SegmentedToggle
               options={[
                 { value: 'list', label: 'Habits' },
@@ -104,20 +104,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               <CalendarIcon className="h-4 w-4" />
             </Button>
   
-            {/* <div className={`transition-opacity duration-300 ${isCombinedPanelCollapsed ? 'opacity-100' : 'hidden pointer-events-none'}`}>
-              <ExternalPanelToggle onToggle={onTogglePanel} />
-            </div> */}
           </div>
 
 
         </div>
-      </div>
+      </div> */}
+
 
       {/* Content */}
-      <div className="flex-1 min-w-0 px-8 pt-2 overflow-hidden min-h-0 relative">
+      <div className="flex-1 min-w-0 px-4 pt-3 overflow-hidden min-h-0 relative">
         {children}
         
       </div>
+      
     </div>
   );
 };

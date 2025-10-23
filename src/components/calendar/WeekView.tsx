@@ -47,7 +47,6 @@ interface WeekViewProps {
 
 export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: WeekViewProps) => {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-  const [expandAllDay, setExpandAllDay] = useState<boolean>(false);
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletionsContext();
 
   // Helper functions for scheduled items
@@ -285,22 +284,25 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
     setSelectedDay(date);
   };
 
-  // Compute a unified all-day height across the week when expanded
-  const [untimedHeight, setUntimedHeight] = useState<number>(108);
-  const collapsedUntimedHeight = 108;
-  const computeExpandedUntimedHeight = () => {
-    const perRow = 24; // approx item height (20) + gap (4)
-    const verticalPadding = 16; // py-2 (top+bottom)
+  // Unified all-day height across the week, resizable via TimeGrid handle
+  const [untimedHeight, setUntimedHeight] = useState<number>(0);
+  const MAX_ALL_DAY = 240;           // max px height for all‑day area
+  const ITEM_ROW_PX = 24;            // approx item height + gap
+  const VERTICAL_PADDING_PX = 16;    // py-2 top+bottom
+
+  const computeUntimedAutoHeight = () => {
     let maxCount = 0;
     weekDates.forEach((d) => {
-      const u = getUntimedForDate(d);
-      const count = (u.habits?.length || 0) + (u.tasks?.length || 0) + (u.diaries?.length || 0);
+      const u = getUntimedForDate(d) as any;
+      const count = (u.habits?.length || 0) + (u.taskEntries?.length || 0) + (u.diaries?.length || 0);
       if (count > maxCount) maxCount = count;
     });
-    if (maxCount <= 0) return collapsedUntimedHeight;
-    return verticalPadding + perRow * maxCount;
+    const autoHeight = Math.max(0, VERTICAL_PADDING_PX + ITEM_ROW_PX * maxCount);
+    return Math.min(MAX_ALL_DAY, autoHeight);
   };
-  const untimedAreaHeight = expandAllDay ? Math.max(untimedHeight, computeExpandedUntimedHeight()) : untimedHeight;
+
+  // Fit content until max; allow handle to increase, but never go below content height (no explicit min)
+  const untimedAreaHeight = Math.min(MAX_ALL_DAY, Math.max(computeUntimedAutoHeight(), untimedHeight));
 
   return (
     <div className="focus:outline-none flex flex-col h-full">
@@ -333,18 +335,6 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
           );
         })}
       </div>
-
-      {/* All-day toggle */}
-      <div className="flex items-center justify-end pr-3 mb-2">
-        <button
-          className="text-xxs text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => setExpandAllDay(v => !v)}
-        >
-          {expandAllDay ? 'Collapse all‑day' : 'Expand all‑day'}
-        </button>
-      </div>
-
-
 
       {/* Time grid for the week */}
       <div className="flex-1 min-h-0">

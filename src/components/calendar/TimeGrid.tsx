@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 
 interface TimeGridProps {
@@ -94,34 +94,28 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
         )
     );
 
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!isDraggingRef.current) return;
-            const dy = e.clientY - dragStartYRef.current;
-            const next = Math.max(64, Math.min(600, (startHeightRef.current || 0) + dy));
-            onResizeUntimed && onResizeUntimed(next);
-        };
-        const handleMouseUp = () => {
-            if (!isDraggingRef.current) return;
-            isDraggingRef.current = false;
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-        if (isDraggingRef.current) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-        }
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [onResizeUntimed]);
+    const handleMouseMove = (e: MouseEvent) => {
+        if (!isDraggingRef.current) return;
+        const dy = e.clientY - dragStartYRef.current;
+        const next = Math.max(0, Math.min(600, (startHeightRef.current || 0) + dy));
+        onResizeUntimed && onResizeUntimed(next);
+    };
+    const handleMouseUp = () => {
+        if (!isDraggingRef.current) return;
+        isDraggingRef.current = false;
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+    };
 
     const startResize = (e: React.MouseEvent) => {
         if (!resizableUntimed) return;
         isDraggingRef.current = true;
         dragStartYRef.current = e.clientY;
         startHeightRef.current = untimedAreaHeight;
+        // Attach listeners immediately when drag starts
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        e.preventDefault();
     };
 
     return (
@@ -259,7 +253,7 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                                 )}
                             </div>
                         </div>
-                    ))}
+                   ))}
                 </div>
 
                 {/* Current time indicator */}
@@ -295,7 +289,7 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
             {resizableUntimed && (
                 <div
                     className="absolute left-0 right-0 z-40 cursor-row-resize"
-                    style={{ top: (untimedAreaHeight || 0) - 3, height: 6 }}
+                    style={{ top: (untimedAreaHeight || 0) - 2, height: 8 }}
                     onMouseDown={startResize}
                     aria-label="Resize all-day bar"
                 >

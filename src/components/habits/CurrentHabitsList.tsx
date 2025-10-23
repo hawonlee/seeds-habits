@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, TrendingUp, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { HabitCard } from "./HabitCard";
 import { CategoryManager } from "./CategoryManager";
@@ -23,6 +23,8 @@ interface CurrentHabitsListProps {
   onMoveHabit: (id: string, phase: Habit['phase']) => void;
   onRefreshHabits?: () => void;
   onReorderHabits?: (habitIds: string[]) => void;
+  onToggleCalendar?: () => void;
+  isCalendarCollapsed?: boolean;
 }
 
 export const CurrentHabitsList = ({
@@ -38,7 +40,9 @@ export const CurrentHabitsList = ({
   onUndoCheckIn,
   onMoveHabit,
   onRefreshHabits,
-  onReorderHabits
+  onReorderHabits,
+  onToggleCalendar,
+  isCalendarCollapsed = true
 }: CurrentHabitsListProps) => {
   // Track a moving 7-day window whose last day (rightmost square) is viewEndDate
   const [viewEndDate, setViewEndDate] = useState(() => {
@@ -90,7 +94,7 @@ export const CurrentHabitsList = ({
 
   return (
     <div ref={ref} className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+      <div className="flex items-center justify-between mb-2 flex-shrink-0">
         <div className="flex items-center justify-start gap-2">
           <h2 className="text-sm font-medium h-10 flex items-center">Current Habits</h2>
           <Button
@@ -102,7 +106,21 @@ export const CurrentHabitsList = ({
           </Button>
         </div>
 
-        <CategoryManager adoptionThreshold={adoptionThreshold} onChangeAdoptionThreshold={onChangeAdoptionThreshold} />
+        <div className="flex items-center gap-2">
+          <CategoryManager adoptionThreshold={adoptionThreshold} onChangeAdoptionThreshold={onChangeAdoptionThreshold} />
+          
+          {onToggleCalendar && (
+            <Button
+              variant="ghosticon"
+              size="icon"
+              onClick={onToggleCalendar}
+              className="text-xs gap-1"
+              title={isCalendarCollapsed ? 'Show calendar' : 'Hide calendar'}
+            >
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
 
       </div>
 

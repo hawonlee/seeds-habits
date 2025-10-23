@@ -24,6 +24,11 @@ import type { Database } from '@/integrations/supabase/types';
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
+interface DiaryViewProps {
+  onToggleCalendar?: () => void;
+  isCalendarCollapsed?: boolean;
+}
+
 interface DiaryEntryFormProps {
   entry?: DiaryEntry;
   onSave: (data: { title: string; body: string; category: string; entry_date: string }) => void;
@@ -164,7 +169,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
   );
 };
 
-export const DiaryView: React.FC = () => {
+export const DiaryView: React.FC<DiaryViewProps> = ({ onToggleCalendar, isCalendarCollapsed = true }) => {
   const navigate = useNavigate();
   const { diaryEntries, loading, deleteDiaryEntry, updateDiaryEntry, createDiaryEntry } = useDiaryEntries();
   const [deletingEntry, setDeletingEntry] = useState<DiaryEntry | null>(null);
@@ -264,13 +269,25 @@ export const DiaryView: React.FC = () => {
 
   return (
     <div ref={ref} className="h-full flex flex-col">
-      <div className="flex items-center justify-start mb-4 h-10 flex-shrink-0">
-        <div>
+      <div className="flex items-center justify-between mb-2 h-10 flex-shrink-0">
+        <div className="flex items-center gap-2">
           <h1 className="text-sm font-medium">Diary</h1>
+          <Button variant="ghost" size="smallicon" onClick={handleCreateNewEntry}>
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
-        <Button variant="ghost" size="smallicon" onClick={handleCreateNewEntry}>
-          <Plus className="h-4 w-4" />
-        </Button>
+        
+        {onToggleCalendar && (
+          <Button
+            variant="ghosticon"
+            size="icon"
+            onClick={onToggleCalendar}
+            className="text-xs gap-1"
+            title={isCalendarCollapsed ? 'Show calendar' : 'Hide calendar'}
+          >
+            <CalendarIcon className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">

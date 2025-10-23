@@ -7,14 +7,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, CheckSquare, Check, X } from 'lucide-react';
+import { Plus, CheckSquare, Check, X, CalendarIcon } from 'lucide-react';
 import { useTasks, Task, TaskList } from '@/hooks/useTasks';
 import { TaskListCard } from '@/components/tasks/TaskList';
 import { TaskDialog } from '@/components/tasks/TaskDialog';
 import { DeleteConfirmationModal } from '@/components/diary/DeleteConfirmationModal';
 import { COLOR_OPTIONS } from '@/lib/colorOptions';
 
-export const TasksView: React.FC = () => {
+interface TasksViewProps {
+  onToggleCalendar?: () => void;
+  isCalendarCollapsed?: boolean;
+}
+
+export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalendarCollapsed = true }) => {
   const {
     taskLists,
     tasks,
@@ -187,14 +192,15 @@ export const TasksView: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-start h-10 mb-4 flex-shrink-0">
-        <h1 className="text-sm font-medium">Tasks</h1>
-        <DropdownMenu open={isCreatingList} onOpenChange={setIsCreatingList}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={handleCreateTaskList}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+      <div className="flex items-center justify-between h-10 mb-2 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <h1 className="text-sm font-medium">Tasks</h1>
+          <DropdownMenu open={isCreatingList} onOpenChange={setIsCreatingList}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={handleCreateTaskList}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent className="p-4" align="end">
             <div className="flex items-end gap-2">
               <div>
@@ -270,6 +276,19 @@ export const TasksView: React.FC = () => {
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
+        
+        {onToggleCalendar && (
+          <Button
+            variant="ghosticon"
+            size="icon"
+            onClick={onToggleCalendar}
+            className="text-xs gap-1"
+            title={isCalendarCollapsed ? 'Show calendar' : 'Hide calendar'}
+          >
+            <CalendarIcon className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
