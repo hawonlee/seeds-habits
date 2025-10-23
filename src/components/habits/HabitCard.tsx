@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import TriCheckbox from "@/components/ui/tri-checkbox";
 import { Plus, Check, Flame } from "lucide-react";
 import { Habit } from "@/hooks/useHabits";
 import { getCategoryById, getCategoryCSSVariables } from "@/lib/categories";
@@ -62,6 +63,7 @@ export const HabitCard = ({
   viewEndDate
 }: HabitCardProps) => {
   const [showInlineEdit, setShowInlineEdit] = useState(false);
+  // Undo state is now persisted by TriCheckbox; local set no longer needed
   const cardRef = useRef<HTMLDivElement>(null);
 
   const { todayDate, lastCompletedKey, isCheckedInToday } = getHabitDates(habit);
@@ -166,23 +168,31 @@ export const HabitCard = ({
               return (
                 <div key={index} className="flex flex-col items-center w-12">
                   <div
-                    className={`${sizeClasses} rounded flex items-center justify-center text-[10px] ${dayDone ? 'text-white' : ''}`}
+                    className={`${sizeClasses} rounded flex items-center justify-center text-[10px]`}
                     title={`${day.toLocaleDateString('en-US', { weekday: 'short' })} ${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-                    style={{
-                      backgroundColor: dayDone ? categoryColor : 'hsl(var(--daycell-bg))',
-                      borderColor: dayDone ? categoryColor : (isToday ? 'hsl(var(--border-today))' : 'hsl(var(--border-default))')
-                    }}
                   >
-                    <button
-                      className={`w-full h-full flex flex-col items-center justify-center rounded duration-200 ${dayDone ? 'text-white' : 'text-text-primary hover:text-text-hover hover:bg-button-hover'}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        completionHandlers.setDateCompletion(day, !dayDone);
-                      }}
-                    >
-                      {day.getDate()}
-                      {isToday && <Check className="h-3 w-3" />}
-                    </button>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <TriCheckbox
+                        onChange={(next) => {
+                          if (next === 'checked') {
+                            completionHandlers.setDateCompletion(day, true);
+                          } else if (next === 'undo') {
+                            // Revert completion immediately on undo
+                            completionHandlers.setDateCompletion(day, false);
+                          } else {
+                            // empty: already reverted on undo; nothing to do
+                          }
+                        }}
+                        size={isToday ? 'lg' : 'sm'}
+                        categoryId={habit.category}
+                        dayNumber={day.getDate()}
+                        isToday={isToday}
+                        showBackground={true}
+                        isCompleted={dayDone}
+                        habitId={habit.id}
+                        stateDate={day.toISOString().split('T')[0]}
+                      />
+                    </div>
                   </div>
                 </div>
               );
@@ -312,14 +322,19 @@ export const HabitCard = ({
           <CardContent className="">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={done}
-                  onCheckedChange={(checked) => {
-                    const shouldCheck = checked === true;
-                    completionHandlers.setDateCompletion(targetDate, shouldCheck);
+                <TriCheckbox
+                  onChange={(next) => {
+                    if (next === 'checked') {
+                      completionHandlers.setDateCompletion(targetDate, true);
+                    } else if (next === 'undo') {
+                      completionHandlers.setDateCompletion(targetDate, false);
+                    }
                   }}
+                  size="md"
                   className="mt-1"
                   categoryId={habit.category}
+                  habitId={habit.id}
+                  stateDate={targetDate.toISOString().split('T')[0]}
                 />
                 <div className="flex-1">
                   <HabitMeta habit={habit} useCardTitle size="sm" />
