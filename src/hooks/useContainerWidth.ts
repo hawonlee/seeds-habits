@@ -1,31 +1,50 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState, type RefCallback } from 'react';
 
 export const useContainerWidth = <T extends HTMLElement>() => {
-  const ref = useRef<T | null>(null);
+  const [node, setNode] = useState<T | null>(null);
   const [width, setWidth] = useState<number>(0);
 
+  const measure = useCallback(() => {
+    if (!node) return;
+    const next = node.getBoundingClientRect().width;
+    setWidth((prev) => (prev !== next ? next : prev));
+  }, [node]);
+
+  const ref = useCallback<RefCallback<T>>((el) => {
+    setNode(el);
+  }, []);
+
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    if (!node) return;
 
-    const update = () => setWidth(el.getBoundingClientRect().width);
-    // Measure now, next frame, and after a short delay to catch programmatic resizes
-    update();
-    const rafId = requestAnimationFrame(update);
-    const timeoutId = setTimeout(update, 50);
+    // Measure immediately to catch the current layout
+    measure();
+    const rafId = requestAnimationFrame(measure);
+    const timeoutId = setTimeout(measure, 50);
 
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    if (el.parentElement) observer.observe(el.parentElement);
+    const observer = new ResizeObserver((entries) => {
+      // Use observed size when available; fall back to direct measurement
+      const entry = entries.find((e) => e.target === node || e.target === node.parentElement);
+      if (entry) {
+        const next = entry.contentRect.width;
+        setWidth((prev) => (prev !== next ? next : prev));
+      } else {
+        measure();
+      }
+    });
 
-    window.addEventListener('resize', update);
+    observer.observe(node);
+    if (node.parentElement) observer.observe(node.parentElement);
+
+    window.addEventListener('resize', measure);
+
     return () => {
       cancelAnimationFrame(rafId);
       clearTimeout(timeoutId);
       observer.disconnect();
-      window.removeEventListener('resize', update);
+      window.removeEventListener('resize', measure);
     };
-  }, [ref.current]);
+  }, [measure, node]);
 
   return { ref, width } as const;
 };

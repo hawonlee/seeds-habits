@@ -7,6 +7,7 @@ import { useDiaryEntries } from "@/hooks/useDiaryEntries";
 import { useHabitSchedules } from "@/hooks/useHabitSchedules";
 import { useCalendarItems } from "@/hooks/useCalendarItems";
 import { useTasks } from "@/hooks/useTasks";
+import type { Database } from "@/integrations/supabase/types";
 import { CurrentHabitsList } from "@/components/habits/CurrentHabitsList";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import * as ResizablePrimitive from "react-resizable-panels";
@@ -51,7 +52,15 @@ const Index = () => {
   const { profile, loading: profileLoading } = useProfile();
   const { habits, loading: habitsLoading, hasLoaded, addHabit, updateHabit, deleteHabit, checkInHabit, undoCheckIn, moveHabitPhase, reorderHabits, refreshHabits } = useHabits();
   const { scheduleHabit, unscheduleHabit, schedules, isHabitScheduledOnDate, getScheduledHabitsForDate } = useHabitSchedules();
-  const { calendarItems, scheduleHabit: scheduleHabitToCalendar, scheduleTask: scheduleTaskToCalendar, unscheduleItem, moveItem, deleteCalendarItemById } = useCalendarItems();
+  const {
+    calendarItems,
+    scheduleHabit: scheduleHabitToCalendar,
+    scheduleTask: scheduleTaskToCalendar,
+    unscheduleItem,
+    moveItem,
+    deleteCalendarItemById,
+    refreshCalendarItems
+  } = useCalendarItems();
   const { diaryEntries } = useDiaryEntries();
   const { tasks, taskLists, updateTask, deleteTask, loading: tasksLoading } = useTasks();
   const navigate = useNavigate();
@@ -280,8 +289,11 @@ const Index = () => {
     }
   };
 
-  const handleDiaryEntryClick = (entry: any) => {
-    navigate('/diary');
+  type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
+
+  const handleDiaryEntryClick = (entry: DiaryEntry) => {
+    // Open the diary page with the entry loaded in the panel
+    navigate('/diary', { state: { diaryEntryId: entry.id } });
   };
 
   const handleTaskToggleComplete = async (taskId: string) => {
@@ -296,6 +308,8 @@ const Index = () => {
     const success = await scheduleTaskToCalendar(taskId, date, { isAllDay });
     if (success) {
       console.log(`Task ${taskId} scheduled for ${date.toDateString()}`);
+      // Ensure calendar updates immediately with latest data
+      await refreshCalendarItems();
     } else {
       console.log(`Failed to schedule task ${taskId} for ${date.toDateString()}`);
     }
@@ -328,18 +342,22 @@ const Index = () => {
       setShowDiary(true);
       setShowCalendar(false);
       setShowTasks(false);
+      navigate('/diary');
     } else if (view === 'calendar') {
       setShowDiary(false);
       setShowCalendar(true);
       setShowTasks(false);
+      navigate('/calendar');
     } else if (view === 'tasks') {
       setShowDiary(false);
       setShowCalendar(false);
       setShowTasks(true);
+      navigate('/tasks');
     } else {
       setShowDiary(false);
       setShowCalendar(false);
       setShowTasks(false);
+      navigate('/');
     }
   };
 

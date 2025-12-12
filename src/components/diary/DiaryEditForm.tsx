@@ -392,7 +392,7 @@ export const DiaryEditForm: React.FC<DiaryEditFormProps> = ({
             <div className="relative">
               <div
                 ref={contentEditableRef}
-                className="min-h-[300px] focus:outline-none text-sm"
+                className="min-h-[300px] focus:outline-none text-xs"
                 contentEditable
                 suppressContentEditableWarning
                 onInput={handleInput}
@@ -401,7 +401,7 @@ export const DiaryEditForm: React.FC<DiaryEditFormProps> = ({
                 style={{ whiteSpace: 'pre-wrap' }}
               />
               {!body && (
-                <div className="absolute top-0 left-1 text-muted-foreground text-sm pointer-events-none ">
+                <div className="absolute top-0 left-1 text-muted-foreground text-xs pointer-events-none ">
                   Write your diary entry...
                 </div>
               )}

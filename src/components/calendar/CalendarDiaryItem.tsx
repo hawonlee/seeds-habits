@@ -1,6 +1,7 @@
 import { BookOpen } from "lucide-react";
 import { getCategoryCSSVariables } from "@/lib/categories";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import type { Database } from "@/integrations/supabase/types";
 import { CalendarDeleteButton } from "./CalendarDeleteButton";
 
@@ -17,11 +18,14 @@ export const CalendarDiaryItem: React.FC<CalendarDiaryItemProps> = ({
   date,
   onClick
 }) => {
+  const navigate = useNavigate();
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onClick) {
       onClick(entry);
     }
+    navigate('/diary', { state: { diaryEntryId: entry.id } });
   };
 
   const cssVars = getCategoryCSSVariables(entry.category);

@@ -119,7 +119,7 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
     };
 
     return (
-        <div className="relative h-full min-h-0">
+        <div className="relative h-full min-h-0 mt-2">
 
             <div className="relative overflow-y-auto h-full">
                 {/* Grid container: first column is time gutter, then day columns */}
@@ -131,8 +131,8 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                     <div className="relative border-habitbg">
 
                         {/* Untimed gutter header */}
-                        <div className="sticky top-0 z-30 border-t border-b border-habitbg mb-3 text-[10px] text-muted-foreground flex items-start justify-end pt-2 pr-2" style={{ height: untimedAreaHeight }}>
-                            all <br />day
+                        <div className="sticky top-0 z-30 border-t min-h-8 bg-popover border-b border-habitbg mb-3 text-[10px] text-muted-foreground flex items-start justify-end pt-2 pr-2" style={{ height: untimedAreaHeight }}>
+                            all day
                         </div>
                         {hours.map((h) => (
                             <div key={h} className="relative" style={{ height: slotsPerHour === 2 ? 64 : 48 }}>
@@ -153,7 +153,7 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                             {/* Untimed items area */}
                             <DroppableWrapper
                                 id={`calendar:${fmtDate(day)}`}
-                                className="sticky top-0 z-30  border-t border-l -ml-[1px] border-b border-habitbg px-2 py-2 overflow-y-auto transition-colors"
+                                className="sticky top-0 z-30  border-t min-h-8 bg-popover border-l -ml-[1px] border-b border-habitbg px-2 py-2 overflow-y-auto transition-colors"
                                 style={{ height: untimedAreaHeight }}
                                 onDragOver={(e) => {
                                     e.preventDefault();

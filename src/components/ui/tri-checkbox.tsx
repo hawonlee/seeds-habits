@@ -3,7 +3,7 @@ import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryCSSVariables } from "@/lib/categories";
 
-type TriState = "empty" | "checked" | "undo";
+type TriState = "empty" | "checked" | "undo" | "excused";
 
 interface TriCheckboxProps {
   value?: TriState;
@@ -94,8 +94,10 @@ export const TriCheckbox = React.forwardRef<HTMLButtonElement, TriCheckboxProps>
         next = "checked";
       } else if (current === "checked") {
         next = "undo";
-      } else {
+      } else if (current === "undo") {
         // current === "undo"
+        next = "excused";
+      } else if (current === "excused") {
         next = "empty";
       }
       
@@ -225,6 +227,9 @@ export const TriCheckbox = React.forwardRef<HTMLButtonElement, TriCheckboxProps>
               <Check style={iconStyle} className="stroke-[2.5px]" />
             )}
             {current === "undo" && (
+              <X style={iconStyle} className="stroke-[2.5px]" />
+            )}
+            {current === "excused" && (
               <X style={iconStyle} className="stroke-[2.5px]" />
             )}
       </button>

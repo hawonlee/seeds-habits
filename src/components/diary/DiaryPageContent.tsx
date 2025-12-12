@@ -1,13 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { formatDateLocal } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Plus, Home } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDiaryEntries } from '@/hooks/useDiaryEntries';
 import { DiaryEntryCard } from './DiaryEntryCard';
-import { DiaryEditModal } from './DiaryEditModal';
 import { DiaryEditorPanel } from './DiaryEditorPanel';
 import type { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
@@ -17,6 +16,7 @@ type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 export const DiaryPageContent: React.FC = () => {
   const { diaryEntries, loading, updateDiaryEntry, deleteDiaryEntry, createDiaryEntry } = useDiaryEntries();
   const navigate = useNavigate();
+  const location = useLocation();
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   
   const blankEntry: DiaryEntry = useMemo(() => ({
@@ -37,6 +37,17 @@ export const DiaryPageContent: React.FC = () => {
       console.error('Error deleting diary entry:', error);
     }
   };
+
+  // If navigated with a diaryEntryId state (e.g., from calendar), open that entry in the panel
+  useEffect(() => {
+    const state = location.state as { diaryEntryId?: string } | null;
+    if (state?.diaryEntryId) {
+      const match = diaryEntries.find((entry) => entry.id === state.diaryEntryId);
+      if (match) {
+        setEditingEntry(match);
+      }
+    }
+  }, [location.state, diaryEntries]);
 
   if (loading) {
     return (

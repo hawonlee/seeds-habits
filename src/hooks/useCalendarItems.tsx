@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import type { Database } from '@/integrations/supabase/types';
@@ -17,6 +17,7 @@ export const useCalendarItems = () => {
   const [calendarItems, setCalendarItems] = useState<CalendarItemWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const fetchIdRef = useRef(0);
 
   // Format date for database (YYYY-MM-DD in local timezone)
   const formatDateForDB = (date: Date): string => {
@@ -28,6 +29,7 @@ export const useCalendarItems = () => {
 
   // Fetch all calendar items for the current user with related data
   const fetchCalendarItems = async (startDate?: Date, endDate?: Date) => {
+    const fetchId = ++fetchIdRef.current;
     if (!user) {
       setCalendarItems([]);
       setLoading(false);
@@ -84,11 +86,17 @@ export const useCalendarItems = () => {
         console.log('[calendar_items] mapped with details (sample):', sample);
       } catch {}
       
-      setCalendarItems(itemsWithDetails);
+      // Only apply the results if this is the latest fetch to avoid overwriting
+      // newer state (e.g., right after a drag-and-drop schedule).
+      if (fetchId === fetchIdRef.current) {
+        setCalendarItems(itemsWithDetails);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setLoading(false);
+      if (fetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 

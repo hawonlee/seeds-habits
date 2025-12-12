@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useContainerWidth } from '@/hooks/useContainerWidth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -171,6 +171,7 @@ const DiaryEntryForm: React.FC<DiaryEntryFormProps> = ({ entry, onSave, onCancel
 
 export const DiaryView: React.FC<DiaryViewProps> = ({ onToggleCalendar, isCalendarCollapsed = true }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { diaryEntries, loading, deleteDiaryEntry, updateDiaryEntry, createDiaryEntry } = useDiaryEntries();
   const [deletingEntry, setDeletingEntry] = useState<DiaryEntry | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -263,6 +264,17 @@ export const DiaryView: React.FC<DiaryViewProps> = ({ onToggleCalendar, isCalend
       setEditingEntry(next);
     }
   }, [diaryEntries, editingEntry]);
+
+  // If navigated with a diaryEntryId (e.g., from calendar), open it in the panel
+  useEffect(() => {
+    const state = location.state as { diaryEntryId?: string } | null;
+    if (state?.diaryEntryId) {
+      const match = diaryEntries.find(entry => entry.id === state.diaryEntryId);
+      if (match) {
+        setEditingEntry(match);
+      }
+    }
+  }, [location.state, diaryEntries]);
 
   const { ref, width } = useContainerWidth<HTMLDivElement>();
   const cols = width < 560 ? 1 : width < 900 ? 2 : 3;
