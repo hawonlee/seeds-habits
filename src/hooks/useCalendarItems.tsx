@@ -18,6 +18,7 @@ export const useCalendarItems = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const fetchIdRef = useRef(0);
+  const nowIso = () => new Date().toISOString();
 
   // Format date for database (YYYY-MM-DD in local timezone)
   const formatDateForDB = (date: Date): string => {
@@ -106,11 +107,28 @@ export const useCalendarItems = () => {
   const scheduleHabit = async (habitId: string, date: Date, options?: { isAllDay?: boolean }): Promise<boolean> => {
     if (!user) return false;
 
+    const scheduledDate = formatDateForDB(date);
+    const isAllDay = options?.isAllDay === true;
+    const startMinutesValue = isAllDay ? null : minutesFromMidnight(date);
+    const optimisticId = `optimistic-habit-${habitId}-${Date.now()}`;
+
+    // Optimistically add so UI updates immediately, even if network is busy (e.g., during screen recording)
+    const optimisticItem: CalendarItemWithDetails = {
+      id: optimisticId,
+      user_id: user.id,
+      item_type: 'habit',
+      item_id: habitId,
+      scheduled_date: scheduledDate,
+      start_minutes: startMinutesValue,
+      end_minutes: null,
+      completed: false,
+      completed_at: null,
+      created_at: nowIso(),
+      updated_at: nowIso(),
+    };
+    setCalendarItems(prev => [...prev, optimisticItem]);
+
     try {
-      const scheduledDate = formatDateForDB(date);
-      const isAllDay = options?.isAllDay === true;
-      const startMinutesValue = isAllDay ? null : minutesFromMidnight(date);
-      
       const { data, error } = await supabase
         .from('calendar_items')
         .insert({
@@ -133,11 +151,15 @@ export const useCalendarItems = () => {
 
       // Update local state
       if (data) {
-        setCalendarItems(prev => [...prev, data]);
+        setCalendarItems(prev =>
+          prev.map(ci => ci.id === optimisticId ? data : ci)
+        );
       }
       
       return true;
     } catch (error) {
+      // Remove optimistic item on failure
+      setCalendarItems(prev => prev.filter(ci => ci.id !== optimisticId));
       console.error('Error scheduling habit:', error);
       setError(error instanceof Error ? error.message : 'An error occurred');
       return false;
@@ -148,11 +170,28 @@ export const useCalendarItems = () => {
   const scheduleTask = async (taskId: string, date: Date, options?: { isAllDay?: boolean }): Promise<boolean> => {
     if (!user) return false;
 
+    const scheduledDate = formatDateForDB(date);
+    const isAllDay = options?.isAllDay === true;
+    const startMinutesValue = isAllDay ? null : minutesFromMidnight(date);
+    const optimisticId = `optimistic-task-${taskId}-${Date.now()}`;
+
+    // Optimistically add so UI updates immediately, even if the network request is delayed
+    const optimisticItem: CalendarItemWithDetails = {
+      id: optimisticId,
+      user_id: user.id,
+      item_type: 'task',
+      item_id: taskId,
+      scheduled_date: scheduledDate,
+      start_minutes: startMinutesValue,
+      end_minutes: null,
+      completed: false,
+      completed_at: null,
+      created_at: nowIso(),
+      updated_at: nowIso(),
+    };
+    setCalendarItems(prev => [...prev, optimisticItem]);
+
     try {
-      const scheduledDate = formatDateForDB(date);
-      const isAllDay = options?.isAllDay === true;
-      const startMinutesValue = isAllDay ? null : minutesFromMidnight(date);
-      
       const { data, error } = await supabase
         .from('calendar_items')
         .insert({
@@ -177,11 +216,15 @@ export const useCalendarItems = () => {
 
       // Update local state
       if (data) {
-        setCalendarItems(prev => [...prev, data]);
+        setCalendarItems(prev =>
+          prev.map(ci => ci.id === optimisticId ? data : ci)
+        );
       }
       
       return true;
     } catch (error) {
+      // Remove optimistic item on failure
+      setCalendarItems(prev => prev.filter(ci => ci.id !== optimisticId));
       console.error('Error scheduling task:', error);
       setError(error instanceof Error ? error.message : 'An error occurred');
       return false;

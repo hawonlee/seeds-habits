@@ -185,7 +185,7 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
       const scheduledTaskItems = getScheduledCalendarTaskItems(date);
       const scheduledEntries = scheduledTaskItems
         .map(ci => {
-          const t = (tasks || []).find(task => task.id === ci.item_id);
+          const t = (tasks || []).find(task => task.id === ci.item_id) || ci.task;
           return t ? { task: t, calendarItemId: ci.id as string | undefined } : null;
         })
         .filter(Boolean) as Array<{ task: Task; calendarItemId?: string }>; 
@@ -333,7 +333,7 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
               <>
                 {/* Render timed tasks */}
                 {taskItems.map((ci) => {
-                  const t = (tasks || []).find(task => task.id === ci.item_id);
+                  const t = (tasks || []).find(task => task.id === ci.item_id) || ci.task;
                   if (!t) return null;
                   const startMin = Math.max(0, (ci.start_minutes || 0) - ctx.startHour * 60);
                   const endMin = Math.min(hoursCount * 60, (ci.end_minutes ?? (ci.start_minutes || 0) + (ctx.slotsPerHour === 2 ? 30 : 60)) - ctx.startHour * 60);
