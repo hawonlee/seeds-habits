@@ -8,13 +8,13 @@ export const LandingPage = () => {
   return (
     <div className="flex flex-col h-screen items-center gap-48 bg-background">
 
-      <div className="flex w-full items-center justify-between pt-6 px-12">
+      <div className="flex w-1/3 mt-6 mx-auto items-center justify-between p-2 pl-4 bg-neutral-200/50 backdrop-blur-md rounded-lg">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Seeds" className="w-4 h-4" />
-          <h1 className="text-sm">Seeds</h1>
+          <img src="/logo.png" alt="Seeds" className="w-6 h-6" />
+          <h1 className="text-sm">seeds</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="skinny" className="text-xxs" onClick={() => navigate('/auth')}>Sign In</Button>
+          <Button variant="secondary" size="skinny" className="border-none text-xxs" onClick={() => navigate('/auth')}>Log In</Button>
           <Button variant="tertiary" size="skinny" className="text-xxs" onClick={() => navigate('/auth')}>Get Started</Button>
         </div>
       </div>

@@ -39,9 +39,10 @@ interface UnifiedCalendarProps {
   onTaskDelete?: (taskId: string, date?: Date) => void;
   onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
+  onOpenSettings?: () => void;
 }
 
-export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick }: UnifiedCalendarProps) => {
+export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, onOpenSettings }: UnifiedCalendarProps) => {
   // Get saved view mode from localStorage, default to 'month'
   const getInitialViewMode = (): 'month' | 'week' | 'day' => {
     const saved = localStorage.getItem('calendar-view-mode');
@@ -257,7 +258,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
 
   return (
     <div className="h-full flex flex-col pt-3 bg-sidebar">
-      <div className="flex items-center mb-4 flex-shrink-0 px-4">
+      <div className="flex items-center mb-4 flex-shrink-0 px-6">
         <CalendarHeader
           title={getTitle()}
           calendarViewMode={calendarViewMode}
@@ -265,10 +266,11 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
           onPrevious={handlePrevious}
           onNext={handleNext}
           onToday={handleToday}
+          onOpenSettings={onOpenSettings}
         />
         
         {/* Filter Controls */}
-        <DropdownMenu>
+        {/* <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="flex items-center gap-2">
               <ListFilter className="h-4 w-4" />
@@ -294,7 +296,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
               Diaries
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> */}
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
         <div className="h-full">

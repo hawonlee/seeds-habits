@@ -86,15 +86,15 @@ interface MonthViewProps {
   const isOpen = openDateKey === dateKey;
 
   return (
-    <Popover
-      key={`cell-${y}-${m}-${index}`}
-      open={isOpen}
-      onOpenChange={(open) => {
-        setOpenDateKey(open ? dateKey : null);
-        if (open) onDayClick(date, habitsForDay);
-      }}
-    >
-      <PopoverTrigger asChild>
+    // <Popover
+    //   key={`cell-${y}-${m}-${index}`}
+    //   open={isOpen}
+    //   onOpenChange={(open) => {
+    //     setOpenDateKey(open ? dateKey : null);
+    //     if (open) onDayClick(date, habitsForDay);
+    //   }}
+    // >
+    //   <PopoverTrigger asChild>
         <div
           className={`
             h-full cursor-pointer transition-colors relative
@@ -216,107 +216,107 @@ interface MonthViewProps {
             </div>
           </div>
         </div>
-      </PopoverTrigger>
-      <PopoverContent side="right" align="start" className="w-[420px] p-3">
-        {(() => {
-          const { completedHabits, plannedHabits, myHabits, isFuture } = getDetailedHabitsForDate(date);
-          const weekStart = getWeekStartDate(date);
-          return (
-            <div className="space-y-3">
-              <div className="text-xs font-medium text-foreground">
-                {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </div>
+      // </PopoverTrigger>
+      // <PopoverContent side="right" align="start" className="w-[420px] p-3">
+      //   {(() => {
+      //     const { completedHabits, plannedHabits, myHabits, isFuture } = getDetailedHabitsForDate(date);
+      //     const weekStart = getWeekStartDate(date);
+      //     return (
+      //       <div className="space-y-3">
+      //         <div className="text-xs font-medium text-foreground">
+      //           {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+      //         </div>
 
-              {plannedHabits.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-xs text-foreground">Habits</div>
-                  <div className="grid gap-2">
-                    {plannedHabits.map(habit => (
-                      <CalendarHabitItem
-                        key={habit.id}
-                        habit={habit}
-                        date={date}
-                        isCompleted={isHabitCompletedOnDate(habit.id, date)}
-                        onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
-                        isScheduled={isHabitScheduledOnDate(habit.id, date)}
-                        onUnschedule={onHabitUnschedule}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+      //         {plannedHabits.length > 0 && (
+      //           <div className="space-y-2">
+      //             <div className="text-xs text-foreground">Habits</div>
+      //             <div className="grid gap-2">
+      //               {plannedHabits.map(habit => (
+      //                 <CalendarHabitItem
+      //                   key={habit.id}
+      //                   habit={habit}
+      //                   date={date}
+      //                   isCompleted={isHabitCompletedOnDate(habit.id, date)}
+      //                   onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
+      //                   isScheduled={isHabitScheduledOnDate(habit.id, date)}
+      //                   onUnschedule={onHabitUnschedule}
+      //                 />
+      //               ))}
+      //             </div>
+      //           </div>
+      //         )}
 
-              {/* {myHabits.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-xs text-neutral-700">My Habits</div>
-                  <div className="grid gap-2">
-                    {myHabits.map(habit => (
-                      <CalendarHabitItem
-                        key={habit.id}
-                        habit={habit}
-                        date={date}
-                        isCompleted={isHabitCompletedOnDate(habit.id, date)}
-                        onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
-                        isScheduled={isHabitScheduledOnDate(habit.id, date)}
-                        onUnschedule={onHabitUnschedule}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )} */}
+      //         {/* {myHabits.length > 0 && (
+      //           <div className="space-y-2">
+      //             <div className="text-xs text-neutral-700">My Habits</div>
+      //             <div className="grid gap-2">
+      //               {myHabits.map(habit => (
+      //                 <CalendarHabitItem
+      //                   key={habit.id}
+      //                   habit={habit}
+      //                   date={date}
+      //                   isCompleted={isHabitCompletedOnDate(habit.id, date)}
+      //                   onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
+      //                   isScheduled={isHabitScheduledOnDate(habit.id, date)}
+      //                   onUnschedule={onHabitUnschedule}
+      //                 />
+      //               ))}
+      //             </div>
+      //           </div>
+      //         )} */}
 
-              {tasksForDay && tasksForDay.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-xs font-normaltext-foreground">Tasks</div>
-                  <div className="grid gap-2">
-                    {tasksForDay.map(task => {
-                      const taskList = taskLists.find(list => list.id === task.task_list_id);
-                      const scheduledIds = getScheduledTasksFromCalendarItems(date);
-                      const isScheduled = scheduledIds.includes(task.id);
-                      return (
-                        <TaskCalendarItem
-                          key={task.id}
-                          task={task}
-                          date={date}
-                          taskList={taskList}
-                          onToggleComplete={onTaskToggleComplete || (() => {})}
-                          onUnschedule={(taskId, taskDate) => {
-                            if (isScheduled && onTaskDelete) {
-                              onTaskDelete(taskId, taskDate);
-                            }
-                          }}
-                          isScheduled={isScheduled}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+      //         {tasksForDay && tasksForDay.length > 0 && (
+      //           <div className="space-y-2">
+      //             <div className="text-xs font-normaltext-foreground">Tasks</div>
+      //             <div className="grid gap-2">
+      //               {tasksForDay.map(task => {
+      //                 const taskList = taskLists.find(list => list.id === task.task_list_id);
+      //                 const scheduledIds = getScheduledTasksFromCalendarItems(date);
+      //                 const isScheduled = scheduledIds.includes(task.id);
+      //                 return (
+      //                   <TaskCalendarItem
+      //                     key={task.id}
+      //                     task={task}
+      //                     date={date}
+      //                     taskList={taskList}
+      //                     onToggleComplete={onTaskToggleComplete || (() => {})}
+      //                     onUnschedule={(taskId, taskDate) => {
+      //                       if (isScheduled && onTaskDelete) {
+      //                         onTaskDelete(taskId, taskDate);
+      //                       }
+      //                     }}
+      //                     isScheduled={isScheduled}
+      //                   />
+      //                 );
+      //               })}
+      //             </div>
+      //           </div>
+      //         )}
 
-              {diaryEntriesForDay && diaryEntriesForDay.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-xs font-normal text-foreground">Diary</div>
-                  <div className="grid gap-2">
-                    {diaryEntriesForDay.map(entry => (
-                      <CalendarDiaryItem
-                        key={entry.id}
-                        entry={entry}
-                        date={date}
-                        onClick={onDiaryEntryClick}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+      //         {diaryEntriesForDay && diaryEntriesForDay.length > 0 && (
+      //           <div className="space-y-2">
+      //             <div className="text-xs font-normal text-foreground">Diary</div>
+      //             <div className="grid gap-2">
+      //               {diaryEntriesForDay.map(entry => (
+      //                 <CalendarDiaryItem
+      //                   key={entry.id}
+      //                   entry={entry}
+      //                   date={date}
+      //                   onClick={onDiaryEntryClick}
+      //                 />
+      //               ))}
+      //             </div>
+      //           </div>
+      //         )}
 
-              {plannedHabits.length === 0 && completedHabits.length === 0 && myHabits.length === 0 && (tasksForDay?.length ?? 0) === 0 && (diaryEntriesForDay?.length ?? 0) === 0 && (
-                <div className="text-xs text-muted-foreground text-center py-2">No items</div>
-              )}
-            </div>
-          );
-        })()}
-      </PopoverContent>
-    </Popover>
+      //         {plannedHabits.length === 0 && completedHabits.length === 0 && myHabits.length === 0 && (tasksForDay?.length ?? 0) === 0 && (diaryEntriesForDay?.length ?? 0) === 0 && (
+      //           <div className="text-xs text-muted-foreground text-center py-2">No items</div>
+      //         )}
+      //       </div>
+      //     );
+      //   })()}
+      // </PopoverContent>
+    // </Popover>
   );
 };
 

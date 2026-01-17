@@ -80,7 +80,7 @@ const Index = () => {
   const [mainCollapsed, setMainCollapsed] = useState(false);
   const [calendarCollapsed, setCalendarCollapsed] = useState(false);
   const [showDiary, setShowDiary] = useState(false);
-  const [showTasks, setShowTasks] = useState(false);
+  const [showTasks, setShowTasks] = useState(true);
   const [showUserSettings, setShowUserSettings] = useState(false);
 
   // Update view state based on URL
@@ -104,7 +104,7 @@ const Index = () => {
     } else {
       setShowCalendar(false);
       setShowDiary(false);
-      setShowTasks(false);
+      setShowTasks(true);
       // Keep current layout
     }
   }, [location.pathname]);
@@ -412,9 +412,10 @@ const Index = () => {
 
         {/* Habit Dashboard - resizable panels */}
         <div className="h-full flex">
-          {/* {mainCollapsed && ( */}
+          {/* Navigation sidebar commented out */}
+          {/*
+          {mainCollapsed && (
             <div className={`w-12 shrink-0 h-full pt-6 pb-4 px-1 flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground select-none bg-background ${mainCollapsed ? '' : 'ml-[0.5px] border-r border-border'}`}>
-              {/* Top section - Panel toggle */}
              <div className="flex flex-col items-center gap-5">
                 <Button
                   size="text"
@@ -423,13 +424,11 @@ const Index = () => {
                   onClick={() => {
                     if (mainCollapsed) {
                       // Expand the panel
-                      (mainPanelRef.current as any)?.expand?.();
                       requestAnimationFrame(() => {
                         (mainPanelRef.current as any)?.setSize?.(20);
                       });
                       setMainCollapsed(false);
                     } else {
-                      // Collapse the panel
                       (mainPanelRef.current as any)?.collapse?.();
                       setMainCollapsed(true);
                     }
@@ -470,7 +469,6 @@ const Index = () => {
                 </div>
              </div>
 
-              {/* Bottom section - User menu */}
               <UserDropdown
                 user={user}
                 profile={profile}
@@ -480,7 +478,8 @@ const Index = () => {
                 onSignOut={signOut}
               />
             </div>
-          {/* )} */}
+          )}
+          */}
           <div className="flex-1 min-w-0">
             <ResizablePanelGroup
               direction="horizontal"
@@ -665,6 +664,7 @@ const Index = () => {
                     onTaskDelete={handleTaskDelete}
                     onCalendarItemDelete={handleCalendarItemDelete}
                     onDiaryEntryClick={handleDiaryEntryClick}
+                    onOpenSettings={() => setShowUserSettings(true)}
                   />
                 </div>
               </ResizablePanel>

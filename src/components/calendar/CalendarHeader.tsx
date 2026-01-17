@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { UserDropdown } from "@/components/layout/UserDropdown";
 
 interface CalendarHeaderProps {
   title: string;
@@ -9,6 +12,7 @@ interface CalendarHeaderProps {
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const CalendarHeader = ({
@@ -17,16 +21,20 @@ export const CalendarHeader = ({
   onViewModeChange,
   onPrevious,
   onNext,
-  onToday
+  onToday,
+  onOpenSettings
 }: CalendarHeaderProps) => {
+  const { user, signOut } = useAuth();
+  const { profile } = useProfile();
+
   return (
     <div className="flex items-center justify-between w-full h-10">
       {/* Left side - Title */}
-      <h2 className="text-sm font-medium text-foreground">
+      <h2 className="text-xs font-medium text-foreground">
         {title}
       </h2>
       
-      {/* Right side - Navigation controls */}
+      {/* Right side - Navigation controls and user profile */}
       <div className="flex items-center gap-2">
         <Select value={calendarViewMode} onValueChange={onViewModeChange}>
           <SelectTrigger className="w-[85px] h-8 text-xs">
@@ -66,6 +74,18 @@ export const CalendarHeader = ({
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+       </div>
+
+       {/* User profile */}
+       <div className="ml-2">
+         <UserDropdown
+           user={user}
+           profile={profile}
+           displayName={profile?.name || user?.email || 'User'}
+           userInitials={(profile?.name || user?.email || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+           onOpenSettings={onOpenSettings || (() => {})}
+           onSignOut={signOut}
+         />
        </div>
       </div>
     </div>

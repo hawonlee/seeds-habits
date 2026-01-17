@@ -194,7 +194,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between h-10 mb-2 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <h1 className="text-sm font-medium">Tasks</h1>
+          <h1 className="text-xs font-medium">My Tasks</h1>
           <DropdownMenu open={isCreatingList} onOpenChange={setIsCreatingList}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" onClick={handleCreateTaskList}>
@@ -278,7 +278,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
         </DropdownMenu>
         </div>
         
-        {onToggleCalendar && (
+        {/* {onToggleCalendar && (
           <Button
             variant="ghosticon"
             size="icon"
@@ -288,16 +288,16 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
           >
             <CalendarIcon className="h-4 w-4" />
           </Button>
-        )}
+        )} */}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
       {taskLists.length === 0 ? (
         <div className="text-left">
-            <h3 className="text-sm mb-2 text-muted-foreground">Create your first task list</h3>
+            {/* <h3 className="text-sm mb-2 text-muted-foreground">Create your first task list</h3> */}
         </div>
       ) : (
-        <div className={`grid gap-6 pb-4 items-stretch`} style={{ gridTemplateColumns: `repeat(auto-fill, minmax(340px, 1fr))` }}>
+        <div className={`grid gap-4 pb-4 items-stretch`} style={{ gridTemplateColumns: `repeat(auto-fill, minmax(200px, 1fr))` }}>
           {taskLists.map((list) => (
             <TaskListCard
               key={list.id}
