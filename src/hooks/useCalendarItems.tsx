@@ -257,24 +257,16 @@ export const useCalendarItems = () => {
 
     try {
       const scheduledDate = formatDateForDB(date);
-      const startMinutes = minutesFromMidnight(date);
       
-      // For all-day entries, start_minutes is NULL. For timed entries it equals minutesFromMidnight(date).
-      let deleteQuery = supabase
+      // Delete all calendar items for this task/date combination, regardless of start_minutes
+      // This handles both all-day items (start_minutes IS NULL) and timed items
+      const { error } = await supabase
         .from('calendar_items')
         .delete()
         .eq('user_id', user.id)
         .eq('item_type', itemType)
         .eq('item_id', itemId)
         .eq('scheduled_date', scheduledDate);
-
-      if (startMinutes === 0) {
-        deleteQuery = deleteQuery.is('start_minutes', null);
-      } else {
-        deleteQuery = deleteQuery.eq('start_minutes', startMinutes);
-      }
-
-      const { error } = await deleteQuery;
 
       if (error) throw error;
 

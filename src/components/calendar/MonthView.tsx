@@ -173,6 +173,10 @@ interface MonthViewProps {
                           );
                         } else if (item.type === 'task') {
                           const taskList = taskLists.find(list => list.id === item.data.task_list_id);
+                          // Find the calendar item ID for this task if it's scheduled
+                          const calendarItem = getScheduledItemsForDate(date)
+                            .find(calendarItem => calendarItem.item_type === 'task' && calendarItem.item_id === item.data.id);
+                          
                           return (
                             <TaskCalendarItem
                               key={item.data.id}
@@ -188,6 +192,8 @@ interface MonthViewProps {
                                 }
                               }}
                               isScheduled={getScheduledTasksFromCalendarItems(date).includes(item.data.id)}
+                              calendarItemId={calendarItem?.id}
+                              onDeleteCalendarItem={onCalendarItemDelete}
                             />
                           );
                         } else if (item.type === 'diary') {
