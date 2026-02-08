@@ -127,15 +127,14 @@ export const TaskDetailsPopup: React.FC<TaskDetailsPopupProps> = ({
   return (
     <div
       ref={popupRef}
-      className="fixed z-50 bg-habitbg border border-border rounded-md shadow-lg"
+      className="fixed z-50 bg-habitbg rounded-md shadow-lg"
       style={{
         top: position.top,
         left: position.left,
-        width: Math.max(position.width, 376),
-        maxWidth: 450
+        width: position.width > 0 ? position.width : 376
       }}
     >
-      <div className="p-2">
+      <div className="px-2 py-1">
         <div className="flex items-start gap-1">
           {/* Checkbox */}
           <div>

@@ -8,6 +8,7 @@ import type { Task } from '@/hooks/useTasks';
 interface TaskItemProps {
   task: Task;
   listColor: string;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
   onToggleComplete: (taskId: string) => void;
   onEdit: (task: Task) => void;
   onUpdate: (taskId: string, updates: Partial<Task>) => void;
@@ -17,6 +18,7 @@ interface TaskItemProps {
 export const TaskItem: React.FC<TaskItemProps> = ({
   task,
   listColor,
+  containerRef,
   onToggleComplete,
   onEdit,
   onUpdate,
@@ -35,10 +37,15 @@ export const TaskItem: React.FC<TaskItemProps> = ({
     
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
+      const containerWidth = containerRef?.current
+        ? containerRef.current.getBoundingClientRect().width
+        : null;
+      const offsetTop = -4;
+      const offsetLeft = -4;
       setPopupPosition({
-        top: rect.top + window.scrollY - 9,
-        left: rect.left + window.scrollX - 5,
-        width: Math.max(rect.width, 350)
+        top: rect.top + offsetTop,
+        left: rect.left + offsetLeft,
+        width: containerWidth ?? Math.max(rect.width, 300)
       });
     }
     setIsPopupOpen(true);

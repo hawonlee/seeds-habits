@@ -16,6 +16,7 @@ interface TaskCalendarItemProps {
   calendarItemId?: string;
   onDeleteCalendarItem?: (calendarItemId: string) => void;
   isTimed?: boolean;
+  displayType?: 'task' | 'deadline' | null;
 }
 
 export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
@@ -28,7 +29,8 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   isScheduled = false,
   calendarItemId,
   onDeleteCalendarItem,
-  isTimed = false
+  isTimed = false,
+  displayType = 'task'
 }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -55,6 +57,30 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   const textColor1 = cssVars ? cssVars.primary : 'hsl(var(--category-6-primary))';
   const bgColor = taskList ? (findColorOptionByValue(taskList.color)?.bgHex || taskList.color) : undefined;
 
+  // Render as deadline (no checkbox, background color)
+  if (displayType === 'deadline') {
+    return (
+      <div
+        className="relative rounded group hover:opacity-90 transition-opacity"
+        onClick={handleClick}
+      >
+        <div 
+          className="relative flex items-center justify-end gap-1.5 rounded h-4"
+          style={{ 
+            backgroundColor: bgColor,
+            color: textColor1
+          }}
+        >
+          <span className="absolute inset-0 truncate text-[10px] text-center font-medium h-full flex items-center justify-center">{task.title}</span>
+          {isScheduled && (
+            <CalendarDeleteButton onClick={handleDelete} />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Render as regular task (with checkbox)
   return (
     <div
       className={`relative  rounded group hover:bg-muted transition-colors ${isTimed ? 'h-full' : ''}`}

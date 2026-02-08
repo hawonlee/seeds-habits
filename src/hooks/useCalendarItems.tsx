@@ -10,6 +10,7 @@ type CalendarItemUpdate = Database['public']['Tables']['calendar_items']['Update
 export interface CalendarItemWithDetails extends CalendarItem {
   habit?: Database['public']['Tables']['habits']['Row'];
   task?: Database['public']['Tables']['tasks']['Row'];
+  display_type?: 'task' | 'deadline' | null;
 }
 
 export const useCalendarItems = () => {
@@ -167,12 +168,13 @@ export const useCalendarItems = () => {
   };
 
   // Schedule a task for a specific date
-  const scheduleTask = async (taskId: string, date: Date, options?: { isAllDay?: boolean }): Promise<boolean> => {
+  const scheduleTask = async (taskId: string, date: Date, options?: { isAllDay?: boolean; displayType?: 'task' | 'deadline' }): Promise<boolean> => {
     if (!user) return false;
 
     const scheduledDate = formatDateForDB(date);
     const isAllDay = options?.isAllDay === true;
     const startMinutesValue = isAllDay ? null : minutesFromMidnight(date);
+    const displayType = options?.displayType || 'task';
     const optimisticId = `optimistic-task-${taskId}-${Date.now()}`;
 
     // Optimistically add so UI updates immediately, even if the network request is delayed
@@ -188,6 +190,7 @@ export const useCalendarItems = () => {
       completed_at: null,
       created_at: nowIso(),
       updated_at: nowIso(),
+      display_type: displayType,
     };
     setCalendarItems(prev => [...prev, optimisticItem]);
 
@@ -201,6 +204,7 @@ export const useCalendarItems = () => {
           scheduled_date: scheduledDate,
           start_minutes: startMinutesValue,
           completed: false,
+          display_type: displayType,
         })
         .select('*')
         .single();

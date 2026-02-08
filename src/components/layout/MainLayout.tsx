@@ -63,7 +63,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     return 'list';
   };
   return (
-    <div className="h-full flex bg-background flex-col">
+    <div className="h-full flex flex-col">
       {/* Header */}
       {/* <div className="pt-6 pl-4 pr-8 w-full flex-shrink-0 flex items-center">
         <div className="flex w-full items-center justify-start gap-2"> */}

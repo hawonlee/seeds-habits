@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -51,6 +51,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
 }) => {
   const [editName, setEditName] = useState(taskList.name);
   const [newTaskText, setNewTaskText] = useState('');
+  const listContainerRef = useRef<HTMLDivElement>(null);
 
   const completedTasks = tasks.filter((task) => task.completed).length;
   const totalTasks = tasks.length;
@@ -197,7 +198,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
         </DropdownMenu>
       </div>
 
-      <div className="flex-1 flex bg-habitbg p-1 flex-col rounded-md">
+      <div ref={listContainerRef} className="flex-1 flex bg-habitbg/60 p-1 flex-col rounded-md">
         {/* <div className="pb-3">
           {totalTasks > 0 && (
             <div className="mt-3">
@@ -231,6 +232,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
               <TaskItem
                 task={task}
                 listColor={taskList.color}
+                containerRef={listContainerRef}
                 onToggleComplete={onToggleTaskComplete}
                 onEdit={onEditTask}
                 onUpdate={onUpdateTask}

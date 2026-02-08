@@ -110,6 +110,10 @@ export default {
 					DEFAULT: 'hsl(var(--muted))',
 					foreground: 'hsl(var(--muted-foreground))'
 				},
+				mutedhover: {
+					DEFAULT: 'hsl(var(--muted-hover))',
+					foreground: 'hsl(var(--muted-hover-foreground))'
+				},
 				accent: {
 					DEFAULT: 'hsl(var(--accent))',
 					foreground: 'hsl(var(--accent-foreground))'

@@ -181,14 +181,14 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
     // Tasks: due that day or scheduled via calendar item (only show if showTasks is true)
     const taskEntries = showTasks ? (() => {
       const dueTasks = (tasks || []).filter(task => task.due_date && new Date(task.due_date).toISOString().split('T')[0] === dateString);
-      const dueEntries = dueTasks.map(t => ({ task: t, calendarItemId: undefined as string | undefined }));
+      const dueEntries = dueTasks.map(t => ({ task: t, calendarItemId: undefined as string | undefined, displayType: 'task' as const }));
       const scheduledTaskItems = getScheduledCalendarTaskItems(date);
       const scheduledEntries = scheduledTaskItems
         .map(ci => {
           const t = (tasks || []).find(task => task.id === ci.item_id) || ci.task;
-          return t ? { task: t, calendarItemId: ci.id as string | undefined } : null;
+          return t ? { task: t, calendarItemId: ci.id as string | undefined, displayType: ci.display_type || 'task' } : null;
         })
-        .filter(Boolean) as Array<{ task: Task; calendarItemId?: string }>; 
+        .filter(Boolean) as Array<{ task: Task; calendarItemId?: string; displayType?: 'task' | 'deadline' | null }>; 
       return [...dueEntries, ...scheduledEntries];
     })() : [];
     
@@ -309,6 +309,7 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
                         calendarItemId={entry.calendarItemId}
                         onDeleteCalendarItem={onCalendarItemDelete}
                         isScheduled={Boolean(entry.calendarItemId)}
+                        displayType={entry.displayType || 'task'}
                     />
                   );
                 })}
@@ -352,6 +353,7 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
                         onDeleteCalendarItem={onCalendarItemDelete}
                         isScheduled={true}
                         isTimed
+                        displayType={ci.display_type || 'task'}
                       />
                     </div>
                   );

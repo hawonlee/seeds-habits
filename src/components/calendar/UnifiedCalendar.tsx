@@ -35,7 +35,7 @@ interface UnifiedCalendarProps {
   onHabitDrop?: (habitId: string, date: Date) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
-  onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean) => void;
+  onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean, displayType?: 'task' | 'deadline') => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
   onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
@@ -191,6 +191,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onTaskToggleComplete={onTaskToggleComplete}
             onTaskDrop={onTaskDrop}
             onTaskDelete={onTaskDelete}
+            onCalendarItemDelete={onCalendarItemDelete}
             onDiaryEntryClick={onDiaryEntryClick}
             showHabits={filter.habits}
             showTasks={filter.tasks}

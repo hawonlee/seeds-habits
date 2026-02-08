@@ -303,11 +303,11 @@ const Index = () => {
     }
   };
 
-  const handleTaskDrop = async (taskId: string, date: Date, isAllDay?: boolean) => {
+  const handleTaskDrop = async (taskId: string, date: Date, isAllDay?: boolean, displayType?: 'task' | 'deadline') => {
     // When a task is dropped on a calendar day, schedule it for that specific date
-    const success = await scheduleTaskToCalendar(taskId, date, { isAllDay });
+    const success = await scheduleTaskToCalendar(taskId, date, { isAllDay, displayType });
     if (success) {
-      console.log(`Task ${taskId} scheduled for ${date.toDateString()}`);
+      console.log(`Task ${taskId} scheduled for ${date.toDateString()} as ${displayType || 'task'}`);
       // Ensure calendar updates immediately with latest data
       await refreshCalendarItems();
     } else {
@@ -500,7 +500,7 @@ const Index = () => {
                 collapsedSize={0}
                 ref={mainPanelRef}
               >
-                <div className={`h-full bg-background flex`}>
+                <div className={`h-full flex`}>
                   {/* Always show collapsed sidebar */}
                   {/* <div className="h-full w-16 py-7 px-1 flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground select-none border-r border-border">
                     <Button

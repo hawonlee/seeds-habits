@@ -39,6 +39,9 @@ All colors MUST be HSL.
     --muted: 0 0% 98%;
     --muted-foreground: 0 0% 46.9%;
 
+    --muted-hover: 0 0% 94%;
+    --muted-hover-foreground: 0 0% 46.9%;
+
     --accent: 0 0% 85%;
     --accent-foreground: 0 0% 50%;
 
