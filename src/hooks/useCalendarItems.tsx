@@ -169,13 +169,25 @@ export const useCalendarItems = () => {
 
   // Schedule a task for a specific date
   const scheduleTask = async (taskId: string, date: Date, options?: { isAllDay?: boolean; displayType?: 'task' | 'deadline' }): Promise<boolean> => {
-    if (!user) return false;
+    if (!user) {
+      console.error('[scheduleTask] No user found');
+      return false;
+    }
 
     const scheduledDate = formatDateForDB(date);
     const isAllDay = options?.isAllDay === true;
     const startMinutesValue = isAllDay ? null : minutesFromMidnight(date);
     const displayType = options?.displayType || 'task';
     const optimisticId = `optimistic-task-${taskId}-${Date.now()}`;
+
+    console.log('[scheduleTask] Scheduling task:', {
+      taskId,
+      scheduledDate,
+      isAllDay,
+      startMinutesValue,
+      displayType,
+      optimisticId
+    });
 
     // Optimistically add so UI updates immediately, even if the network request is delayed
     const optimisticItem: CalendarItemWithDetails = {
@@ -192,7 +204,10 @@ export const useCalendarItems = () => {
       updated_at: nowIso(),
       display_type: displayType,
     };
-    setCalendarItems(prev => [...prev, optimisticItem]);
+    setCalendarItems(prev => {
+      console.log('[scheduleTask] Adding optimistic item, current count:', prev.length);
+      return [...prev, optimisticItem];
+    });
 
     try {
       const { data, error } = await supabase
@@ -210,13 +225,16 @@ export const useCalendarItems = () => {
         .single();
 
       if (error) {
+        console.error('[scheduleTask] Database error:', error);
+        // Note: We now allow duplicates (same task multiple times on same date)
+        // If we get a unique constraint error, it's unexpected - log and continue
         if (error.code === '23505') {
-          // If conflict and we're not all-day, keep disallowing duplicates at exact time
-          console.log('Task already scheduled for this date/time');
-          return false;
+          console.warn('[scheduleTask] Unexpected unique constraint error when scheduling task:', error);
         }
         throw error;
       }
+
+      console.log('[scheduleTask] Successfully created calendar item:', data);
 
       // Update local state
       if (data) {
@@ -229,7 +247,7 @@ export const useCalendarItems = () => {
     } catch (error) {
       // Remove optimistic item on failure
       setCalendarItems(prev => prev.filter(ci => ci.id !== optimisticId));
-      console.error('Error scheduling task:', error);
+      console.error('[scheduleTask] Error scheduling task:', error);
       setError(error instanceof Error ? error.message : 'An error occurred');
       return false;
     }

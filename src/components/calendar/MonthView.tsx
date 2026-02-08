@@ -34,6 +34,7 @@ interface MonthViewProps {
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
   onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean, displayType?: 'task' | 'deadline') => void;
+  onTaskUpdateTitle?: (taskId: string, title: string) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
   onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
@@ -54,6 +55,7 @@ const DayCell = ({
   onHabitUnschedule,
   onTaskToggleComplete,
   onTaskDrop,
+  onTaskUpdateTitle,
   onTaskDelete,
   onCalendarItemDelete,
   onDiaryEntryClick,
@@ -61,6 +63,7 @@ const DayCell = ({
   isToday,
   isCurrentMonth,
   index,
+  onDragEnter,
   onDragOver,
   onDragLeave,
   onDrop,
@@ -106,6 +109,7 @@ const DayCell = ({
     <div
       className="h-full cursor-pointer transition-colors relative"
       id={`calendar-${dateKey}`}
+      onDragEnter={onDragEnter}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
@@ -148,6 +152,7 @@ const DayCell = ({
                 date={date}
                 taskList={taskList}
                 onToggleComplete={onTaskToggleComplete || (() => { })}
+                onUpdateTitle={onTaskUpdateTitle}
                 onUnschedule={
                   entry.calendarItemId
                     ? undefined
@@ -175,8 +180,8 @@ const DayCell = ({
           />
           
           {/* Task items - foreground layer */}
-          <div className="relative z-10 flex flex-col gap-1 h-full">
-            {taskItems.slice(0, 2).map((entry: any, index: number) => {
+          <div className="relative z-10 flex flex-col h-full">
+            {taskItems.map((entry: any, index: number) => {
               const task = entry.task;
               const taskList = taskLists.find(list => list.id === task.task_list_id);
               const itemKey = entry.calendarItemId
@@ -189,6 +194,7 @@ const DayCell = ({
                   date={date}
                   taskList={taskList}
                   onToggleComplete={onTaskToggleComplete || (() => { })}
+                onUpdateTitle={onTaskUpdateTitle}
                   onUnschedule={
                     entry.calendarItemId
                       ? undefined
@@ -344,7 +350,7 @@ const DayCell = ({
   );
 };
 
-export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: MonthViewProps) => {
+export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskUpdateTitle, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: MonthViewProps) => {
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletionsContext();
   const [openDateKey, setOpenDateKey] = React.useState<string | null>(null);
 
@@ -580,9 +586,22 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
             const isPrevMonth = date.getMonth() < currentMonth || (date.getMonth() === 11 && currentMonth === 0 && date.getFullYear() < currentYear);
             const isNextMonth = date.getMonth() > currentMonth || (date.getMonth() === 0 && currentMonth === 11 && date.getFullYear() > currentYear);
 
+            const handleDragEnter = (e: React.DragEvent) => {
+              e.preventDefault();
+              console.log('[MonthView] Drag entered day cell:', date.toDateString());
+            };
+
+            let dragOverCount = 0;
             const handleDragOver = (e: React.DragEvent) => {
               e.preventDefault();
-              e.dataTransfer.dropEffect = 'move';
+              e.stopPropagation();
+              e.dataTransfer.dropEffect = 'copy';
+              
+              // Only log occasionally to avoid spam
+              dragOverCount++;
+              if (dragOverCount % 20 === 0) {
+                console.log('[MonthView] Drag over day cell (count:', dragOverCount, '):', date.toDateString());
+              }
 
               const currentTarget = e.currentTarget as HTMLElement;
               const deadlineZone = currentTarget.querySelector('[data-drop-zone="deadline"]') as HTMLElement | null;
@@ -607,21 +626,30 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
             };
 
             const handleDragLeave = (e: React.DragEvent) => {
+              console.log('[MonthView] Drag left day cell:', date.toDateString());
               const currentTarget = e.currentTarget as HTMLElement;
               const deadlineZone = currentTarget.querySelector('[data-drop-zone="deadline"]') as HTMLElement | null;
               const taskZone = currentTarget.querySelector('[data-drop-zone="task"]') as HTMLElement | null;
               deadlineZone?.classList.remove('bg-mutedhover');
               taskZone?.classList.remove('bg-mutedhover');
+              dragOverCount = 0; // Reset counter
             };
 
             const handleDrop = (e: React.DragEvent) => {
               e.preventDefault();
+              e.stopPropagation();
+              
+              console.log('[MonthView] ===== DROP EVENT FIRED =====');
+              
               const currentTarget = e.currentTarget as HTMLElement;
               const deadlineZone = currentTarget.querySelector('[data-drop-zone="deadline"]') as HTMLElement | null;
               const taskZone = currentTarget.querySelector('[data-drop-zone="task"]') as HTMLElement | null;
               deadlineZone?.classList.remove('bg-mutedhover');
               taskZone?.classList.remove('bg-mutedhover');
               const data = e.dataTransfer.getData('text/plain');
+              
+              console.log('[MonthView] Drop event:', { data, date: date.toISOString() });
+              dragOverCount = 0; // Reset counter
 
               // Determine target date from drop zone id when available
               const targetId = (e.currentTarget as HTMLElement).id || '';
@@ -646,13 +674,21 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
 
               if (data.startsWith('habit:')) {
                 const habitId = data.replace('habit:', '');
+                console.log('[MonthView] Dropping habit:', habitId, 'on', targetDate.toDateString());
                 if (onHabitDrop) {
                   onHabitDrop(habitId, targetDate, true); // MonthView only has all-day drops
                 }
               } else if (data.startsWith('task:')) {
-                const taskId = data.replace('task:', '');
+                // Parse task data: format is either "task:id" or "task:id:displayType"
+                const parts = data.split(':');
+                const taskId = parts[1];
+                const draggedDisplayType = parts[2] || null;
+                const displayType = isDeadlineZone ? 'deadline' : 'task';
+                
+                console.log('[MonthView] Dropping task:', { taskId, targetDate: targetDate.toDateString(), displayType, draggedDisplayType });
+                
                 if (onTaskDrop) {
-                  const displayType = isDeadlineZone ? 'deadline' : 'task';
+                  // Use the drop zone to determine display type (user can change it on drop)
                   onTaskDrop(taskId, targetDate, true, displayType);
                 }
               }
@@ -671,6 +707,7 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
                 onHabitUnschedule={onHabitUnschedule}
                 onTaskToggleComplete={onTaskToggleComplete}
                 onTaskDrop={onTaskDrop}
+                onTaskUpdateTitle={onTaskUpdateTitle}
                 onTaskDelete={onTaskDelete}
                 onCalendarItemDelete={onCalendarItemDelete}
                 onDiaryEntryClick={onDiaryEntryClick}
@@ -678,6 +715,7 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
                 isToday={isToday}
                 isCurrentMonth={isCurrentMonth}
                 index={index}
+                onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}

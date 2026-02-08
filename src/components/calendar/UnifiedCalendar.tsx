@@ -36,13 +36,14 @@ interface UnifiedCalendarProps {
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
   onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean, displayType?: 'task' | 'deadline') => void;
+  onTaskUpdateTitle?: (taskId: string, title: string) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
   onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
   onOpenSettings?: () => void;
 }
 
-export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, onOpenSettings }: UnifiedCalendarProps) => {
+export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskUpdateTitle, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, onOpenSettings }: UnifiedCalendarProps) => {
   // Get saved view mode from localStorage, default to 'month'
   const getInitialViewMode = (): 'month' | 'week' | 'day' => {
     const saved = localStorage.getItem('calendar-view-mode');
@@ -190,6 +191,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onHabitUnschedule={onHabitUnschedule}
             onTaskToggleComplete={onTaskToggleComplete}
             onTaskDrop={onTaskDrop}
+            onTaskUpdateTitle={onTaskUpdateTitle}
             onTaskDelete={onTaskDelete}
             onCalendarItemDelete={onCalendarItemDelete}
             onDiaryEntryClick={onDiaryEntryClick}
@@ -217,6 +219,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onHabitUnschedule={onHabitUnschedule}
             onTaskToggleComplete={onTaskToggleComplete}
             onTaskDrop={onTaskDrop}
+            onTaskUpdateTitle={onTaskUpdateTitle}
             onTaskDelete={onTaskDelete}
             onCalendarItemDelete={onCalendarItemDelete}
             onDiaryEntryClick={onDiaryEntryClick}
@@ -244,6 +247,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onHabitUnschedule={onHabitUnschedule}
             onTaskToggleComplete={onTaskToggleComplete}
             onTaskDrop={onTaskDrop}
+            onTaskUpdateTitle={onTaskUpdateTitle}
             onTaskDelete={onTaskDelete}
             onCalendarItemDelete={onCalendarItemDelete}
             onDiaryEntryClick={onDiaryEntryClick}

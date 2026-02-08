@@ -276,7 +276,8 @@ function DroppableRow({
         e.stopPropagation();
         try {
           e.dataTransfer.setData('text/plain', `${externalDragType}:${id}`);
-          e.dataTransfer.effectAllowed = 'move';
+          // Allow both reorder (move) and external drop (copy)
+          e.dataTransfer.effectAllowed = 'copyMove';
         } catch {}
       }}
       data-task-id={id}
@@ -334,7 +335,8 @@ function NativeList<T>({
               setDraggingId(id);
               try {
                 e.dataTransfer.setData('text/plain', `${externalDragType}:${id}`);
-                e.dataTransfer.effectAllowed = 'move';
+                // Allow both reorder (move) and external drop (copy)
+                e.dataTransfer.effectAllowed = 'copyMove';
               } catch {}
             }}
             onDragEnd={() => {

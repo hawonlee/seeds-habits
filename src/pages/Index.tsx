@@ -303,15 +303,21 @@ const Index = () => {
     }
   };
 
+  const handleTaskUpdateTitle = async (taskId: string, title: string) => {
+    await updateTask(taskId, { title });
+  };
+
   const handleTaskDrop = async (taskId: string, date: Date, isAllDay?: boolean, displayType?: 'task' | 'deadline') => {
     // When a task is dropped on a calendar day, schedule it for that specific date
+    console.log('[Index.handleTaskDrop] Called with:', { taskId, date: date.toDateString(), isAllDay, displayType });
+    
     const success = await scheduleTaskToCalendar(taskId, date, { isAllDay, displayType });
     if (success) {
-      console.log(`Task ${taskId} scheduled for ${date.toDateString()} as ${displayType || 'task'}`);
+      console.log(`[Index.handleTaskDrop] Task ${taskId} scheduled for ${date.toDateString()} as ${displayType || 'task'}`);
       // Ensure calendar updates immediately with latest data
       await refreshCalendarItems();
     } else {
-      console.log(`Failed to schedule task ${taskId} for ${date.toDateString()}`);
+      console.error(`[Index.handleTaskDrop] Failed to schedule task ${taskId} for ${date.toDateString()}`);
     }
   };
 
@@ -661,6 +667,7 @@ const Index = () => {
                     onHabitUnschedule={handleHabitUnschedule}
                     onTaskToggleComplete={handleTaskToggleComplete}
                     onTaskDrop={handleTaskDrop}
+                    onTaskUpdateTitle={handleTaskUpdateTitle}
                     onTaskDelete={handleTaskDelete}
                     onCalendarItemDelete={handleCalendarItemDelete}
                     onDiaryEntryClick={handleDiaryEntryClick}

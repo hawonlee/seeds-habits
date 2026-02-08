@@ -25,8 +25,10 @@ export const DraggableTaskItem: React.FC<DraggableTaskItemProps> = ({
   };
 
   const handleDragStart = (e: React.DragEvent) => {
+    // Use consistent format with CalendarTaskItem, without specifying display type
+    // so the drop zone determines it
     e.dataTransfer.setData('text/plain', `task:${task.id}`);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = 'copy';
   };
 
   // Get the category color for the task list
