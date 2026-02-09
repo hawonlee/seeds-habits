@@ -33,6 +33,8 @@ interface DayViewProps {
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
   onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean) => void;
+  onTaskUpdateTitle?: (taskId: string, title: string) => void;
+  onCalendarItemToggleComplete?: (calendarItemId: string, completed: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
   onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
@@ -41,7 +43,7 @@ interface DayViewProps {
   showDiaries?: boolean;
 }
 
-export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: DayViewProps) => {
+export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskUpdateTitle, onCalendarItemToggleComplete, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: DayViewProps) => {
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletionsContext();
   // Helper functions for scheduled habits
   const formatDateForDB = (date: Date): string => {
@@ -186,9 +188,9 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
       const scheduledEntries = scheduledTaskItems
         .map(ci => {
           const t = (tasks || []).find(task => task.id === ci.item_id) || ci.task;
-          return t ? { task: t, calendarItemId: ci.id as string | undefined, displayType: ci.display_type || 'task' } : null;
+          return t ? { task: t, calendarItemId: ci.id as string | undefined, displayType: ci.display_type || 'task', completed: ci.completed } : null;
         })
-        .filter(Boolean) as Array<{ task: Task; calendarItemId?: string; displayType?: 'task' | 'deadline' | null }>; 
+        .filter(Boolean) as Array<{ task: Task; calendarItemId?: string; displayType?: 'task' | 'deadline' | null; completed?: boolean }>; 
       return [...dueEntries, ...scheduledEntries];
     })() : [];
     
@@ -303,6 +305,9 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
                       date={day}
                       taskList={taskList}
                       onToggleComplete={onTaskToggleComplete || (() => {})}
+                      onUpdateTitle={onTaskUpdateTitle}
+                      completed={entry.completed}
+                      onToggleCalendarItemComplete={onCalendarItemToggleComplete}
                         onUnschedule={(taskId, taskDate) => {
                           if (onTaskDelete) onTaskDelete(taskId, taskDate);
                         }}
@@ -348,6 +353,9 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
                         date={day}
                         taskList={list}
                         onToggleComplete={onTaskToggleComplete || (() => {})}
+                        onUpdateTitle={onTaskUpdateTitle}
+                        completed={ci.completed}
+                        onToggleCalendarItemComplete={onCalendarItemToggleComplete}
                         onUnschedule={(taskId, taskDate) => { if (onTaskDelete) onTaskDelete(taskId, taskDate); }}
                         calendarItemId={ci.id}
                         onDeleteCalendarItem={onCalendarItemDelete}

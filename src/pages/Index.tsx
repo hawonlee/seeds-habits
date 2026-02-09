@@ -59,7 +59,8 @@ const Index = () => {
     unscheduleItem,
     moveItem,
     deleteCalendarItemById,
-    refreshCalendarItems
+    refreshCalendarItems,
+    toggleCalendarItemCompleted
   } = useCalendarItems();
   const { diaryEntries } = useDiaryEntries();
   const { tasks, taskLists, updateTask, deleteTask, loading: tasksLoading } = useTasks();
@@ -301,6 +302,10 @@ const Index = () => {
     if (task) {
       await updateTask(taskId, { completed: !task.completed });
     }
+  };
+
+  const handleCalendarItemToggleComplete = async (calendarItemId: string, completed: boolean) => {
+    await toggleCalendarItemCompleted(calendarItemId, completed);
   };
 
   const handleTaskUpdateTitle = async (taskId: string, title: string) => {
@@ -668,6 +673,7 @@ const Index = () => {
                     onTaskToggleComplete={handleTaskToggleComplete}
                     onTaskDrop={handleTaskDrop}
                     onTaskUpdateTitle={handleTaskUpdateTitle}
+                    onCalendarItemToggleComplete={handleCalendarItemToggleComplete}
                     onTaskDelete={handleTaskDelete}
                     onCalendarItemDelete={handleCalendarItemDelete}
                     onDiaryEntryClick={handleDiaryEntryClick}

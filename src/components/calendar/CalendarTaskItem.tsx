@@ -13,6 +13,8 @@ interface TaskCalendarItemProps {
   onUnschedule?: (taskId: string, date: Date) => void;
   onClick?: (task: Task) => void;
   onUpdateTitle?: (taskId: string, title: string) => void;
+  completed?: boolean;
+  onToggleCalendarItemComplete?: (calendarItemId: string, completed: boolean) => void;
   isScheduled?: boolean;
   calendarItemId?: string;
   onDeleteCalendarItem?: (calendarItemId: string) => void;
@@ -28,6 +30,8 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   onUnschedule,
   onClick,
   onUpdateTitle,
+  completed,
+  onToggleCalendarItemComplete,
   isScheduled = false,
   calendarItemId,
   onDeleteCalendarItem,
@@ -76,6 +80,16 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
     console.log('[CalendarTaskItem] Drag data set, effectAllowed:', e.dataTransfer.effectAllowed);
   };
 
+  const handleDeadlineToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isEditing) return;
+    if (calendarItemId && onToggleCalendarItemComplete) {
+      onToggleCalendarItemComplete(calendarItemId, !isCompleted);
+    } else {
+      onToggleComplete(task.id);
+    }
+  };
+
   const beginEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setDraftTitle(task.title);
@@ -99,8 +113,9 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
     setIsEditing(false);
   };
 
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !task.completed;
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !(completed ?? task.completed);
   const isDueToday = task.due_date && new Date(task.due_date).toDateString() === date.toDateString();
+  const isCompleted = completed ?? task.completed;
   
   // Colors
   const textColor = taskList ? getIntermediaryColorFromHex(taskList.color) : 'hsl(var(--category-6-intermediary))';
@@ -113,7 +128,8 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
     return (
       <div
         className="relative rounded group hover:opacity-90 transition-opacity "
-        onClick={handleClick}
+        onClick={handleDeadlineToggle}
+        onDoubleClick={beginEdit}
         draggable={!isEditing}
         onDragStart={handleDragStart}
       >
@@ -142,12 +158,11 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
                     }
                   }}
                   autoFocus
-                  className="w-full bg-transparent text-[11px] text-center outline-none"
+                  className="w-full bg-transparent text-[11px] text-center outline-none pb-[6px]"
                 />
               ) : (
                 <span
-                  className="block truncate text-[11px] text-center"
-                  onClick={beginEdit}
+                  className={`block truncate text-[11px] text-center ${isCompleted ? 'line-through' : ''}`}
                 >
                   {task.title}
                 </span>
@@ -155,7 +170,7 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
             </div>
           </div>
           {isScheduled && (
-            <CalendarDeleteButton onClick={handleDelete} />
+            <div className="pr-0.5 flex items-center justify-center"><CalendarDeleteButton onClick={handleDelete} /></div>
           )}
         </div>
       </div>
@@ -176,8 +191,15 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
       )}
       <div className="relative h-5 flex items-center gap-1.5 px-1 ">
         <Checkbox
-          checked={task.completed}
-          onCheckedChange={() => onToggleComplete(task.id)}
+          checked={isCompleted}
+          onCheckedChange={(checked) => {
+            const next = checked === true;
+            if (calendarItemId && onToggleCalendarItemComplete) {
+              onToggleCalendarItemComplete(calendarItemId, next);
+            } else {
+              onToggleComplete(task.id);
+            }
+          }}
           onClick={(e) => e.stopPropagation()}
           className="mt-[2px]"
           customColor={textColor}

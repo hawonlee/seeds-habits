@@ -35,6 +35,7 @@ interface MonthViewProps {
   onTaskToggleComplete?: (taskId: string) => void;
   onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean, displayType?: 'task' | 'deadline') => void;
   onTaskUpdateTitle?: (taskId: string, title: string) => void;
+  onCalendarItemToggleComplete?: (calendarItemId: string, completed: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
   onCalendarItemDelete?: (calendarItemId: string) => void;
   onDiaryEntryClick?: (entry: DiaryEntry) => void;
@@ -56,6 +57,7 @@ const DayCell = ({
   onTaskToggleComplete,
   onTaskDrop,
   onTaskUpdateTitle,
+  onCalendarItemToggleComplete,
   onTaskDelete,
   onCalendarItemDelete,
   onDiaryEntryClick,
@@ -153,6 +155,8 @@ const DayCell = ({
                 taskList={taskList}
                 onToggleComplete={onTaskToggleComplete || (() => { })}
                 onUpdateTitle={onTaskUpdateTitle}
+                completed={entry.completed}
+                onToggleCalendarItemComplete={onCalendarItemToggleComplete}
                 onUnschedule={
                   entry.calendarItemId
                     ? undefined
@@ -195,6 +199,8 @@ const DayCell = ({
                   taskList={taskList}
                   onToggleComplete={onTaskToggleComplete || (() => { })}
                 onUpdateTitle={onTaskUpdateTitle}
+                completed={entry.completed}
+                onToggleCalendarItemComplete={onCalendarItemToggleComplete}
                   onUnschedule={
                     entry.calendarItemId
                       ? undefined
@@ -350,7 +356,7 @@ const DayCell = ({
   );
 };
 
-export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskUpdateTitle, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: MonthViewProps) => {
+export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskUpdateTitle, onCalendarItemToggleComplete, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: MonthViewProps) => {
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletionsContext();
   const [openDateKey, setOpenDateKey] = React.useState<string | null>(null);
 
@@ -536,10 +542,11 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
         return {
           task,
           calendarItemId: item.id as string,
-          displayType: item.display_type || 'task'
+          displayType: item.display_type || 'task',
+          completed: item.completed
         };
       })
-      .filter(Boolean) as Array<{ task: Task; calendarItemId: string; displayType: 'task' | 'deadline' | null }>;
+      .filter(Boolean) as Array<{ task: Task; calendarItemId: string; displayType: 'task' | 'deadline' | null; completed?: boolean }>;
 
     return [...dueEntries, ...scheduledEntries];
   };
@@ -708,6 +715,7 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
                 onTaskToggleComplete={onTaskToggleComplete}
                 onTaskDrop={onTaskDrop}
                 onTaskUpdateTitle={onTaskUpdateTitle}
+                onCalendarItemToggleComplete={onCalendarItemToggleComplete}
                 onTaskDelete={onTaskDelete}
                 onCalendarItemDelete={onCalendarItemDelete}
                 onDiaryEntryClick={onDiaryEntryClick}
