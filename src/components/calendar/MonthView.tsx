@@ -543,12 +543,19 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
           task,
           calendarItemId: item.id as string,
           displayType: item.display_type || 'task',
-          completed: item.completed
+          completed: item.completed,
+          createdAt: item.created_at
         };
       })
-      .filter(Boolean) as Array<{ task: Task; calendarItemId: string; displayType: 'task' | 'deadline' | null; completed?: boolean }>;
+      .filter(Boolean) as Array<{ task: Task; calendarItemId: string; displayType: 'task' | 'deadline' | null; completed?: boolean; createdAt?: string }>;
 
-    return [...dueEntries, ...scheduledEntries];
+    const orderedScheduledEntries = [...scheduledEntries].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aTime - bTime;
+    });
+
+    return [...dueEntries, ...orderedScheduledEntries];
   };
 
 
