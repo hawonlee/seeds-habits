@@ -63,7 +63,7 @@ const Index = () => {
     toggleCalendarItemCompleted
   } = useCalendarItems();
   const { diaryEntries } = useDiaryEntries();
-  const { tasks, taskLists, updateTask, deleteTask, loading: tasksLoading } = useTasks();
+  const { tasks, taskLists, createTask, updateTask, deleteTask, loading: tasksLoading } = useTasks();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -312,17 +312,64 @@ const Index = () => {
     await updateTask(taskId, { title });
   };
 
-  const handleTaskDrop = async (taskId: string, date: Date, isAllDay?: boolean, displayType?: 'task' | 'deadline') => {
+  const handleTaskDrop = async (
+    taskId: string,
+    date: Date,
+    isAllDay?: boolean,
+    displayType?: 'task' | 'deadline',
+    options?: { endDateTime?: Date }
+  ) => {
     // When a task is dropped on a calendar day, schedule it for that specific date
-    console.log('[Index.handleTaskDrop] Called with:', { taskId, date: date.toDateString(), isAllDay, displayType });
+    console.log('[Index.handleTaskDrop] Called with:', { taskId, date: date.toDateString(), isAllDay, displayType, endDateTime: options?.endDateTime?.toISOString() });
     
-    const success = await scheduleTaskToCalendar(taskId, date, { isAllDay, displayType });
+    const success = await scheduleTaskToCalendar(
+      taskId,
+      date,
+      { isAllDay, displayType, endDateTime: options?.endDateTime } as any
+    );
     if (success) {
       console.log(`[Index.handleTaskDrop] Task ${taskId} scheduled for ${date.toDateString()} as ${displayType || 'task'}`);
       // Ensure calendar updates immediately with latest data
       await refreshCalendarItems();
     } else {
       console.error(`[Index.handleTaskDrop] Failed to schedule task ${taskId} for ${date.toDateString()}`);
+    }
+  };
+
+  const handleTaskCreateForDate = async (title: string, date: Date) => {
+    const defaultListId = taskLists[0]?.id;
+    if (!defaultListId) {
+      console.warn("[Index.handleTaskCreateForDate] No task list exists for new task creation");
+      return undefined;
+    }
+
+    try {
+      const task = await createTask({
+        title,
+        task_list_id: defaultListId,
+        completed: false,
+        priority: 'medium',
+      });
+
+      if (!task?.id) return undefined;
+
+      // Return the new task id immediately so calendar styling can apply
+      // before the scheduled item appears and avoid a color flash.
+      void (async () => {
+        try {
+          const success = await scheduleTaskToCalendar(task.id, date, { isAllDay: true, displayType: 'task' });
+          if (success) {
+            await refreshCalendarItems();
+          }
+        } catch (error) {
+          console.error("[Index.handleTaskCreateForDate] Failed to schedule task after creation:", error);
+        }
+      })();
+
+      return task.id;
+    } catch (error) {
+      console.error("[Index.handleTaskCreateForDate] Failed to create and schedule task:", error);
+      return undefined;
     }
   };
 
@@ -672,6 +719,7 @@ const Index = () => {
                     onHabitUnschedule={handleHabitUnschedule}
                     onTaskToggleComplete={handleTaskToggleComplete}
                     onTaskDrop={handleTaskDrop}
+                    onTaskCreate={handleTaskCreateForDate}
                     onTaskUpdateTitle={handleTaskUpdateTitle}
                     onCalendarItemToggleComplete={handleCalendarItemToggleComplete}
                     onTaskDelete={handleTaskDelete}

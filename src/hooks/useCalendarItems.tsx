@@ -168,7 +168,17 @@ export const useCalendarItems = () => {
   };
 
   // Schedule a task for a specific date
-  const scheduleTask = async (taskId: string, date: Date, options?: { isAllDay?: boolean; displayType?: 'task' | 'deadline' }): Promise<boolean> => {
+  const scheduleTask = async (
+    taskId: string,
+    date: Date,
+    options?: {
+      isAllDay?: boolean;
+      displayType?: 'task' | 'deadline';
+      endDateTime?: Date;
+      startMinutes?: number;
+      endMinutes?: number;
+    }
+  ): Promise<boolean> => {
     if (!user) {
       console.error('[scheduleTask] No user found');
       return false;
@@ -176,7 +186,14 @@ export const useCalendarItems = () => {
 
     const scheduledDate = formatDateForDB(date);
     const isAllDay = options?.isAllDay === true;
-    const startMinutesValue = isAllDay ? null : minutesFromMidnight(date);
+    const startMinutesValue = isAllDay
+      ? null
+      : (typeof options?.startMinutes === 'number' ? options.startMinutes : minutesFromMidnight(date));
+    const derivedEndMinutes = options?.endDateTime ? minutesFromMidnight(options.endDateTime) : null;
+    const rawEndMinutes = typeof options?.endMinutes === 'number' ? options.endMinutes : derivedEndMinutes;
+    const endMinutesValue = isAllDay
+      ? null
+      : (rawEndMinutes !== null && rawEndMinutes > (startMinutesValue ?? -1) ? rawEndMinutes : null);
     const displayType = options?.displayType || 'task';
     const optimisticId = `optimistic-task-${taskId}-${Date.now()}`;
 
@@ -185,6 +202,7 @@ export const useCalendarItems = () => {
       scheduledDate,
       isAllDay,
       startMinutesValue,
+      endMinutesValue,
       displayType,
       optimisticId
     });
@@ -197,7 +215,7 @@ export const useCalendarItems = () => {
       item_id: taskId,
       scheduled_date: scheduledDate,
       start_minutes: startMinutesValue,
-      end_minutes: null,
+      end_minutes: endMinutesValue,
       completed: false,
       completed_at: null,
       created_at: nowIso(),
@@ -218,6 +236,7 @@ export const useCalendarItems = () => {
           item_id: taskId,
           scheduled_date: scheduledDate,
           start_minutes: startMinutesValue,
+          end_minutes: endMinutesValue,
           completed: false,
           display_type: displayType,
         })

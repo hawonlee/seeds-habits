@@ -35,6 +35,30 @@ export const invalidateTasksCacheForUser = (userId: string) => {
   }
 };
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const TASK_LIST_ORDER_STORAGE_PREFIX = 'task-list-order:';
+
+const getTaskListOrderStorageKey = (userId: string) => `${TASK_LIST_ORDER_STORAGE_PREFIX}${userId}`;
+
+const applyTaskListOrder = (lists: TaskList[], orderedIds: string[]): TaskList[] => {
+  if (!orderedIds.length) return lists;
+
+  const byId = new Map(lists.map((list) => [list.id, list]));
+  const ordered: TaskList[] = [];
+
+  orderedIds.forEach((id) => {
+    const list = byId.get(id);
+    if (list) {
+      ordered.push(list);
+      byId.delete(id);
+    }
+  });
+
+  lists.forEach((list) => {
+    if (byId.has(list.id)) ordered.push(list);
+  });
+
+  return ordered;
+};
 
 export const useTasks = () => {
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
@@ -42,6 +66,27 @@ export const useTasks = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+
+  const readStoredTaskListOrder = useCallback((): string[] => {
+    if (!user?.id || typeof window === 'undefined') return [];
+    try {
+      const raw = window.localStorage.getItem(getTaskListOrderStorageKey(user.id));
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+    } catch {
+      return [];
+    }
+  }, [user?.id]);
+
+  const writeStoredTaskListOrder = useCallback((orderedIds: string[]) => {
+    if (!user?.id || typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(getTaskListOrderStorageKey(user.id), JSON.stringify(orderedIds));
+    } catch {
+      // Ignore local storage failures.
+    }
+  }, [user?.id]);
 
   // Unified refresh function that fetches both task lists and tasks
   const refresh = useCallback(async () => {
@@ -59,7 +104,7 @@ export const useTasks = () => {
       // Check cache first
       const cached = tasksCache[user.id];
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        setTaskLists(cached.taskLists);
+        setTaskLists(applyTaskListOrder(cached.taskLists, readStoredTaskListOrder()));
         setTasks(cached.tasks);
         setLoading(false);
         return;
@@ -84,7 +129,7 @@ export const useTasks = () => {
         setError(taskListsRes.error.message);
       } else {
         const taskListsData = taskListsRes.data || [];
-        setTaskLists(taskListsData);
+        setTaskLists(applyTaskListOrder(taskListsData, readStoredTaskListOrder()));
       }
 
       if (tasksRes.error) {
@@ -108,7 +153,7 @@ export const useTasks = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, readStoredTaskListOrder]);
 
   // Initial fetch when user becomes available
   useEffect(() => {
@@ -193,13 +238,18 @@ export const useTasks = () => {
 
       if (error) throw error;
       
-      setTaskLists(prev => [data, ...prev]);
+      let nextTaskLists: TaskList[] = [];
+      setTaskLists(prev => {
+        nextTaskLists = [data, ...prev];
+        return nextTaskLists;
+      });
+      writeStoredTaskListOrder(nextTaskLists.map((list) => list.id));
       
       // Update cache
       if (user && tasksCache[user.id]) {
         tasksCache[user.id] = {
           ...tasksCache[user.id],
-          taskLists: [data, ...tasksCache[user.id].taskLists],
+          taskLists: nextTaskLists,
           timestamp: Date.now()
         };
       }
@@ -251,7 +301,12 @@ export const useTasks = () => {
 
       if (error) throw error;
       
-      setTaskLists(prev => prev.filter(list => list.id !== id));
+      let nextTaskLists: TaskList[] = [];
+      setTaskLists(prev => {
+        nextTaskLists = prev.filter((list) => list.id !== id);
+        return nextTaskLists;
+      });
+      writeStoredTaskListOrder(nextTaskLists.map((list) => list.id));
       // Also delete all tasks in this list
       setTasks(prev => prev.filter(task => task.task_list_id !== id));
       
@@ -259,7 +314,7 @@ export const useTasks = () => {
       if (user && tasksCache[user.id]) {
         tasksCache[user.id] = {
           ...tasksCache[user.id],
-          taskLists: tasksCache[user.id].taskLists.filter(list => list.id !== id),
+          taskLists: nextTaskLists,
           tasks: tasksCache[user.id].tasks.filter(task => task.task_list_id !== id),
           timestamp: Date.now()
         };
@@ -267,6 +322,28 @@ export const useTasks = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       throw err;
+    }
+  };
+
+  const reorderTaskLists = async (taskListIds: string[]): Promise<boolean> => {
+    try {
+      const ordered = applyTaskListOrder(taskLists, taskListIds);
+      setTaskLists(ordered);
+      writeStoredTaskListOrder(ordered.map((list) => list.id));
+
+      if (user && tasksCache[user.id]) {
+        tasksCache[user.id] = {
+          ...tasksCache[user.id],
+          taskLists: ordered,
+          timestamp: Date.now()
+        };
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error reordering task lists:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred');
+      return false;
     }
   };
 
@@ -535,6 +612,7 @@ export const useTasks = () => {
     updateTask,
     deleteTask,
     getTasksByList,
+    reorderTaskLists,
     reorderTasks,
     scheduleTask,
     unscheduleTask,

@@ -15,9 +15,10 @@ interface TaskListDialogProps {
   list?: TaskList;
 }
 
-const colorOptions = COLOR_OPTIONS.map(color => ({
+const colorOptions = COLOR_OPTIONS.map((color) => ({
   value: color.value,
-  label: color.name
+  label: color.name,
+  swatch: color.midHex,
 }));
 
 export const TaskListDialog: React.FC<TaskListDialogProps> = ({
@@ -29,6 +30,7 @@ export const TaskListDialog: React.FC<TaskListDialogProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(COLOR_OPTIONS[3].value); // Blue
+  const selectedColorOption = colorOptions.find((opt) => opt.value === color);
 
   useEffect(() => {
     if (list) {
@@ -95,9 +97,9 @@ export const TaskListDialog: React.FC<TaskListDialogProps> = ({
                   <div className="flex items-center gap-2">
                     <div 
                       className="w-4 h-4 rounded-full border"
-                      style={{ backgroundColor: color }}
+                        style={{ backgroundColor: selectedColorOption?.swatch || color }}
                     />
-                    {colorOptions.find(opt => opt.value === color)?.label}
+                    {selectedColorOption?.label}
                   </div>
                 </SelectValue>
               </SelectTrigger>
@@ -107,7 +109,7 @@ export const TaskListDialog: React.FC<TaskListDialogProps> = ({
                     <div className="flex items-center gap-2">
                       <div 
                         className="w-4 h-4 rounded-full border"
-                        style={{ backgroundColor: option.value }}
+                        style={{ backgroundColor: option.swatch }}
                       />
                       {option.label}
                     </div>

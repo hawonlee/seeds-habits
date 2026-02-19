@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Task, TaskList } from '@/hooks/useTasks';
-import { getCategoryCSSVariables, getIntermediaryColorFromHex } from '@/lib/categories';
 import { findColorOptionByValue } from '@/lib/colorOptions';
 import { CalendarDeleteButton } from './CalendarDeleteButton';
 
@@ -20,6 +19,8 @@ interface TaskCalendarItemProps {
   onDeleteCalendarItem?: (calendarItemId: string) => void;
   isTimed?: boolean;
   displayType?: 'task' | 'deadline' | null;
+  isDraggable?: boolean;
+  useForegroundColor?: boolean;
 }
 
 export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
@@ -36,7 +37,9 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   calendarItemId,
   onDeleteCalendarItem,
   isTimed = false,
-  displayType = 'task'
+  displayType = 'task',
+  isDraggable = true,
+  useForegroundColor = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(task.title);
@@ -118,10 +121,10 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   const isCompleted = completed ?? task.completed;
   
   // Colors
-  const textColor = taskList ? getIntermediaryColorFromHex(taskList.color) : 'hsl(var(--category-6-intermediary))';
-  const cssVars = taskList ? getCategoryCSSVariables(taskList.color) : undefined;
-  const textColor1 = cssVars ? cssVars.primary : 'hsl(var(--category-6-primary))';
-  const bgColor = taskList ? (findColorOptionByValue(taskList.color)?.bgHex || taskList.color) : undefined;
+  const palette = taskList ? findColorOptionByValue(taskList.color) : undefined;
+  const textColor = palette?.textHex || taskList?.color || '#4D4D4D';
+  const todoTextColor = useForegroundColor ? 'hsl(var(--foreground))' : (palette?.midHex || textColor);
+  const bgColor = palette?.bgHex || taskList?.color;
 
   // Render as deadline (no checkbox, background color)
   if (displayType === 'deadline') {
@@ -130,14 +133,14 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
         className="relative rounded group hover:opacity-90 transition-opacity "
         onClick={handleDeadlineToggle}
         onDoubleClick={beginEdit}
-        draggable={!isEditing}
-        onDragStart={handleDragStart}
+        draggable={isDraggable && !isEditing}
+        onDragStart={isDraggable ? handleDragStart : undefined}
       >
         <div 
           className="relative flex items-center justify-end gap-1.5 rounded h-4"
           style={{ 
             backgroundColor: bgColor,
-            color: textColor1
+            color: textColor
           }}
         >
           <div className="absolute inset-0 flex items-center justify-center px-1">
@@ -158,11 +161,11 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
                     }
                   }}
                   autoFocus
-                  className="w-full bg-transparent text-[11px] text-center outline-none pb-[6px]"
+                  className="w-full bg-transparent text-[11px] font-light text-center outline-none pb-[6px]"
                 />
               ) : (
                 <span
-                  className={`block truncate text-[11px] text-center ${isCompleted ? 'line-through' : ''}`}
+                  className={`block truncate text-[11px] font-light text-center ${isCompleted ? 'line-through' : ''}`}
                 >
                   {task.title}
                 </span>
@@ -181,10 +184,10 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   return (
     <div
       className={`relative  rounded group hover:bg-muted transition-colors ${isTimed ? 'h-full' : ''}`}
-      style={{ color: textColor }}
+      style={{ color: todoTextColor }}
       onClick={handleClick}
-      draggable={!isEditing}
-      onDragStart={handleDragStart}
+      draggable={isDraggable && !isEditing}
+      onDragStart={isDraggable ? handleDragStart : undefined}
     >
       {isTimed && (
         <div className="absolute inset-0 rounded" style={{ backgroundColor: bgColor, opacity: 0.35, pointerEvents: 'none' }} />
@@ -202,7 +205,7 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
           }}
           onClick={(e) => e.stopPropagation()}
           className="mt-[2px]"
-          customColor={textColor}
+          customColor={todoTextColor}
         />
         <div className="relative flex-1 min-w-0">
           {isEditing ? (
@@ -221,11 +224,11 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
                 }
               }}
               autoFocus
-              className="w-full bg-transparent text-[11px] outline-none p-0 m-0 h-full pb-[7px]"
+              className="w-full bg-transparent text-[11px] font-light outline-none p-0 m-0 h-full pb-[7px]"
             />
           ) : (
             <span
-              className="block truncate text-[11px] "
+              className="block truncate text-[11px] font-light"
               onClick={beginEdit}
             >
               {task.title}

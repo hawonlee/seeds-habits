@@ -19,7 +19,9 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['IBM Plex Mono', 'monospace'],
+				sans: ['Geist Mono', 'monospace'],
+				display: ['Inter', 'system-ui', 'sans-serif'],
+				mono: ['JetBrains Mono', 'Geist Mono', 'monospace'],
 			},
 			fontSize: {
 				'xxs': ['0.7rem', { lineHeight: '1rem' }], // 10px

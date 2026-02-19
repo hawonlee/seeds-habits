@@ -5,19 +5,84 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, CheckSquare, Check, X, CalendarIcon } from 'lucide-react';
 import { useTasks, Task, TaskList } from '@/hooks/useTasks';
 import { TaskListCard } from '@/components/tasks/TaskList';
 import { TaskDialog } from '@/components/tasks/TaskDialog';
 import { DeleteConfirmationModal } from '@/components/diary/DeleteConfirmationModal';
+import { cn } from '@/lib/utils';
 import { COLOR_OPTIONS } from '@/lib/colorOptions';
+import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface TasksViewProps {
   onToggleCalendar?: () => void;
   isCalendarCollapsed?: boolean;
 }
+
+interface SortableTaskListCardProps {
+  list: TaskList;
+  tasksForList: Task[];
+  onAddTask: (listId: string, taskText: string) => void;
+  onEditTask: (task: Task) => void;
+  onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
+  onDeleteTask: (taskId: string) => void;
+  onToggleTaskComplete: (taskId: string) => void;
+  onDeleteList: (listId: string) => void;
+  onUpdateList: (listId: string, updates: Partial<TaskList>) => void;
+  onReorderTasks: (listId: string, taskIds: string[]) => void;
+}
+
+const SortableTaskListCard: React.FC<SortableTaskListCardProps> = ({
+  list,
+  tasksForList,
+  onAddTask,
+  onEditTask,
+  onUpdateTask,
+  onDeleteTask,
+  onToggleTaskComplete,
+  onDeleteList,
+  onUpdateList,
+  onReorderTasks,
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: list.id,
+  });
+
+  const normalizedTransform = transform
+    ? { ...transform, scaleX: 1, scaleY: 1 }
+    : null;
+
+  const style = {
+    transform: CSS.Transform.toString(normalizedTransform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={cn('h-full', isDragging ? 'opacity-70 z-20' : '')}>
+      <TaskListCard
+        taskList={list}
+        tasks={tasksForList}
+        onAddTask={onAddTask}
+        onEditTask={onEditTask}
+        onUpdateTask={onUpdateTask}
+        onDeleteTask={onDeleteTask}
+        onToggleTaskComplete={onToggleTaskComplete}
+        onEditList={() => {}}
+        onDeleteList={onDeleteList}
+        onUpdateList={onUpdateList}
+        onReorderTasks={onReorderTasks}
+        listDragHandleProps={{
+          ...attributes,
+          ...listeners,
+          title: 'Drag to reorder list',
+        }}
+      />
+    </div>
+  );
+};
 
 export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalendarCollapsed = true }) => {
   const {
@@ -31,6 +96,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
     updateTask,
     deleteTask,
     getTasksByList,
+    reorderTaskLists,
     reorderTasks
   } = useTasks();
 
@@ -38,12 +104,12 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [deletingTaskList, setDeletingTaskList] = useState<TaskList | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-  
+
   // Inline task list creation state
   const [isCreatingList, setIsCreatingList] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDescription, setNewListDescription] = useState('');
-  const [newListColor, setNewListColor] = useState(COLOR_OPTIONS[3].value); // Blue
+  const [newListColor, setNewListColor] = useState(COLOR_OPTIONS[0].value); // Red
 
   // CSS-only responsive columns to avoid timing issues on first navigation
   // (DiaryView also uses measured width, but here we rely on CSS for robustness)
@@ -52,7 +118,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
     setIsCreatingList(true);
     setNewListName('');
     setNewListDescription('');
-    setNewListColor(COLOR_OPTIONS[3].value); // Blue
+    setNewListColor(COLOR_OPTIONS[0].value); // Red
   };
 
   const handleEditTaskList = (list: TaskList) => {
@@ -138,6 +204,14 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
     }
   };
 
+  const handleReorderTaskLists = async (taskListIds: string[]) => {
+    try {
+      await reorderTaskLists(taskListIds);
+    } catch (error) {
+      console.error('Error reordering task lists:', error);
+    }
+  };
+
   const handleSaveTaskList = async (listData: Omit<TaskList, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
     await createTaskList(listData);
   };
@@ -151,12 +225,12 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
         description: newListDescription.trim() || undefined,
         color: newListColor
       });
-      
+
       // Reset form
       setIsCreatingList(false);
       setNewListName('');
       setNewListDescription('');
-      setNewListColor(COLOR_OPTIONS[3].value); // Blue
+      setNewListColor(COLOR_OPTIONS[0].value); // Red
     } catch (error) {
       console.error('Error creating task list:', error);
     }
@@ -166,7 +240,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
     setIsCreatingList(false);
     setNewListName('');
     setNewListDescription('');
-    setNewListColor(COLOR_OPTIONS[3].value); // Blue
+    setNewListColor(COLOR_OPTIONS[0].value); // Red
   };
 
   const handleSaveTask = async (taskData: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
@@ -177,6 +251,30 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
     }
   };
 
+  const colorOptions = COLOR_OPTIONS.map(color => ({
+    value: color.value,
+    label: color.name,
+    swatch: color.midHex
+  }));
+  const listIds = taskLists.map((list) => list.id);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 }
+    })
+  );
+
+  const handleTaskListDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = listIds.indexOf(String(active.id));
+    const newIndex = listIds.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reorderedIds = arrayMove(listIds, oldIndex, newIndex);
+    handleReorderTaskLists(reorderedIds);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -184,11 +282,6 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
       </div>
     );
   }
-
-  const colorOptions = COLOR_OPTIONS.map(color => ({
-    value: color.value,
-    label: color.name
-  }));
 
   return (
     <div className="h-full flex flex-col">
@@ -201,83 +294,55 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
                 <Plus className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-          <DropdownMenuContent className="p-4" align="end">
-            <div className="flex items-end gap-2">
-              <div>
-                <Label htmlFor="list-name" className="text-xs font-normal">Name</Label>
-                <Input
-                  id="list-name"
-                  value={newListName}
-                  onChange={(e) => setNewListName(e.target.value)}
-                  placeholder="Enter list name..."
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleCreateListInline();
-                    } else if (e.key === 'Escape') {
-                      handleCancelCreateList();
-                    }
-                  }}
-                  autoFocus
-                />
+            <DropdownMenuContent className="p-2 bg-white" align="start">
+              <div className="flex flex-col gap-2 min-w-[200px]">
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="list-name"
+                    value={newListName}
+                    onChange={(e) => setNewListName(e.target.value)}
+                    placeholder="Enter list name"
+                    className="text-xxs h-7 flex-1 px-2"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleCreateListInline();
+                      } else if (e.key === 'Escape') {
+                        handleCancelCreateList();
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <Button
+                    onClick={handleCreateListInline}
+                    disabled={!newListName.trim()}
+                    size="icon"
+                    className="flex-shrink-0 h-7 w-7 "
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap justify-between p-1.5">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setNewListColor(color.value)}
+                      className={cn(
+                        'w-4 h-4 rounded-full ring-1 ring-offset-4 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
+                        newListColor === color.value
+                          ? 'ring-foreground/40'
+                          : 'ring-transparent hover:ring-foreground/20 transition-colors duration-200'
+                      )}
+                      style={{ backgroundColor: color.swatch }}
+                      title={color.label}
+                    />
+                  ))}
+                </div>
               </div>
-{/* 
-              <div>
-                <Label htmlFor="list-description">Description (optional)</Label>
-                <Textarea
-                  id="list-description"
-                  value={newListDescription}
-                  onChange={(e) => setNewListDescription(e.target.value)}
-                  placeholder="Enter description"
-                  rows={2}
-                />
-              </div> */}
-              
-              <div>
-                <Label htmlFor="list-color" className="text-xs font-normal">Color</Label>
-                <Select value={newListColor} onValueChange={setNewListColor}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {colorOptions.map((color) => (
-                      <SelectItem key={color.value} value={color.value}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-sm"
-                            style={{ backgroundColor: color.value }}
-                          />
-                          {color.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleCreateListInline}
-                  disabled={!newListName.trim()}
-                  size="icon"
-                  className="flex-1"
-                >
-                  <Check className="h-4 w-4" />
-                </Button>
-                {/* <Button 
-                  onClick={handleCancelCreateList}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button> */}
-              </div>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        
+
         {/* {onToggleCalendar && (
           <Button
             variant="ghosticon"
@@ -292,32 +357,35 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-      {taskLists.length === 0 ? (
-        <div className="text-left">
+        {taskLists.length === 0 ? (
+          <div className="text-left">
             {/* <h3 className="text-sm mb-2 text-muted-foreground">Create your first task list</h3> */}
-        </div>
-      ) : (
-        <div className={`grid gap-4 pb-4 items-stretch`} style={{ gridTemplateColumns: `repeat(auto-fill, minmax(200px, 1fr))` }}>
-          {taskLists.map((list) => (
-            <TaskListCard
-              key={list.id}
-              taskList={list}
-              tasks={(list.hide_completed
-                ? getTasksByList(list.id).filter(t => !t.completed)
-                : getTasksByList(list.id))}
-              onAddTask={handleAddTask}
-              onEditTask={handleEditTask}
-              onUpdateTask={handleUpdateTask}
-              onDeleteTask={handleDeleteTask}
-              onToggleTaskComplete={handleToggleTaskComplete}
-              onEditList={handleEditTaskList}
-              onDeleteList={handleDeleteTaskList}
-              onUpdateList={handleUpdateTaskList}
-              onReorderTasks={handleReorderTasks}
-            />
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <DndContext sensors={sensors} onDragEnd={handleTaskListDragEnd}>
+            <SortableContext items={listIds} strategy={rectSortingStrategy}>
+              <div className={`grid gap-4 pb-4 items-stretch`} style={{ gridTemplateColumns: `repeat(auto-fill, minmax(200px, 1fr))` }}>
+                {taskLists.map((list) => (
+                  <SortableTaskListCard
+                    key={list.id}
+                    list={list}
+                    tasksForList={(list.hide_completed
+                      ? getTasksByList(list.id).filter(t => !t.completed)
+                      : getTasksByList(list.id))}
+                    onAddTask={handleAddTask}
+                    onEditTask={handleEditTask}
+                    onUpdateTask={handleUpdateTask}
+                    onDeleteTask={handleDeleteTask}
+                    onToggleTaskComplete={handleToggleTaskComplete}
+                    onDeleteList={handleDeleteTaskList}
+                    onUpdateList={handleUpdateTaskList}
+                    onReorderTasks={handleReorderTasks}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
       </div>
 
       {/* Dialogs */}

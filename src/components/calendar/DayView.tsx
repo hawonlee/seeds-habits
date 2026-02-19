@@ -32,7 +32,13 @@ interface DayViewProps {
   onHabitDrop?: (habitId: string, date: Date, isAllDay?: boolean) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
-  onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean) => void;
+  onTaskDrop?: (
+    taskId: string,
+    date: Date,
+    isAllDay?: boolean,
+    displayType?: 'task' | 'deadline',
+    options?: { endDateTime?: Date }
+  ) => void;
   onTaskUpdateTitle?: (taskId: string, title: string) => void;
   onCalendarItemToggleComplete?: (calendarItemId: string, completed: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
@@ -238,7 +244,7 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
         onHabitDrop(habitId, currentDate);
       }
     } else if (data.startsWith('task:')) {
-      const taskId = data.replace('task:', '');
+      const [, taskId] = data.split(':');
       if (onTaskDrop) {
         onTaskDrop(taskId, currentDate);
       }
@@ -397,8 +403,8 @@ export const DayView = ({ habits, schedules, calendarItems, diaryEntries = [], t
             // Placeholder: later we will open a scheduler for tasks/habits with time ranges
             console.log('Clicked time slot:', dt.toString());
           }}
-              onDropTask={(taskId, dateTime, isAllDay) => {
-                if (onTaskDrop) onTaskDrop(taskId, dateTime, isAllDay);
+              onDropTask={(taskId, dateTime, isAllDay, options) => {
+                if (onTaskDrop) onTaskDrop(taskId, dateTime, isAllDay, options?.displayType, { endDateTime: options?.endDateTime });
           }}
           onDropHabit={(habitId, dateTime, isAllDay) => {
             if (onHabitDrop) onHabitDrop(habitId, dateTime, isAllDay);

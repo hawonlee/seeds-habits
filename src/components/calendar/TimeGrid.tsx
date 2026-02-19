@@ -10,7 +10,12 @@ interface TimeGridProps {
     onSlotClick?: (dateTime: Date) => void;
     renderUntimed?: (date: Date) => React.ReactNode;
     untimedAreaHeight?: number; // px; fixed height to keep hour rows aligned across days
-    onDropTask?: (taskId: string, dateTime: Date, isAllDay: boolean) => void;
+    onDropTask?: (
+        taskId: string,
+        dateTime: Date,
+        isAllDay: boolean,
+        options?: { displayType?: 'task' | 'deadline'; endDateTime?: Date }
+    ) => void;
     onDropHabit?: (habitId: string, dateTime: Date, isAllDay: boolean) => void;
     renderTimed?: (date: Date, ctx: { hourRowHeight: number; slotsPerHour: number; startHour: number; endHour: number; }) => React.ReactNode;
     resizableUntimed?: boolean;
@@ -74,6 +79,22 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
     const fmtDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
     const hours = useMemo(() => hoursInRange(startHour, endHour), [startHour, endHour]);
     const slotsPerHour = stepMinutes === 30 ? 2 : 1;
+    const parseDragPayload = (payload: string):
+        | { kind: 'task'; id: string; displayType: 'task' | 'deadline' }
+        | { kind: 'habit'; id: string }
+        | null => {
+        if (!payload) return null;
+        const [kind, id, maybeDisplayType] = payload.split(':');
+        if (!kind || !id) return null;
+        if (kind === 'task') {
+            const displayType = maybeDisplayType === 'deadline' ? 'deadline' : 'task';
+            return { kind: 'task', id, displayType };
+        }
+        if (kind === 'habit') {
+            return { kind: 'habit', id };
+        }
+        return null;
+    };
 
     const days = useMemo(() => {
         return mode === 'week' ? getWeekDates(currentDate) : [new Date(currentDate)];
@@ -167,6 +188,7 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                                     e.preventDefault();
                                     (e.currentTarget as HTMLElement).classList.remove('bg-muted');
                                     const data = e.dataTransfer.getData('text/plain');
+                                    const parsed = parseDragPayload(data);
                                     const idAttr = (e.currentTarget as HTMLElement).id || '';
                                     let dt = new Date(day);
                                     const idMatch = idAttr.match(/^calendar:(\d{4}-\d{2}-\d{2})$/);
@@ -175,12 +197,10 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                                         dt = new Date(y, m - 1, d);
                                     }
                                     dt.setHours(0, 0, 0, 0);
-                                    if (data.startsWith('task:')) {
-                                        const id = data.replace('task:', '');
-                                        onDropTask && onDropTask(id, dt, true);
-                                    } else if (data.startsWith('habit:')) {
-                                        const id = data.replace('habit:', '');
-                                        onDropHabit && onDropHabit(id, dt, true);
+                                    if (parsed?.kind === 'task') {
+                                        onDropTask && onDropTask(parsed.id, dt, true, { displayType: parsed.displayType });
+                                    } else if (parsed?.kind === 'habit') {
+                                        onDropHabit && onDropHabit(parsed.id, dt, true);
                                     }
                                 }}
                             >
@@ -219,6 +239,7 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                                                         e.preventDefault();
                                                         (e.currentTarget as HTMLElement).classList.remove('bg-muted');
                                                         const data = e.dataTransfer.getData('text/plain');
+                                                        const parsed = parseDragPayload(data);
                                                         const minutes = idx * (60 / slotsPerHour);
                                                         const idAttr = (e.currentTarget as HTMLElement).id || '';
                                                         let dt = new Date(day);
@@ -232,12 +253,15 @@ export const TimeGrid: React.FC<TimeGridProps> = ({
                                                         } else {
                                                             dt.setHours(h, minutes, 0, 0);
                                                         }
-                                                        if (data.startsWith('task:')) {
-                                                            const id = data.replace('task:', '');
-                                                            onDropTask && onDropTask(id, dt, false);
-                                                        } else if (data.startsWith('habit:')) {
-                                                            const id = data.replace('habit:', '');
-                                                            onDropHabit && onDropHabit(id, dt, false);
+                                                        if (parsed?.kind === 'task') {
+                                                            const end = new Date(dt);
+                                                            end.setMinutes(end.getMinutes() + stepMinutes);
+                                                            onDropTask && onDropTask(parsed.id, dt, false, {
+                                                                displayType: parsed.displayType,
+                                                                endDateTime: end,
+                                                            });
+                                                        } else if (parsed?.kind === 'habit') {
+                                                            onDropHabit && onDropHabit(parsed.id, dt, false);
                                                         }
                                                     }}
                                                     aria-label={`Schedule at ${h}:${idx * (60 / slotsPerHour)}`}

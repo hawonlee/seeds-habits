@@ -35,7 +35,14 @@ interface UnifiedCalendarProps {
   onHabitDrop?: (habitId: string, date: Date) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
-  onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean, displayType?: 'task' | 'deadline') => void;
+  onTaskDrop?: (
+    taskId: string,
+    date: Date,
+    isAllDay?: boolean,
+    displayType?: 'task' | 'deadline',
+    options?: { endDateTime?: Date }
+  ) => void;
+  onTaskCreate?: (title: string, date: Date) => Promise<string | void> | string | void;
   onTaskUpdateTitle?: (taskId: string, title: string) => void;
   onCalendarItemToggleComplete?: (calendarItemId: string, completed: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
@@ -44,7 +51,7 @@ interface UnifiedCalendarProps {
   onOpenSettings?: () => void;
 }
 
-export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskUpdateTitle, onCalendarItemToggleComplete, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, onOpenSettings }: UnifiedCalendarProps) => {
+export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskCreate, onTaskUpdateTitle, onCalendarItemToggleComplete, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, onOpenSettings }: UnifiedCalendarProps) => {
   // Get saved view mode from localStorage, default to 'month'
   const getInitialViewMode = (): 'month' | 'week' | 'day' => {
     const saved = localStorage.getItem('calendar-view-mode');
@@ -192,6 +199,7 @@ export const UnifiedCalendar = ({ habits, schedules, calendarItems, diaryEntries
             onHabitUnschedule={onHabitUnschedule}
             onTaskToggleComplete={onTaskToggleComplete}
             onTaskDrop={onTaskDrop}
+            onTaskCreate={onTaskCreate}
             onCalendarItemToggleComplete={onCalendarItemToggleComplete}
             onTaskDelete={onTaskDelete}
             onCalendarItemDelete={onCalendarItemDelete}

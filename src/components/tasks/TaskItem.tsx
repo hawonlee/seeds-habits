@@ -72,7 +72,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
     <>
       <div
         ref={cardRef}
-        className="transition-all duration-200 hover:bg-button-ghost-hover/40 rounded-sm px-1 flex items-center cursor-pointer"
+        className="transition-all duration-200 hover:bg-button-ghost-hover rounded-sm px-1 flex items-center cursor-pointer"
         onClick={handleCardClick}
       >
         <div className="flex items-start gap-2 w-full">
@@ -91,9 +91,9 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 mt-1">
-                <h3 className="text-xxs">{task.title}</h3>
+                <h3 className="text-xxs font-light">{task.title}</h3>
                 {task.description && (
-                  <p className="text-xxs text-muted-foreground leading-relaxed">
+                  <p className="text-xxs font-light text-muted-foreground leading-relaxed">
                     {truncateNotes(task.description)}
                   </p>
                 )}
@@ -101,7 +101,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
 
               {/* Due Date */}
               {task.due_date && (
-                <div className="text-xxs text-muted-foreground mt-1">
+                <div className="text-xxs font-light text-muted-foreground mt-1">
                   {formatDateOnly(task.due_date)}
                 </div>
               )}

@@ -13,7 +13,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-button-outline-border rounded-full hover:bg-button-outline-hover hover:text-accent-foreground",
+          "border border-button-outline-border rounded-full hover:bg-button-outline-hover",
         outlinefilled: "bg-button-outline-filled border border-button-outline-filled-border rounded-full",
         outlineinactive: "border border-button-outline-inactive-border rounded-full hover:bg-button-outline-inactive-hover hover:text-button-outline-inactive-text text-button-outline-inactive-text font-normal",
         nooutline:
@@ -32,7 +32,7 @@ const buttonVariants = cva(
         sm: "h-7 px-3",
         lg: "h-11 px-8",
         skinny: "px-5 py-2",
-        icon: "h-6 w-6",
+        icon: "h-7 w-7",
         smallicon: "h-8 w-8",
         frequency: "p-2",
         text: ""

@@ -18,6 +18,7 @@ import { findColorOptionByValue } from '@/lib/colorOptions';
 import { shouldHabitBeScheduledOnDate } from "./calendarFrequency";
 import { TimeGrid } from "./TimeGrid";
 import type { Database } from "@/integrations/supabase/types";
+import { AllDayTaskSections, CalendarTaskEntry } from "@/components/calendar/AllDayTaskSections";
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
 
@@ -36,7 +37,13 @@ interface WeekViewProps {
   onHabitDrop?: (habitId: string, date: Date, isAllDay?: boolean) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
-  onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean) => void;
+  onTaskDrop?: (
+    taskId: string,
+    date: Date,
+    isAllDay?: boolean,
+    displayType?: 'task' | 'deadline',
+    options?: { endDateTime?: Date }
+  ) => void;
   onTaskUpdateTitle?: (taskId: string, title: string) => void;
   onCalendarItemToggleComplete?: (calendarItemId: string, completed: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
@@ -354,6 +361,16 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
             const scheduledHabitIds = getScheduledHabitsForDate(day);
             return (
               <div className="flex flex-col gap-1">
+                <AllDayTaskSections
+                  date={day}
+                  taskEntries={taskEntries as CalendarTaskEntry[]}
+                  taskLists={taskLists}
+                  onTaskToggleComplete={onTaskToggleComplete}
+                  onTaskUpdateTitle={onTaskUpdateTitle}
+                  onCalendarItemToggleComplete={onCalendarItemToggleComplete}
+                  onTaskDelete={onTaskDelete}
+                  onCalendarItemDelete={onCalendarItemDelete}
+                />
                 {habitsForDay.map(habit => {
                   // Find the calendar item ID for this habit if it's scheduled
                   const calendarItem = getScheduledItemsForDate(day)
@@ -370,29 +387,6 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
                       onUnschedule={onHabitUnschedule}
                       calendarItemId={calendarItem?.id}
                       onDeleteCalendarItem={onCalendarItemDelete}
-                    />
-                  );
-                })}
-                {taskEntries.map((entry: any, idx: number) => {
-                  const task = entry.task as Task;
-                  const taskList = taskLists?.find(list => list.id === task.task_list_id);
-                  return (
-                    <TaskCalendarItem
-                      key={`untimed-t-${task.id}-${idx}`}
-                      task={task}
-                      date={day}
-                      taskList={taskList}
-                      onToggleComplete={onTaskToggleComplete || (() => { })}
-                      onUpdateTitle={onTaskUpdateTitle}
-                      completed={entry.completed}
-                      onToggleCalendarItemComplete={onCalendarItemToggleComplete}
-                      onUnschedule={(taskId, taskDate) => {
-                        if (onTaskDelete) onTaskDelete(taskId, taskDate);
-                      }}
-                      calendarItemId={entry.calendarItemId}
-                      onDeleteCalendarItem={onCalendarItemDelete}
-                      isScheduled={Boolean(entry.calendarItemId)}
-                      displayType={entry.displayType || 'task'}
                     />
                   );
                 })}
@@ -475,8 +469,8 @@ export const WeekView = ({ habits, schedules, calendarItems, diaryEntries = [], 
             // Placeholder: later we will open a scheduler for tasks/habits with time ranges
             console.log('Clicked time slot:', dt.toString());
           }}
-        onDropTask={(taskId, dateTime, isAllDay) => {
-            if (onTaskDrop) onTaskDrop(taskId, dateTime, isAllDay);
+        onDropTask={(taskId, dateTime, isAllDay, options) => {
+            if (onTaskDrop) onTaskDrop(taskId, dateTime, isAllDay, options?.displayType, { endDateTime: options?.endDateTime });
           }}
         onDropHabit={(habitId, dateTime, isAllDay) => {
             if (onHabitDrop) onHabitDrop(habitId, dateTime, isAllDay);

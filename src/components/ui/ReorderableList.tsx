@@ -310,16 +310,53 @@ function NativeList<T>({
 }) {
   const [draggingId, setDraggingId] = React.useState<string | null>(null);
   const [overIndex, setOverIndex] = React.useState<number | null>(null);
+  const extractDraggedId = React.useCallback((e: React.DragEvent): string | null => {
+    const payload = e.dataTransfer.getData('text/plain');
+    if (!payload || !payload.startsWith(`${externalDragType}:`)) return null;
+    const [, draggedId] = payload.split(':');
+    return draggedId || null;
+  }, [externalDragType]);
+
+  const getActiveDraggedId = React.useCallback((e: React.DragEvent): string | null => {
+    if (draggingId) return draggingId;
+    return extractDraggedId(e);
+  }, [draggingId, extractDraggedId]);
+
+  const isValidReorderDragForList = React.useCallback((e: React.DragEvent): boolean => {
+    const draggedId = getActiveDraggedId(e);
+    return !!draggedId && ids.includes(draggedId);
+  }, [getActiveDraggedId, ids]);
+
+  React.useEffect(() => {
+    const clearIndicators = () => {
+      setOverIndex(null);
+      setDraggingId(null);
+    };
+    window.addEventListener('dragend', clearIndicators);
+    window.addEventListener('drop', clearIndicators);
+    return () => {
+      window.removeEventListener('dragend', clearIndicators);
+      window.removeEventListener('drop', clearIndicators);
+    };
+  }, []);
 
   return (
     <div className={className ?? 'space-y-0 relative'}
       onDragOver={(e) => {
-        // allow drop within list container
+        if (!isValidReorderDragForList(e)) {
+          setOverIndex(null);
+          return;
+        }
         e.preventDefault();
+      }}
+      onDragLeave={() => {
+        setOverIndex(null);
       }}
       onDrop={(e) => {
         // If dropped on the list container but not a specific row, treat as cancel
+        e.preventDefault();
         setOverIndex(null);
+        setDraggingId(null);
       }}
     >
       {items.map((item, i) => {
@@ -344,6 +381,10 @@ function NativeList<T>({
               setOverIndex(null);
             }}
             onDragOver={(e) => {
+              if (!isValidReorderDragForList(e)) {
+                setOverIndex(null);
+                return;
+              }
               e.preventDefault();
               // decide target index based on cursor position in the row
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -372,6 +413,10 @@ function NativeList<T>({
                 return;
               }
               // Otherwise it's an external drop target (e.g., calendar) — ignore here
+              setOverIndex(null);
+            }}
+            onDragLeave={() => {
+              setOverIndex(null);
             }}
             className={`relative select-none`}
           >

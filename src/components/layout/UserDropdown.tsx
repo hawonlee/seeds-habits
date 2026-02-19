@@ -34,26 +34,25 @@ export const UserDropdown = ({
           >
             <Avatar className="h-7 w-7">
               {/* <AvatarImage src={profile?.avatar_url || ""} alt={displayName} /> */}
-              <AvatarFallback className="text-foreground bg-habitbg hover:bg-habitbghover transition-colors duration-200">
+              <AvatarFallback className="text-foreground font-normal bg-habitbg hover:bg-habitbghover transition-colors duration-200">
                 {safeInitials || <User className="h-5 w-5" />}
               </AvatarFallback>
             </Avatar>
           </Button>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56 mb-2">
+      <DropdownMenuContent align="end" className="w-56 mb-2 p-2 my-1 bg-white">
         <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{safeDisplayName}</p>
+          <p className="text-xs">{safeDisplayName}</p>
           <p className="text-xs text-muted-foreground">{safeEmail}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onOpenSettings}>
-          <Settings className="mr-2 h-4 w-4" />
+          <Settings className="mr-2 h-3.5 w-3.5" />
           <p className="text-xs">Settings</p>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut}>
-          <LogOut className="mr-2 h-4 w-4" />
+          <LogOut className="mr-2 h-3.5 w-3.5" />
           <p className="text-xs">Log Out</p>
         </DropdownMenuItem>
       </DropdownMenuContent>

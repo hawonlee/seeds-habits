@@ -1,7 +1,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarHabitItem } from "@/components/calendar/CalendarHabitItem";
 import { CalendarDiaryItem } from "@/components/calendar/CalendarDiaryItem";
-import { TaskCalendarItem } from "@/components/calendar/CalendarTaskItem";
+import { AllDayTaskSections, CalendarTaskEntry } from "@/components/calendar/AllDayTaskSections";
 import { Habit } from "@/hooks/useHabits";
 import { Task, TaskList } from "@/hooks/useTasks";
 import { getCategoryCSSClasses } from "@/lib/categories";
@@ -16,7 +16,6 @@ import type { Database } from "@/integrations/supabase/types";
 import { Separator } from "@radix-ui/react-separator";
 
 type DiaryEntry = Database['public']['Tables']['diary_entries']['Row'];
-
 interface MonthViewProps {
   habits: Habit[];
   schedules: HabitSchedule[];
@@ -33,7 +32,14 @@ interface MonthViewProps {
   onHabitDrop?: (habitId: string, date: Date, isAllDay?: boolean) => void;
   onHabitUnschedule?: (habitId: string, date: Date) => void;
   onTaskToggleComplete?: (taskId: string) => void;
-  onTaskDrop?: (taskId: string, date: Date, isAllDay?: boolean, displayType?: 'task' | 'deadline') => void;
+  onTaskDrop?: (
+    taskId: string,
+    date: Date,
+    isAllDay?: boolean,
+    displayType?: 'task' | 'deadline',
+    options?: { endDateTime?: Date }
+  ) => void;
+  onTaskCreate?: (title: string, date: Date) => Promise<string | void> | string | void;
   onTaskUpdateTitle?: (taskId: string, title: string) => void;
   onCalendarItemToggleComplete?: (calendarItemId: string, completed: boolean) => void;
   onTaskDelete?: (taskId: string, date?: Date) => void;
@@ -56,6 +62,7 @@ const DayCell = ({
   onHabitUnschedule,
   onTaskToggleComplete,
   onTaskDrop,
+  onTaskCreate,
   onTaskUpdateTitle,
   onCalendarItemToggleComplete,
   onTaskDelete,
@@ -102,10 +109,24 @@ const DayCell = ({
     index === self.findIndex(t => t.data.id === item.data.id)
   );
 
-  // Separate deadline and task items
-  const deadlineItems = showTasks ? tasksForDay.filter((entry: any) => entry.displayType === 'deadline') : [];
-  const taskItems = showTasks ? tasksForDay.filter((entry: any) => entry.displayType !== 'deadline') : [];
   const diaryItems = showDiaries ? diaryEntriesForDay : [];
+  const [newTaskTitle, setNewTaskTitle] = React.useState("");
+  const [inlineCreatedTaskIds, setInlineCreatedTaskIds] = React.useState<Set<string>>(new Set());
+
+  const handleCreateTask = async () => {
+    const title = newTaskTitle.trim();
+    if (!title || !onTaskCreate) return;
+
+    const createdTaskId = await onTaskCreate(title, date);
+    if (createdTaskId) {
+      setInlineCreatedTaskIds((prev) => {
+        const next = new Set(prev);
+        next.add(createdTaskId);
+        return next;
+      });
+    }
+    setNewTaskTitle("");
+  };
 
   return (
     <div
@@ -139,42 +160,6 @@ const DayCell = ({
           </div>
         </div>
 
-        {/* Deadline items section */}
-        <div className="flex flex-col gap-[2px]">
-          {deadlineItems.slice(0, 2).map((entry: any, index: number) => {
-            const task = entry.task;
-            const taskList = taskLists.find(list => list.id === task.task_list_id);
-            const itemKey = entry.calendarItemId
-              ? `deadline-ci-${entry.calendarItemId}`
-              : `deadline-${task.id}-${dateKey}-${index}`;
-            return (
-              <TaskCalendarItem
-                key={itemKey}
-                task={task}
-                date={date}
-                taskList={taskList}
-                onToggleComplete={onTaskToggleComplete || (() => { })}
-                onUpdateTitle={onTaskUpdateTitle}
-                completed={entry.completed}
-                onToggleCalendarItemComplete={onCalendarItemToggleComplete}
-                onUnschedule={
-                  entry.calendarItemId
-                    ? undefined
-                    : (taskId, taskDate) => {
-                      if (onTaskDelete) onTaskDelete(taskId, taskDate);
-                    }
-                }
-                isScheduled={Boolean(entry.calendarItemId)}
-                calendarItemId={entry.calendarItemId}
-                onDeleteCalendarItem={onCalendarItemDelete}
-                displayType="deadline"
-              />
-            );
-          })}
-        </div>
-
-        
-
         {/* Task drop zone section - at the bottom with background */}
         <div className="flex-1 relative mt-[2px]">
           {/* Task drop zone - background layer */}
@@ -185,69 +170,78 @@ const DayCell = ({
           
           {/* Task items - foreground layer */}
           <div className="relative z-10 flex flex-col h-full">
-            {taskItems.map((entry: any, index: number) => {
-              const task = entry.task;
-              const taskList = taskLists.find(list => list.id === task.task_list_id);
-              const itemKey = entry.calendarItemId
-                ? `task-ci-${entry.calendarItemId}`
-                : `task-${task.id}-${dateKey}-${index}`;
-              return (
-                <TaskCalendarItem
-                  key={itemKey}
-                  task={task}
+            <div className="flex flex-col">
+              <AllDayTaskSections
+                date={date}
+                taskEntries={showTasks ? (tasksForDay as CalendarTaskEntry[]) : []}
+                taskLists={taskLists}
+                onTaskToggleComplete={onTaskToggleComplete}
+                onTaskUpdateTitle={onTaskUpdateTitle}
+                onCalendarItemToggleComplete={onCalendarItemToggleComplete}
+                onTaskDelete={onTaskDelete}
+                onCalendarItemDelete={onCalendarItemDelete}
+                maxDeadlineItems={2}
+                highlightedTaskIds={inlineCreatedTaskIds}
+              />
+
+              {/* Habits section */}
+              <div className="flex flex-col gap-1 mt-1">
+                {uniqueHabits.slice(0, 2).map((item, index) => {
+                  const isScheduledHabit = scheduledHabitIds.includes(item.data.id);
+                  const calendarItem = getScheduledItemsForDate(date)
+                    .find(calendarItem => calendarItem.item_type === 'habit' && calendarItem.item_id === item.data.id && calendarItem.start_minutes == null);
+
+                  return (
+                    <CalendarHabitItem
+                      key={`habit-${item.data.id}-${dateKey}`}
+                      habit={item.data}
+                      date={date}
+                      isCompleted={isHabitCompletedOnDate(item.data.id, date)}
+                      onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
+                      isScheduled={isScheduledHabit}
+                      onUnschedule={onHabitUnschedule}
+                      calendarItemId={calendarItem?.id}
+                      onDeleteCalendarItem={onCalendarItemDelete}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Diary items */}
+              {diaryItems.slice(0, 1).map(entry => (
+                <CalendarDiaryItem
+                  key={entry.id}
+                  entry={entry}
                   date={date}
-                  taskList={taskList}
-                  onToggleComplete={onTaskToggleComplete || (() => { })}
-                onUpdateTitle={onTaskUpdateTitle}
-                completed={entry.completed}
-                onToggleCalendarItemComplete={onCalendarItemToggleComplete}
-                  onUnschedule={
-                    entry.calendarItemId
-                      ? undefined
-                      : (taskId, taskDate) => {
-                        if (onTaskDelete) onTaskDelete(taskId, taskDate);
-                      }
-                  }
-                  isScheduled={Boolean(entry.calendarItemId)}
-                  calendarItemId={entry.calendarItemId}
-                  onDeleteCalendarItem={onCalendarItemDelete}
-                  displayType="task"
+                  onClick={onDiaryEntryClick}
                 />
-              );
-            })}
+              ))}
+            </div>
 
-            {/* Habits section */}
-        <div className="flex flex-col gap-1 mt-1">
-          {uniqueHabits.slice(0, 2).map((item, index) => {
-            const isScheduledHabit = scheduledHabitIds.includes(item.data.id);
-            const calendarItem = getScheduledItemsForDate(date)
-              .find(calendarItem => calendarItem.item_type === 'habit' && calendarItem.item_id === item.data.id && calendarItem.start_minutes == null);
-
-            return (
-              <CalendarHabitItem
-                key={`habit-${item.data.id}-${dateKey}`}
-                habit={item.data}
-                date={date}
-                isCompleted={isHabitCompletedOnDate(item.data.id, date)}
-                onToggle={(h, d, isDone) => handleHabitCheckIn(h, d, isDone)}
-                isScheduled={isScheduledHabit}
-                onUnschedule={onHabitUnschedule}
-                calendarItemId={calendarItem?.id}
-                onDeleteCalendarItem={onCalendarItemDelete}
-              />
-            );
-          })}
-        </div>
-
-            {/* Diary items */}
-            {diaryItems.slice(0, 1).map(entry => (
-              <CalendarDiaryItem
-                key={entry.id}
-                entry={entry}
-                date={date}
-                onClick={onDiaryEntryClick}
-              />
-            ))}
+            {/* Inline add task input pinned to bottom */}
+            {showTasks && (
+              <div className="mt-auto pt-1">
+                <input
+                  type="text"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleCreateTask();
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setNewTaskTitle("");
+                    }
+                  }}
+                  placeholder="+"
+                  className="h-5 w-full rounded bg-transparent px-1.5 text-[11px] text-foreground placeholder:text-muted-foreground/80 hover:bg-muted/50 focus:bg-muted/50 focus:outline-none"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -356,7 +350,7 @@ const DayCell = ({
   );
 };
 
-export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskUpdateTitle, onCalendarItemToggleComplete, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: MonthViewProps) => {
+export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [], tasks = [], taskLists = [], onCheckIn, onUndoCheckIn, onDayClick, calendarViewMode, onViewModeChange, currentDate, onHabitDrop, onHabitUnschedule, onTaskToggleComplete, onTaskDrop, onTaskCreate, onTaskUpdateTitle, onCalendarItemToggleComplete, onTaskDelete, onCalendarItemDelete, onDiaryEntryClick, showHabits = true, showTasks = true, showDiaries = true }: MonthViewProps) => {
   const { isHabitCompletedOnDate, toggleCompletion } = useHabitCompletionsContext();
   const [openDateKey, setOpenDateKey] = React.useState<string | null>(null);
 
@@ -721,6 +715,7 @@ export const MonthView = ({ habits, schedules, calendarItems, diaryEntries = [],
                 onHabitUnschedule={onHabitUnschedule}
                 onTaskToggleComplete={onTaskToggleComplete}
                 onTaskDrop={onTaskDrop}
+                onTaskCreate={onTaskCreate}
                 onTaskUpdateTitle={onTaskUpdateTitle}
                 onCalendarItemToggleComplete={onCalendarItemToggleComplete}
                 onTaskDelete={onTaskDelete}

@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Trash2,
-  Settings,
   Ellipsis
 } from 'lucide-react';
 import { TaskItem } from './TaskItem';
@@ -32,6 +31,7 @@ interface TaskListProps {
   onDeleteList: (listId: string) => void;
   onUpdateList: (listId: string, updates: Partial<TaskListType>) => void;
   onReorderTasks: (listId: string, taskIds: string[]) => void;
+  listDragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   // using DB-backed hide_completed; no local storage props
 }
 
@@ -48,6 +48,7 @@ export const TaskListCard: React.FC<TaskListProps> = ({
   onDeleteList,
   onUpdateList,
   onReorderTasks,
+  listDragHandleProps,
 }) => {
   const [editName, setEditName] = useState(taskList.name);
   const [newTaskText, setNewTaskText] = useState('');
@@ -61,11 +62,6 @@ export const TaskListCard: React.FC<TaskListProps> = ({
   const handleReorder = (ids: string[]) => {
     onReorderTasks(taskList.id, ids);
   };
-
-  const colorOptions = COLOR_OPTIONS.map(color => ({
-    value: color.value,
-    label: color.name
-  }));
 
   const handleNameSave = () => {
     if (editName.trim() !== taskList.name) {
@@ -103,26 +99,26 @@ export const TaskListCard: React.FC<TaskListProps> = ({
   return (
     <div className="w-full h-full flex flex-col">
       {/* List Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-0.5">
         <Badge
-          className="text-xxs px-2 py-0.5"
+          className="text-xxs px-2 py-0.5 cursor-grab active:cursor-grabbing select-none focus:ring-0 focus:ring-offset-0"
           style={{ 
             backgroundColor: findColorOptionByValue(taskList.color)?.bgHex || taskList.color,
             color: findColorOptionByValue(taskList.color)?.textHex || taskList.color
           }}
+          {...listDragHandleProps}
         >
           {taskList.name}
         </Badge>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <Ellipsis className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="">
+              <Ellipsis className="h-3 w-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64 p-4" onCloseAutoFocus={(e) => e.preventDefault()}>
-            <div className="space-y-4">
-              {/* Inline editable name with delete button */}
+          <DropdownMenuContent align="end" className="p-2 bg-white w-64" onCloseAutoFocus={(e) => e.preventDefault()}>
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <Input
                   value={editName}
@@ -135,49 +131,42 @@ export const TaskListCard: React.FC<TaskListProps> = ({
                       handleNameCancel();
                     }
                   }}
-                  className="flex-1 h-8 text-xxs"
+                  className="flex-1 h-7 px-2 text-xxs"
                   placeholder="List name"
                 />
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => onDeleteList(taskList.id)}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
 
-              {/* Color swatches */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-6 gap-2">
-                  {COLOR_OPTIONS.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => handleColorChange(color.value)}
-                      className={`
-                        flex items-center justify-center p-2 rounded-md transition-colors
-                        hover:opacity-80
-                        ${taskList.color === color.value
-                          ? 'ring-2 ring-offset-1 ring-bordermuted'
-                          : ''
-                        }
-                      `}
-                    >
-                      <div
-                        className="h-4 w-4 rounded-sm"
-                        style={{ backgroundColor: findColorOptionByValue(color.value)?.bgHex || color.value }}
-                      />
-                    </button>
-                  ))}
-                </div>
+              <div className="flex flex-wrap justify-between p-2 mt-1">
+                {COLOR_OPTIONS.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => handleColorChange(color.value)}
+                    className={`w-4 h-4 rounded-full ring-1 ring-offset-4 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 ${
+                      taskList.color === color.value
+                        ? 'ring-foreground/40'
+                        : 'ring-transparent hover:ring-foreground/20 transition-colors duration-200'
+                    }`}
+                    style={{ backgroundColor: findColorOptionByValue(color.value)?.midHex || color.value }}
+                    title={color.name}
+                  />
+                ))}
               </div>
 
-              {/* Hide completed toggle (DB-backed) */}
-              <div className="flex items-center justify-between">
+              <div className="w-full h-[1px] bg-foreground/5 my-1" />
+
+              <div className="flex items-center justify-between px-1.5 pb-1">
                 <Label
                   htmlFor={`hide-completed-${taskList.id}`}
-                  className="text-xs font-normal"
+                  className="text-[11px] font-light text-muted-foreground"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();

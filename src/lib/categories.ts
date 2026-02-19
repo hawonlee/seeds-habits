@@ -337,13 +337,15 @@ export const getCategoryCSSVariables = (categoryId: string): { primary: string; 
       return { primary: 'hsl(var(--category-1-primary))', intermediary: 'hsl(var(--category-1-intermediary))', bg: 'hsl(var(--category-1-bg))' };
     case 1: // Amber
       return { primary: 'hsl(var(--category-2-primary))', intermediary: 'hsl(var(--category-2-intermediary))', bg: 'hsl(var(--category-2-bg))' };
-    case 2: // Green
+    case 2: // Yellow
+      return { primary: 'hsl(var(--category-2-primary))', intermediary: 'hsl(var(--category-2-intermediary))', bg: 'hsl(var(--category-2-bg))' };
+    case 3: // Green
       return { primary: 'hsl(var(--category-3-primary))', intermediary: 'hsl(var(--category-3-intermediary))', bg: 'hsl(var(--category-3-bg))' };
-    case 3: // Blue
+    case 4: // Blue
       return { primary: 'hsl(var(--category-4-primary))', intermediary: 'hsl(var(--category-4-intermediary))', bg: 'hsl(var(--category-4-bg))' };
-    case 4: // Purple
+    case 5: // Purple
       return { primary: 'hsl(var(--category-5-primary))', intermediary: 'hsl(var(--category-5-intermediary))', bg: 'hsl(var(--category-5-bg))' };
-    case 5: // Neutral
+    case 6: // Neutral
       return { primary: 'hsl(var(--category-6-primary))', intermediary: 'hsl(var(--category-6-intermediary))', bg: 'hsl(var(--category-6-bg))' };
     default:
       return { primary: 'hsl(var(--category-6-primary))', intermediary: 'hsl(var(--category-6-intermediary))', bg: 'hsl(var(--category-6-bg))' };
@@ -365,13 +367,15 @@ export const getIntermediaryColorFromHex = (hexColor: string): string => {
       return 'hsl(var(--category-1-intermediary))';
     case 1: // Amber
       return 'hsl(var(--category-2-intermediary))';
-    case 2: // Green
+    case 2: // Yellow
+      return 'hsl(var(--category-2-intermediary))';
+    case 3: // Green
       return 'hsl(var(--category-3-intermediary))';
-    case 3: // Blue
+    case 4: // Blue
       return 'hsl(var(--category-4-intermediary))';
-    case 4: // Purple
+    case 5: // Purple
       return 'hsl(var(--category-5-intermediary))';
-    case 5: // Neutral
+    case 6: // Neutral
       return 'hsl(var(--category-6-intermediary))';
     default:
       return 'hsl(var(--category-6-intermediary))';
@@ -400,13 +404,15 @@ export const getCategoryCSSClasses = (categoryId: string): { primary: string; in
       return { primary: 'category-1-primary', intermediary: 'category-1-intermediary', bg: 'category-1-bg' };
     case 1: // Amber
       return { primary: 'category-2-primary', intermediary: 'category-2-intermediary', bg: 'category-2-bg' };
-    case 2: // Green
+    case 2: // Yellow
+      return { primary: 'category-2-primary', intermediary: 'category-2-intermediary', bg: 'category-2-bg' };
+    case 3: // Green
       return { primary: 'category-3-primary', intermediary: 'category-3-intermediary', bg: 'category-3-bg' };
-    case 3: // Blue
+    case 4: // Blue
       return { primary: 'category-4-primary', intermediary: 'category-4-intermediary', bg: 'category-4-bg' };
-    case 4: // Purple
+    case 5: // Purple
       return { primary: 'category-5-primary', intermediary: 'category-5-intermediary', bg: 'category-5-bg' };
-    case 5: // Neutral
+    case 6: // Neutral
       return { primary: 'category-6-primary', intermediary: 'category-6-intermediary', bg: 'category-6-bg' };
     default:
       return { primary: 'category-6-primary', intermediary: 'category-6-intermediary', bg: 'category-6-bg' };

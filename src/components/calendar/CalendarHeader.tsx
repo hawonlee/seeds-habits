@@ -41,9 +41,9 @@ export const CalendarHeader = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem className="mb-1" value="month">Month</SelectItem>
-            <SelectItem className="mb-1" value="week">Week</SelectItem>
-            <SelectItem value="day">Day</SelectItem>
+            <SelectItem className="mb-1 focus:text-foreground data-[highlighted]:text-foreground" value="month">Month</SelectItem>
+            <SelectItem className="mb-1 focus:text-foreground data-[highlighted]:text-foreground" value="week">Week</SelectItem>
+            <SelectItem className="focus:text-foreground data-[highlighted]:text-foreground" value="day">Day</SelectItem>
           </SelectContent>
         </Select>
         
