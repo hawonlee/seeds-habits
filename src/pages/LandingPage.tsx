@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MoveRight, Check } from "lucide-react";
+import { MoveRight, Check, ArrowUpRight, Ellipsis } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
+import arrow from "@/assets/arrow.svg";
 import {
   motion,
   useScroll,
@@ -321,159 +322,139 @@ const DeadlineRibbon = ({
   );
 };
 
-// ─── Sticky Note (PRD §6.3) ─────────────────────────────────────────────────
-const StickyNote = ({
-  text,
-  author,
-  rotation = 0,
+// ─── Dummy Calendar Preview Components ──────────────────────────────────────
+
+const DummyCheckbox = ({ checked, color }: { checked: boolean; color: string }) => (
+  <div
+    className="h-[12px] w-[12px] shrink-0 rounded-[2px] border flex items-center justify-center mt-[1px]"
+    style={{ borderColor: color, backgroundColor: checked ? color : "transparent" }}
+  >
+    {checked && <Check className="h-[10px] w-[10px] stroke-[2.5px] text-white" />}
+  </div>
+);
+
+const DummyTaskRow = ({
+  title,
+  completed,
+  color,
 }: {
-  text: string;
-  author: string;
-  rotation?: number;
-}) => {
-  return (
-    <MagneticHover>
-      <motion.div
-        className="w-52 p-4 rounded-sm relative"
-        style={{
-          backgroundColor: "#FEF9C3",
-          rotate: `${rotation}deg`,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.06)",
-        }}
-        whileHover={{ scale: 1.03, rotate: 0 }}
-      >
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 h-2 rounded-sm washi-tape"
-          style={{
-            width: "40px",
-            background:
-              "repeating-linear-gradient(90deg, #3B82F640, #3B82F640 4px, transparent 4px, transparent 8px)",
-          }}
-        />
-        <p className="font-display text-xs font-light text-neutral-700 leading-relaxed">
-          "{text}"
-        </p>
-        <p className="font-mono text-[9px] text-neutral-400 mt-2">— {author}</p>
-      </motion.div>
-    </MagneticHover>
-  );
-};
+  title: string;
+  completed: boolean;
+  color: string;
+}) => (
+  <div className="flex items-center gap-1.5 h-5 px-1">
+    <DummyCheckbox checked={completed} color={color} />
+    <span
+      className={`text-[11px] font-light truncate ${completed ? "line-through text-neutral-400" : "text-neutral-700"
+        }`}
+    >
+      {title}
+    </span>
+  </div>
+);
 
-// ─── Discord Bubble (PRD §6.3) ───────────────────────────────────────────────
-const DiscordBubble = ({ text, user }: { text: string; user: string }) => {
-  return (
-    <MagneticHover>
-      <div
-        className="bg-[#f8f9fa] border border-neutral-100 rounded-xl px-4 py-3 max-w-xs"
-        style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}
-      >
-        <span className="font-mono text-[10px] text-[#3B82F6] font-medium">{user}</span>
-        <p className="font-display text-xs font-light text-neutral-600 mt-0.5">{text}</p>
-      </div>
-    </MagneticHover>
-  );
-};
-
-// ─── Bento Cell (PRD §3.2 / §6.2) ───────────────────────────────────────────
-const BentoCell = ({
-  children,
-  className = "",
-  span = "1x1",
+const DummyDeadlineBar = ({
+  title,
+  bgColor,
+  textColor,
 }: {
-  children: React.ReactNode;
-  className?: string;
-  span?: "1x1" | "1x2" | "2x1" | "2x2";
-}) => {
-  const spanMap = {
-    "1x1": "col-span-1 row-span-1",
-    "1x2": "col-span-1 row-span-2",
-    "2x1": "col-span-2 row-span-1",
-    "2x2": "col-span-2 row-span-2",
-  };
+  title: string;
+  bgColor: string;
+  textColor: string;
+}) => (
+  <div
+    className="h-4 rounded flex items-center justify-center px-1"
+    style={{ backgroundColor: bgColor, color: textColor }}
+  >
+    <span className="text-[11px] font-light truncate">{title}</span>
+  </div>
+);
 
-  return (
-    <ScrollSection>
-      <div
-        className={`${spanMap[span]} rounded-2xl border border-neutral-100 bg-white p-6 ${className}`}
-        style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.03)" }}
+const DummyTaskListCard = ({
+  name,
+  colorBg,
+  colorText,
+  colorMid,
+  tasks,
+}: {
+  name: string;
+  colorBg: string;
+  colorText: string;
+  colorMid: string;
+  tasks: { id: string; title: string; completed: boolean }[];
+}) => (
+  <div className="w-48 flex flex-col">
+    {/* Header: badge + ellipsis */}
+    <div className="flex items-center justify-between pb-0.5">
+      <span
+        className="inline-flex items-center rounded font-normal px-2 py-0.5 text-xxs select-none"
+        style={{ backgroundColor: colorBg, color: colorText }}
       >
-        {children}
+        {name}
+      </span>
+      <button className="h-6 w-6 flex items-center justify-center rounded hover:bg-neutral-100 transition-colors">
+        <Ellipsis className="h-3.5 w-3.5 text-neutral-400" />
+      </button>
+    </div>
+
+    {/* Body */}
+    <div className="flex flex-col bg-neutral-100/80 p-1 rounded-md">
+      {tasks.map((task) => (
+        <DummyTaskRow key={task.id} title={task.title} completed={task.completed} color={colorMid} />
+      ))}
+      {/* New task field */}
+      <div className="px-1 py-0.5">
+        <span className="text-xxs text-stone-400">+ New Task</span>
       </div>
-    </ScrollSection>
-  );
-};
+    </div>
+  </div>
+);
 
-// ─── Live Task Breakdown Demo (PRD §6.2 Cell A) ─────────────────────────────
-const TaskBreakdownDemo = () => {
-  const [active, setActive] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-60px" });
-
-  useEffect(() => {
-    if (isInView) {
-      const timer = setTimeout(() => setActive(true), 600);
-      return () => clearTimeout(timer);
-    }
-  }, [isInView]);
-
-  const outputs = ["Outline", "Source Hunting", "Drafting", "Editing"];
-
+const DummyDayCell = ({
+  deadlines,
+  tasks,
+}: {
+  deadlines: { id: string; title: string; bgColor: string; textColor: string }[];
+  tasks: { id: string; title: string; completed: boolean; color: string }[];
+}) => {
+  const today = new Date();
   return (
-    <div ref={ref} className="space-y-5">
-      <div>
-        <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest">
-          Input
-        </span>
-        <div className="mt-2 border border-neutral-200 rounded-lg px-3 py-2 bg-neutral-50/50">
-          <span className="font-display text-sm font-light">"Write Research Paper"</span>
+    <div
+      className="w-44 h-52 border border-neutral-200 p-[2px] bg-white flex flex-col overflow-hidden"
+      style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.04)" }}
+    >
+      {/* Top row: left deadlines drop zone + date number in top-right corner */}
+      <div className="flex h-fit justify-between mb-1 relative">
+        <div className="flex-1 relative z-10">
+          {/* Deadline bars sit in the content area below */}
+        </div>
+        <div className="flex items-center justify-center m-[1px] w-[24px] h-[24px] rounded-full bg-red-600 text-white relative z-10 text-xs font-medium flex-shrink-0">
+          {today.getDate()}
         </div>
       </div>
 
-      {/* Arrow */}
-      <div className="flex justify-center">
-        <motion.div
-          initial={{ scaleY: 0 }}
-          animate={active ? { scaleY: 1 } : {}}
-          transition={{ duration: 0.3 }}
-          className="w-px h-6 bg-neutral-300 origin-top"
-        />
-      </div>
-
-      <div>
-        <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest">
-          Seeds
-        </span>
-        <div className="mt-2 space-y-1.5">
-          {outputs.map((item, i) => (
-            <motion.div
-              key={item}
-              initial={{ opacity: 0, x: -12 }}
-              animate={active ? { opacity: 1, x: 0 } : {}}
-              transition={{ delay: 0.3 + i * 0.12, duration: 0.4 }}
-              className="flex items-center gap-2"
-            >
-              <SeedCircle state="empty" size={10} delay={0} />
-              <span className="font-display text-xs font-light text-neutral-700">{item}</span>
-            </motion.div>
+      {/* Content area: deadlines + tasks */}
+      <div className="flex-1 relative flex flex-col overflow-hidden px-[2px]">
+        <div className="flex flex-col gap-[2px]">
+          {deadlines.map((d) => (
+            <DummyDeadlineBar key={d.id} title={d.title} bgColor={d.bgColor} textColor={d.textColor} />
+          ))}
+          {tasks.map((t) => (
+            <DummyTaskRow key={t.id} title={t.title} completed={t.completed} color={t.color} />
           ))}
         </div>
+
+        {/* "+" pinned to bottom, matches the inline add input */}
+        <div className="mt-auto pt-1">
+          <div className="h-5 w-full rounded px-1.5 text-[11px] text-muted-foreground/80">
+            +
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-// ─── Stat Box (PRD §3.1 corners) ────────────────────────────────────────────
-const StatBox = ({ label, value }: { label: string; value: string }) => (
-  <MagneticHover strength={0.08}>
-    <div
-      className="border border-neutral-200 rounded-md px-3 py-1.5 bg-white float-drift"
-      style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}
-    >
-      <span className="font-mono text-[10px] text-neutral-400">{label}</span>
-      <span className="font-mono text-sm text-neutral-800 block">{value}</span>
-    </div>
-  </MagneticHover>
-);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN LANDING PAGE
@@ -508,23 +489,22 @@ export const LandingPage = () => {
   return (
     <div
       ref={containerRef}
-      className="landing-page relative bg-white min-h-screen overflow-x-hidden"
+      className="landing-page relative min-h-screen overflow-x-hidden"
       onMouseMove={handleMouseMove}
     >
       {/* Grid background overlay (PRD §6.1) */}
       <div
-        className={`landing-grid-bg fixed inset-0 pointer-events-none z-0 ${
-          gridVisible ? "visible" : ""
+        className={`fixed inset-0 pointer-events-none z-0 visible
         }`}
       />
 
       {/* ── NAV BAR ───────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50">
         <div className="max-w-lg mx-auto mt-4">
-          <div className="flex items-center justify-between px-4 py-2 bg-white/80 backdrop-blur-xl rounded-xl border border-neutral-100">
+          <div className="flex items-center justify-between px-4 py-2 bg-secondary backdrop-blur-lg rounded-xl">
             <div className="flex items-center gap-2">
               <img src="/logo.png" alt="Seeds" className="w-5 h-5" />
-              <span className="font-display text-sm font-light tracking-tight">seeds</span>
+              <span className="font-display text-sm font-light tracking-tight">Seeds</span>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -548,376 +528,145 @@ export const LandingPage = () => {
         </div>
       </nav>
 
-      {/* ── SECTION 1: HERO — "The Infinite Workspace" (Scroll 0-1000px) ── */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-20">
-        {/* Peripheral stat boxes (PRD §3.1 corners) */}
-        <div className="absolute top-24 left-8 hidden lg:block">
-          <StatBox label="Tasks Completed" value="128" />
-        </div>
-        <div className="absolute top-24 right-8 hidden lg:block">
-          <StatBox label="Active Seeds" value="12" />
-        </div>
 
-        {/* Left edge: Task Decomposition (PRD §3.1) */}
-        <div className="absolute left-8 top-1/2 -translate-y-1/2 hidden xl:block">
-          <TaskDecomposition />
-        </div>
-
-        {/* Right edge: Deadline tag (PRD §3.1) */}
-        <motion.div
-          className="absolute right-8 hidden lg:block"
-          style={{ top: useTransform(scrollYProgress, [0, 0.3], ["40%", "60%"]) }}
-        >
-          <MagneticHover strength={0.1}>
-            <div className="flex items-center gap-2 float-drift-slow">
-              <div className="w-px h-16 bg-neutral-200" />
-              <div className="border border-neutral-200 rounded-md px-3 py-1.5 bg-white"
-                style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}
-              >
-                <span className="font-mono text-[10px] text-neutral-400 block">Deadline</span>
-                <span className="font-mono text-xs text-red-400">Feb 28, 2026</span>
-              </div>
+      <div className="h-screen w-full flex flex-col items-center justify-center">
+        <section className="max-w-5xl mx-auto px-6 pb-24">
+          <ScrollSection>
+            <div className="text-center mb-16">
+              <h2 className="font-display text-3xl sm:text-4xl font-extralight text-neutral-900">
+                Grow your routine, <br />one seed at a time.
+              </h2>
             </div>
-          </MagneticHover>
-        </motion.div>
+          </ScrollSection>
 
-        {/* Hero Content */}
-        <div className="text-center max-w-3xl mx-auto relative z-10">
-          <motion.h1
-            className="font-display text-5xl sm:text-7xl md:text-[88px] font-extralight leading-[0.95] tracking-[-0.04em] text-neutral-900"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          >
-            Grow your big ideas,{" "}
-            <span className="italic">one seed</span> at a time.
-          </motion.h1>
-
-          <motion.p
-            className="font-display text-lg sm:text-xl font-light text-neutral-400 mt-8 tracking-[-0.01em]"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            Decompose complex assignments into manageable, atomic tasks.
-            <br className="hidden sm:block" />
-            Watch them grow into accomplishments.
-          </motion.p>
-
-          <motion.div
-            className="flex gap-3 items-center justify-center mt-10"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-          >
-            <Button
-              variant="tertiary"
-              size="default"
-              className="font-display text-sm font-light gap-2 h-10 px-6"
-              onClick={() => navigate("/auth")}
-            >
-              Start Planting
-              <MoveRight strokeWidth={1.5} className="w-4 h-4" />
-            </Button>
-          </motion.div>
-
-          {/* Seed row under hero text */}
-          <motion.div
-            className="flex gap-4 items-center justify-center mt-12"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-          >
-            {(["complete", "complete", "complete", "half", "empty", "empty", "empty"] as SeedState[]).map(
-              (state, i) => (
-                <SeedCircle
-                  key={i}
-                  state={state}
-                  size={10}
-                  delay={0.9 + i * 0.08}
-                />
-              )
-            )}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── DEADLINE RIBBON (PRD §5.3) ─────────────────────────────────── */}
-      <div className="py-16 px-6">
-        <ScrollSection>
-          <DeadlineRibbon days={2} hours={14} minutes={5} />
-        </ScrollSection>
-      </div>
-
-      {/* ── SECTION 2: BENTO GRID (Scroll 1000-2500px) ────────────────── */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
-        <ScrollSection>
-          <div className="text-center mb-16">
-            <h2 className="font-display text-3xl sm:text-4xl font-extralight tracking-[-0.03em] text-neutral-900">
-              Intelligence, atomized.
-            </h2>
-            <p className="font-display text-base font-light text-neutral-400 mt-4 max-w-lg mx-auto">
-              Seeds breaks the overwhelming into the achievable. Every feature is designed for
-              clarity.
-            </p>
-          </div>
-        </ScrollSection>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[200px]">
-          {/* Cell A (2x2): Task Breakdown (PRD §6.2) */}
-          <BentoCell span="2x2" className="flex flex-col justify-between">
+          <div className="absolute -z-10 w-full lg:w-3/5 h-4/5 lg:h-3/5 left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/3 origin-top scale-[0.68] sm:scale-[0.82] lg:scale-100">
             <div>
-              <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest">
-                Task Shredder
-              </span>
-              <h3 className="font-display text-lg font-light text-neutral-800 mt-1">
-                Break it down
-              </h3>
-              <p className="font-display text-xs font-light text-neutral-400 mt-1">
-                Feed in any complex task. Get back an actionable checklist.
-              </p>
+              <ScrollSection delay={0} className="absolute bottom-32 left-0">
+                <DummyTaskListCard
+                  name="Work"
+                  colorBg="#D7ECFF"
+                  colorText="#3C4C5D"
+                  colorMid="#268ED3"
+                  tasks={[
+                    { id: "w1", title: "Review pull requests", completed: true },
+                    { id: "w2", title: "Write sprint notes", completed: true },
+                    { id: "w3", title: "Update roadmap doc", completed: false },
+                    { id: "w4", title: "Team sync prep", completed: false },
+                  ]}
+                />
+              </ScrollSection>
+
+              <ScrollSection delay={0.1} className="absolute bottom-14 left-52">
+                <DummyTaskListCard
+                  name="Personal"
+                  colorBg="#E8FEC6"
+                  colorText="#4B6039"
+                  colorMid="#5FAB00"
+                  tasks={[
+                    { id: "p1", title: "Morning run", completed: true },
+                    { id: "p2", title: "Read 20 pages", completed: false },
+                    { id: "p3", title: "Grocery run", completed: false },
+                    { id: "p4", title: "Call dentist", completed: false },
+                  ]}
+                />
+              </ScrollSection>
             </div>
-            <TaskBreakdownDemo />
-          </BentoCell>
 
-          {/* Cell B (1x2): Progress Radial (PRD §3.2) */}
-          <BentoCell span="1x2" className="flex flex-col items-center justify-center">
-            <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest mb-4">
-              Progress
-            </span>
-            <ProgressRadial progress={radialValue} />
-            <p className="font-display text-xs font-light text-neutral-400 mt-3 text-center">
-              Fills as you scroll —<br />your momentum, visualized.
-            </p>
-          </BentoCell>
-
-          {/* Cell C (1x1): Seed states */}
-          <BentoCell span="1x1" className="flex flex-col items-center justify-center gap-3">
-            <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest">
-              Seed States
-            </span>
-            <div className="flex gap-4 items-end">
-              <div className="flex flex-col items-center gap-1">
-                <SeedCircle state="empty" size={18} delay={0} />
-                <span className="font-mono text-[9px] text-neutral-400">Identified</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <SeedCircle state="half" size={18} delay={0.1} />
-                <span className="font-mono text-[9px] text-neutral-400">In Progress</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <SeedCircle state="complete" size={18} delay={0.2} />
-                <span className="font-mono text-[9px] text-neutral-400">Complete</span>
-              </div>
-            </div>
-          </BentoCell>
-
-          {/* Cell D (1x1): Task Stack preview */}
-          <BentoCell span="1x1" className="flex flex-col items-center justify-center overflow-hidden">
-            <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest mb-2">
-              Task Stack
-            </span>
-            <div className="scale-75 origin-center">
-              <TaskStack />
-            </div>
-          </BentoCell>
-
-          {/* Cell E (2x1): The Thread UI (PRD §8) */}
-          <BentoCell span="2x1" className="flex flex-col justify-center">
-            <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest mb-3">
-              The Thread
-            </span>
-            <ThreadUI />
-          </BentoCell>
-
-          {/* Cell F (2x1): Features list */}
-          <BentoCell span="2x1" className="flex flex-col justify-center">
-            <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest mb-3">
-              Everything You Need
-            </span>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 mt-1">
-              {[
-                "Task decomposition",
-                "Priority tagging",
-                "Deadline tracking",
-                "Progress radials",
-                "Calendar sync",
-                "Drag & drop",
-              ].map((f) => (
-                <div key={f} className="flex items-center gap-2">
-                  <Check className="w-3 h-3 text-[#22C55E]" strokeWidth={2} />
-                  <span className="font-display text-xs font-light text-neutral-600">{f}</span>
-                </div>
-              ))}
-            </div>
-          </BentoCell>
-        </div>
-      </section>
-
-      {/* ── SECTION 3: SOCIAL PROOF — Sticky Notes & Discord (PRD §6.3) ── */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <ScrollSection>
-          <div className="text-center mb-16">
-            <h2 className="font-display text-3xl sm:text-4xl font-extralight tracking-[-0.03em] text-neutral-900">
-              People are growing things.
-            </h2>
-          </div>
-        </ScrollSection>
-
-        <div className="flex flex-wrap justify-center gap-6 items-start">
-          <ScrollSection delay={0}>
-            <StickyNote
-              text="I finally finished my thesis because I stopped seeing it as one giant task."
-              author="@marina_k"
-              rotation={-2}
-            />
-          </ScrollSection>
-
-          <ScrollSection delay={0.1}>
-            <DiscordBubble
-              user="jake.dev"
-              text="Seeds is the only tool that actually made me break things down instead of just listing them."
-            />
-          </ScrollSection>
-
-          <ScrollSection delay={0.2}>
-            <StickyNote
-              text="The decomposition feature is worth it alone. Turns chaos into clarity."
-              author="@emi.patel"
-              rotation={1.5}
-            />
-          </ScrollSection>
-
-          <ScrollSection delay={0.3}>
-            <DiscordBubble
-              user="the_real_carlos"
-              text="Went from 0 to 12 completed seeds in a week. Addicting in the best way."
-            />
-          </ScrollSection>
-
-          <ScrollSection delay={0.15}>
-            <StickyNote
-              text="Clean, minimal, and no fluff. Exactly what productivity tools should be."
-              author="@fiona.z"
-              rotation={-1}
-            />
-          </ScrollSection>
-        </div>
-      </section>
-
-      {/* ── BOTTOM CTA ─────────────────────────────────────────────────── */}
-      <section className="py-32 px-6">
-        <ScrollSection>
-          <div className="text-center max-w-lg mx-auto">
-            <h2 className="font-display text-4xl sm:text-5xl font-extralight tracking-[-0.04em] text-neutral-900">
-              Plant your first seed.
-            </h2>
-            <p className="font-display text-base font-light text-neutral-400 mt-4">
-              Free to start. No credit card required.
-            </p>
-            <div className="mt-8">
-              <Button
-                variant="tertiary"
-                size="default"
-                className="font-display text-sm font-light gap-2 h-10 px-6"
-                onClick={() => navigate("/auth")}
+            <div className="absolute bottom-16 left-80 flex flex-col items-center gap-2 self-center z-20">
+              <img src={arrow} alt="arrow" className="w-20 ml-24" />
+              <div
+                className="flex w-32 items-center gap-1.5 bg-white border border-neutral-200 rounded p-1"
+                style={{
+                  // transform: "rotate(6deg)",
+                  boxShadow: "0 10px 28px rgba(0,0,0,0.14)",
+                }}
               >
-                Get Started
-                <MoveRight strokeWidth={1.5} className="w-4 h-4" />
-              </Button>
+
+                <DummyCheckbox checked={false} color="#5FAB00" />
+                <span className="text-[11px] font-light text-neutral-700 whitespace-nowrap">
+                  Grocery run
+                </span>
+              </div>
             </div>
 
-            {/* Seed row */}
-            <div className="flex gap-3 items-center justify-center mt-10">
-              {(["complete", "complete", "half", "empty", "empty"] as SeedState[]).map((s, i) => (
-                <SeedCircle key={i} state={s} size={8} delay={0} />
-              ))}
+            <div className="absolute bottom-72 left-20 flex flex-col items-center gap-2 self-center z-20">
+             
+              <div
+                className="flex w-32 items-center gap-1.5 bg-white border border-neutral-200 rounded p-1"
+                style={{
+                  // transform: "rotate(6deg)",
+                  boxShadow: "0 10px 28px rgba(0,0,0,0.14)",
+                }}
+              >
+
+                <DummyCheckbox checked={false} color="#268ED3" />
+                <span className="text-[11px] font-light text-neutral-700 whitespace-nowrap">
+                  Team sync prep
+                </span>
+              </div>
             </div>
+
+            <div className="absolute top-28 right-64 flex flex-col items-center gap-2 self-center z-20">
+             
+             <div
+               className="flex w-32 items-center gap-1.5 bg-white border border-neutral-200 rounded p-1"
+               style={{
+                 // transform: "rotate(6deg)",
+                 boxShadow: "0 10px 28px rgba(0,0,0,0.14)",
+               }}
+             >
+
+               <DummyCheckbox checked={true} color="#BCAA00" />
+               <span className="text-[11px] font-light text-neutral-700 whitespace-nowrap">
+                 Team sync prep
+               </span>
+             </div>
+           </div>
+
+         
+
+        
+
+
+            <ScrollSection delay={0.2} className="absolute right-12 top-20">
+              <DummyDayCell
+                deadlines={[
+                  { id: "d1", title: "Q1 Report due", bgColor: "#FFE1E2", textColor: "#5B3E3F" },
+                  { id: "d2", title: "Design handoff", bgColor: "#D7ECFF", textColor: "#3C4C5D" },
+                ]}
+                tasks={[
+                  { id: "c1", title: "Review slides", completed: true, color: "#268ED3" },
+                  { id: "c2", title: "Send agenda", completed: false, color: "#268ED3" },
+                  { id: "c3", title: "Book venue", completed: false, color: "#5FAB00" },
+                ]}
+              />
+            </ScrollSection>
           </div>
-        </ScrollSection>
-      </section>
+        </section>
 
-      {/* ── FOOTER ─────────────────────────────────────────────────────── */}
-      <footer className="border-t border-neutral-100 py-8 px-6">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Seeds" className="w-4 h-4 opacity-40" />
-            <span className="font-display text-xs font-light text-neutral-300">
-              seeds &copy; 2026
-            </span>
+
+
+        {/* ── FOOTER ─────────────────────────────────────────────────────── */}
+        <footer className="absolute bottom-0 py-2 border-t border-border space-y-2 font-light w-full">
+          <div className="px-8 lg:px-10 flex items-center gap-2 pb-2 border-b border-border text-left text-xs text-muted-foreground">
+            <p>Noted</p>
+
           </div>
-          <span className="font-mono text-[10px] text-neutral-300">
-            Grow your routine, one seed at a time.
-          </span>
-        </div>
-      </footer>
-    </div>
-  );
-};
-
-// ─── Thread UI (PRD §8 — connecting parent to seeds) ─────────────────────────
-const ThreadUI = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-40px" });
-
-  const seeds = ["Research", "Draft", "Review", "Submit"];
-
-  return (
-    <div ref={ref} className="flex items-center gap-0 w-full">
-      {/* Parent node */}
-      <div className="flex-shrink-0">
-        <div className="border border-neutral-200 rounded-md px-3 py-1.5 bg-neutral-50">
-          <span className="font-mono text-[10px] text-neutral-500">Project</span>
-        </div>
-      </div>
-
-      {/* Thread lines */}
-      <svg className="flex-1 h-8 overflow-visible" preserveAspectRatio="none">
-        {seeds.map((_, i) => {
-          const xStart = 0;
-          const xEnd = `${((i + 1) / seeds.length) * 100}%`;
-          return (
-            <motion.line
-              key={i}
-              x1={xStart}
-              y1="50%"
-              x2={xEnd}
-              y2="50%"
-              stroke="#d4d4d4"
-              strokeWidth={1}
-              initial={{ pathLength: 0 }}
-              animate={isInView ? { pathLength: 1 } : {}}
-              transition={{ delay: 0.2 + i * 0.15, duration: 0.5 }}
-            />
-          );
-        })}
-      </svg>
-
-      {/* Seed nodes */}
-      <div className="flex gap-2 flex-shrink-0">
-        {seeds.map((seed, i) => (
-          <motion.div
-            key={seed}
-            initial={{ scale: 0 }}
-            animate={isInView ? { scale: 1 } : {}}
-            transition={{
-              delay: 0.5 + i * 0.15,
-              type: "spring",
-              stiffness: 300,
-              damping: 20,
-            }}
-            className="flex flex-col items-center gap-1"
-          >
-            <div
-              className="w-3 h-3 rounded-full border border-[#22C55E]"
-              style={{
-                backgroundColor: i < 2 ? "#22C55E" : i === 2 ? "#22C55E80" : "transparent",
-              }}
-            />
-            <span className="font-mono text-[8px] text-neutral-400">{seed}</span>
-          </motion.div>
-        ))}
+          <div className="px-8 lg:px-10 flex items-center gap-2 text-left text-xs text-muted-foreground">
+            <p>Built by Hawon Lee</p>
+            <a
+              href="https://www.hawonlee.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center hover:text-primary transition-colors"
+              aria-label="Visit Hawon Lee's website"
+            >
+              <ArrowUpRight className="w-4 h-4" />
+            </a>
+          </div>
+        </footer>
       </div>
     </div>
   );
 };
+

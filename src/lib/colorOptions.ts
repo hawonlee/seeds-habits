@@ -15,7 +15,7 @@ export interface ColorOption {
 // Centralized six-color palette. Change hexes here to update globally.
 export const COLOR_OPTIONS: ColorOption[] = [
   { name: 'Red',    value: '#5B3E3F', bgHex: '#FFE1E2', textHex: '#5B3E3F', midHex: "#BE0006" },
-  { name: 'Amber',  value: '#6C682D', bgHex: '#FFECD2', textHex: '#462800', midHex: "#D77D00" },
+  { name: 'Amber',  value: '#6C682D', bgHex: '#FFECD2', textHex: '#815F31', midHex: "#D77D00" },
   { name: 'Yellow', value: '#756B1F', bgHex: '#FFF9C4', textHex: '#756B1F', midHex: "#BCAA00" },
   { name: 'Green',  value: '#4B6039', bgHex: '#E8FEC6', textHex: '#4B6039', midHex: "#5FAB00" },
   { name: 'Blue',   value: '#3C4C5D', bgHex: '#D7ECFF', textHex: '#3C4C5D', midHex: "#268ED3" },

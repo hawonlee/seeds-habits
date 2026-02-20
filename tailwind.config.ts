@@ -20,7 +20,7 @@ export default {
 		extend: {
 			fontFamily: {
 				sans: ['Geist Mono', 'monospace'],
-				display: ['Inter', 'system-ui', 'sans-serif'],
+				display: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
 				mono: ['JetBrains Mono', 'Geist Mono', 'monospace'],
 			},
 			fontSize: {
