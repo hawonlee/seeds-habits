@@ -173,7 +173,10 @@ export const AllDayTaskSections: React.FC<AllDayTaskSectionsProps> = ({
       insertIndex: startIndex >= 0 ? startIndex : null,
     });
 
-    e.dataTransfer.effectAllowed = "move";
+    // Allow both:
+    // - move for in-section reordering
+    // - copy when dropping into another day cell (month/day/week handlers)
+    e.dataTransfer.effectAllowed = "copyMove";
     e.dataTransfer.setData("text/plain", `task:${taskId}:${section}`);
     e.dataTransfer.setData("application/x-calendar-section-reorder", `${section}:${draggedId}`);
 
