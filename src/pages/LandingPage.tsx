@@ -649,7 +649,7 @@ export const LandingPage = () => {
         {/* ── FOOTER ─────────────────────────────────────────────────────── */}
         <footer className="absolute bottom-0 py-2 border-t border-border space-y-2 font-light w-full">
           <div className="px-8 lg:px-10 flex items-center gap-2 pb-2 border-b border-border text-left text-xs text-muted-foreground">
-            <p>Noted</p>
+            <p>Seeds</p>
 
           </div>
           <div className="px-8 lg:px-10 flex items-center gap-2 text-left text-xs text-muted-foreground">
