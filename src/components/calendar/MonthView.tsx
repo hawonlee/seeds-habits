@@ -110,6 +110,8 @@ const DayCell = ({
   );
 
   const diaryItems = showDiaries ? diaryEntriesForDay : [];
+  const taskEntries = showTasks ? (tasksForDay as CalendarTaskEntry[]) : [];
+
   const [newTaskTitle, setNewTaskTitle] = React.useState("");
   const [inlineCreatedTaskIds, setInlineCreatedTaskIds] = React.useState<Set<string>>(new Set());
 
@@ -161,7 +163,7 @@ const DayCell = ({
         </div>
 
         {/* Task drop zone section - at the bottom with background */}
-        <div className="flex-1 relative mt-[2px]">
+        <div className="flex-1 min-h-0 relative mt-[2px]">
           {/* Task drop zone - background layer */}
           <div
             data-drop-zone="task"
@@ -169,24 +171,24 @@ const DayCell = ({
           />
           
           {/* Task items - foreground layer */}
-          <div className="relative z-10 flex flex-col h-full">
-            <div className="flex flex-col">
+          <div className="relative z-10 flex flex-col h-full min-h-0">
+            <div className="relative flex-1 min-h-0">
+              <div className="h-full overflow-y-auto pr-0.5">
               <AllDayTaskSections
                 date={date}
-                taskEntries={showTasks ? (tasksForDay as CalendarTaskEntry[]) : []}
+                taskEntries={taskEntries}
                 taskLists={taskLists}
                 onTaskToggleComplete={onTaskToggleComplete}
                 onTaskUpdateTitle={onTaskUpdateTitle}
                 onCalendarItemToggleComplete={onCalendarItemToggleComplete}
                 onTaskDelete={onTaskDelete}
                 onCalendarItemDelete={onCalendarItemDelete}
-                maxDeadlineItems={2}
                 highlightedTaskIds={inlineCreatedTaskIds}
               />
 
               {/* Habits section */}
               <div className="flex flex-col gap-1 mt-1">
-                {uniqueHabits.slice(0, 2).map((item, index) => {
+                {uniqueHabits.map((item, index) => {
                   const isScheduledHabit = scheduledHabitIds.includes(item.data.id);
                   const calendarItem = getScheduledItemsForDate(date)
                     .find(calendarItem => calendarItem.item_type === 'habit' && calendarItem.item_id === item.data.id && calendarItem.start_minutes == null);
@@ -208,7 +210,7 @@ const DayCell = ({
               </div>
 
               {/* Diary items */}
-              {diaryItems.slice(0, 1).map(entry => (
+              {diaryItems.map(entry => (
                 <CalendarDiaryItem
                   key={entry.id}
                   entry={entry}
@@ -216,6 +218,8 @@ const DayCell = ({
                   onClick={onDiaryEntryClick}
                 />
               ))}
+              </div>
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-background/90 to-transparent" />
             </div>
 
             {/* Inline add task input pinned to bottom */}
