@@ -224,7 +224,7 @@ const DayCell = ({
 
             {/* Inline add task input pinned to bottom */}
             {showTasks && (
-              <div className="mt-auto pt-1">
+              <div className="mt-auto">
                 <input
                   type="text"
                   value={newTaskTitle}
