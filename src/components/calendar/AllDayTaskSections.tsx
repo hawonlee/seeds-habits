@@ -85,7 +85,6 @@ interface AllDayTaskSectionsProps {
   onTaskDelete?: (taskId: string, date?: Date) => void;
   onCalendarItemDelete?: (calendarItemId: string) => void;
   maxDeadlineItems?: number;
-  highlightedTaskIds?: Set<string>;
 }
 
 export const AllDayTaskSections: React.FC<AllDayTaskSectionsProps> = ({
@@ -98,7 +97,6 @@ export const AllDayTaskSections: React.FC<AllDayTaskSectionsProps> = ({
   onTaskDelete,
   onCalendarItemDelete,
   maxDeadlineItems,
-  highlightedTaskIds,
 }) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -361,7 +359,6 @@ export const AllDayTaskSections: React.FC<AllDayTaskSectionsProps> = ({
                 onDeleteCalendarItem={onCalendarItemDelete}
                 displayType="task"
                 isDraggable={false}
-                useForegroundColor={Boolean(highlightedTaskIds?.has(task.id))}
               />
               {showIndicatorAfterLast && (
                 <ReorderIndicator className="absolute bottom-0 left-0 right-0" />

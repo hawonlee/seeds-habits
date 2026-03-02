@@ -113,20 +113,12 @@ const DayCell = ({
   const taskEntries = showTasks ? (tasksForDay as CalendarTaskEntry[]) : [];
 
   const [newTaskTitle, setNewTaskTitle] = React.useState("");
-  const [inlineCreatedTaskIds, setInlineCreatedTaskIds] = React.useState<Set<string>>(new Set());
 
   const handleCreateTask = async () => {
     const title = newTaskTitle.trim();
     if (!title || !onTaskCreate) return;
 
-    const createdTaskId = await onTaskCreate(title, date);
-    if (createdTaskId) {
-      setInlineCreatedTaskIds((prev) => {
-        const next = new Set(prev);
-        next.add(createdTaskId);
-        return next;
-      });
-    }
+    await onTaskCreate(title, date);
     setNewTaskTitle("");
   };
 
@@ -183,7 +175,6 @@ const DayCell = ({
                 onCalendarItemToggleComplete={onCalendarItemToggleComplete}
                 onTaskDelete={onTaskDelete}
                 onCalendarItemDelete={onCalendarItemDelete}
-                highlightedTaskIds={inlineCreatedTaskIds}
               />
 
               {/* Habits section */}

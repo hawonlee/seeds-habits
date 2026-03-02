@@ -63,7 +63,7 @@ const Index = () => {
     toggleCalendarItemCompleted
   } = useCalendarItems();
   const { diaryEntries } = useDiaryEntries();
-  const { tasks, taskLists, createTask, updateTask, deleteTask, loading: tasksLoading } = useTasks();
+  const { tasks, taskLists, createTask, createTaskList, updateTask, deleteTask, loading: tasksLoading } = useTasks();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -337,16 +337,34 @@ const Index = () => {
   };
 
   const handleTaskCreateForDate = async (title: string, date: Date) => {
-    const defaultListId = taskLists[0]?.id;
-    if (!defaultListId) {
-      console.warn("[Index.handleTaskCreateForDate] No task list exists for new task creation");
-      return undefined;
-    }
-
     try {
+      const noneTaskList = taskLists.find(
+        (list) => list.name.trim().toLowerCase() === "none"
+      );
+      let targetTaskListId = noneTaskList?.id;
+
+      if (!targetTaskListId) {
+        try {
+          const createdNoneList = await createTaskList({
+            name: "none",
+            description: "",
+            color: "#4D4D4D",
+            hide_completed: false,
+          });
+          targetTaskListId = createdNoneList?.id;
+        } catch (error) {
+          console.warn("[Index.handleTaskCreateForDate] Failed to auto-create 'none' task list:", error);
+        }
+      }
+
+      if (!targetTaskListId) {
+        console.warn("[Index.handleTaskCreateForDate] Could not resolve 'none' task list");
+        return undefined;
+      }
+
       const task = await createTask({
         title,
-        task_list_id: defaultListId,
+        task_list_id: targetTaskListId,
         completed: false,
         priority: 'medium',
       });

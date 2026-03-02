@@ -122,8 +122,11 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
   
   // Colors
   const palette = taskList ? findColorOptionByValue(taskList.color) : undefined;
+  const isNoneTaskList = taskList?.name?.trim().toLowerCase() === 'none';
   const textColor = palette?.textHex || taskList?.color || '#4D4D4D';
-  const todoTextColor = useForegroundColor ? 'hsl(var(--foreground))' : (palette?.midHex || textColor);
+  const todoTextColor = (useForegroundColor || isNoneTaskList)
+    ? 'hsl(var(--foreground))'
+    : (palette?.midHex || textColor);
   const bgColor = palette?.bgHex || taskList?.color;
 
   // Render as deadline (no checkbox, background color)
@@ -140,7 +143,7 @@ export const TaskCalendarItem: React.FC<TaskCalendarItemProps> = ({
           className="relative flex items-center justify-end gap-1.5 rounded h-4"
           style={{ 
             backgroundColor: bgColor,
-            color: textColor
+            color: isNoneTaskList ? 'hsl(var(--foreground))' : textColor
           }}
         >
           <div className="absolute inset-0 flex items-center justify-center px-1">

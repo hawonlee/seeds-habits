@@ -103,7 +103,6 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [deletingTaskList, setDeletingTaskList] = useState<TaskList | null>(null);
-  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
   // Inline task list creation state
   const [isCreatingList, setIsCreatingList] = useState(false);
@@ -167,17 +166,11 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
     setIsTaskDialogOpen(true);
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-      setDeletingTask(task);
-    }
-  };
-
-  const handleConfirmDeleteTask = async () => {
-    if (deletingTask) {
-      await deleteTask(deletingTask.id);
-      setDeletingTask(null);
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await deleteTask(taskId);
+    } catch (error) {
+      console.error('Error deleting task:', error);
     }
   };
 
@@ -404,12 +397,6 @@ export const TasksView: React.FC<TasksViewProps> = ({ onToggleCalendar, isCalend
         title={deletingTaskList?.name || ''}
       />
 
-      <DeleteConfirmationModal
-        isOpen={deletingTask !== null}
-        onClose={() => setDeletingTask(null)}
-        onConfirm={handleConfirmDeleteTask}
-        title={deletingTask?.title || ''}
-      />
     </div>
   );
 };

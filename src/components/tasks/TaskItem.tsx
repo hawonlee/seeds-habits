@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { TaskDetailsPopup } from './TaskDetailsPopup';
 import type { Task } from '@/hooks/useTasks';
+import { X } from 'lucide-react';
 
 interface TaskItemProps {
   task: Task;
@@ -30,6 +31,11 @@ export const TaskItem: React.FC<TaskItemProps> = ({
 
   const handleToggleComplete = () => {
     onToggleComplete(task.id);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(task.id);
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -72,7 +78,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
     <>
       <div
         ref={cardRef}
-        className="transition-all duration-200 hover:bg-button-ghost-hover rounded-sm px-1 flex items-center cursor-pointer"
+        className="group transition-all duration-200 hover:bg-button-ghost-hover rounded-sm px-1 flex items-center cursor-pointer"
         onClick={handleCardClick}
       >
         <div className="flex items-start gap-2 w-full">
@@ -108,6 +114,17 @@ export const TaskItem: React.FC<TaskItemProps> = ({
             </div>
           </div>
         </div>
+
+        <Button
+          variant="text"
+          size="text"
+          onClick={handleDelete}
+          title="Delete task"
+          className="opacity-0 group-hover:opacity-100 transition-opacity"
+          data-prevent-click
+        >
+          <X className="w-3.5 h-3.5 text-muted-foreground" />
+        </Button>
       </div>
 
       <TaskDetailsPopup
